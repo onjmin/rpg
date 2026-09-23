@@ -30,6 +30,8 @@ const songVolume = (mml: string): number => {
 
 /** 効果音の音量（RPGEN の mp3 は音が大きいものが多いので半分に絞る）。 */
 const seGainOf = (v: number): number => (v / 100) * 0.5;
+/** これより長い効果音（ジングル）は、同じ音が鳴っている間は重ねない。 */
+const LONG_SE_SEC = 1;
 
 /** 前奏（`@0` が全休符で始まる4小節）がある曲は、2周目から前奏を飛ばす。 */
 const hasIntro = (mml: string): boolean =>
@@ -94,6 +96,8 @@ export class GameAudio {
 	/** 今の曲を歌声つきで流すか（singBgm）。 */
 	private sing = false;
 	private seCache = new Map<string, Promise<AudioBuffer | null>>();
+	/** 長い効果音が鳴り終わる時刻（AudioContext の時計。重ね鳴らし防止）。 */
+	private seEnds = new Map<string, number>();
 	private voiceReady: Promise<void> | null = null;
 	private speaking: {
 		abort: AbortController;
@@ -405,6 +409,11 @@ export class GameAudio {
 		void p.then((buf) => {
 			// 読み込みに時間がかかりすぎたら鳴らさない（ずれた音は邪魔）
 			if (!buf || performance.now() - t0 > 600) return;
+			// ジングルのような長い音は、同じ音が鳴り終わるまで重ねない（カーソル音などの短い音は重ねてよい）
+			if (buf.duration > LONG_SE_SEC) {
+				if ((this.seEnds.get(name) ?? 0) > ctx.currentTime) return;
+				this.seEnds.set(name, ctx.currentTime + buf.duration);
+			}
 			const src = ctx.createBufferSource();
 			src.buffer = buf;
 			src.connect(gain);

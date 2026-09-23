@@ -910,9 +910,12 @@ export class Game {
 			gainExp: async (n) => {
 				if (!(n > 0)) return;
 				await this.say(null, `${n}ポイントの　けいけんちを　かくとく！`);
+				// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）
+				let leveled = false;
 				for (const m of this.state.party) {
 					if (addExp(this.data, m, n) > 0) {
-						this.audio.se("levelup");
+						if (!leveled) this.audio.se("levelup");
+						leveled = true;
 						await this.say(
 							null,
 							`${this.data.cast[m.id]?.name ?? m.id}は　レベル${m.lv}に　あがった！`,

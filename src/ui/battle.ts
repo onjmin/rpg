@@ -736,11 +736,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		if (data.victoryBgm) void audio.jingle(data.victoryBgm, 21, 5500);
 		await log(group.victory ?? "あらしを　しずめた！", 900);
 		if (exp > 0) await log(`${exp}ポイントの　けいけんちを　かくとく！`, 900);
+		// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）
+		let leveled = false;
 		for (const f of party) {
 			if (!f.member) continue;
 			const ups = gainExp(data, f.member, exp);
 			if (ups > 0) {
-				audio.se("levelup");
+				if (!leveled) audio.se("levelup");
+				leveled = true;
 				renderParty();
 				await log(`${f.name}は　レベル${f.member.lv}に　あがった！`, 1000);
 			}
