@@ -42,7 +42,7 @@ pnpm dev
 - `node scripts/make-sprites.mjs` … 素材が無かったドット絵（ムッジェ・ボツキリコ・蓄音機）を作り直す
 - 開発中は URL でタイトルを飛ばして好きな場所から始められます（`pnpm dev` のときだけ）:
   `http://localhost:5173/?map=town&x=11&y=16&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
-- main に push すると GitHub Actions（`.github/workflows/gh-pages.yml`）が `gh-pages` ブランチへデプロイします。リポジトリの Settings → Pages で「Deploy from a branch: gh-pages」を選んでください。
+- main に push すると GitHub Actions（`.github/workflows/gh-pages.yml`）がビルドして GitHub Pages に公開します（Settings → Pages の Source は「GitHub Actions」）。
 
 ### 構成
 
