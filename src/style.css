@@ -489,6 +489,12 @@ body.shake #app {
 	background: rgba(255, 255, 255, 0.04);
 }
 
+/* 控え（つよさ）：たたかっていない仲間は少し淡く */
+.status-card.bench {
+	opacity: 0.72;
+	border-left-style: dashed;
+}
+
 .s-name {
 	color: var(--char);
 	font-size: 17px;
@@ -1000,6 +1006,17 @@ body.shake #app {
 .m-name span {
 	color: var(--muted);
 	font-size: 11px;
+}
+
+/* 幅のせまい端末（〜340px）でも戦闘の3人を1列に収める */
+@media (max-width: 340px) {
+	.member {
+		min-width: 0;
+		padding: 6px 5px;
+	}
+	.m-name {
+		font-size: 13px;
+	}
 }
 
 .m-bar {

@@ -109,6 +109,9 @@ export type CharDef = {
 	battle?: MemberStats;
 };
 
+/** うたと、覚えるレベル。 */
+export type SongLearn = { id: string; lv: number };
+
 export type MemberStats = {
 	/** Lv1 の値と、1レベルごとの伸び。 */
 	hp: [number, number];
@@ -116,8 +119,11 @@ export type MemberStats = {
 	atk: [number, number];
 	def: [number, number];
 	spd: [number, number];
-	/** 「うたう」で使う技（data/battle.ts の skills）。こえ（mp）が 0 のキャラは空にする。 */
-	skills: string[];
+	/**
+	 * 「うたう」で使う技（data/battle.ts の skills）と、覚えるレベル。覚える順に並べる。
+	 * 加入したときは、そのレベル以下のうたを覚えている。こえ（mp）が 0 のキャラは空にする。
+	 */
+	skills: SongLearn[];
 	/**
 	 * 「たたかう」のときの文（ランダムに1つ）。{user} を名前に置き換える。
 	 * UTAU の声が無い（こえ 0 の）キャラの持ち技は、ここで通常攻撃の演出として出す。
@@ -195,6 +201,8 @@ export type MemberState = {
 	exp: number;
 	hp: number;
 	mp: number;
+	/** 控え（隊列・戦闘・経験値に入らない）。無い・false なら たたかう仲間。 */
+	bench?: boolean;
 };
 
 export type GameState = {
@@ -203,6 +211,10 @@ export type GameState = {
 	y: number;
 	dir: Dir;
 	flags: Record<string, number | boolean | string>;
+	/**
+	 * 仲間全員。たたかう仲間（隊列の順。先頭はキリコ＝リーダー・いつも たたかう）のあとに控え。
+	 * 並びかえは engine/party.ts（toBench・fromBench・swapBench・tidyParty）で。
+	 */
 	party: MemberState[];
 	items: Record<string, number>;
 	playMs: number;
@@ -291,6 +303,8 @@ export type GameData = {
 	credits: string[];
 	/** 仲間との親睦（ひとやすみ会話・なかまと話す・プロフィール）。 */
 	bonds?: BondData;
+	/** 古いセーブで たたかう仲間が多すぎたとき、先に控えへ回す順（本編で控えに回る順）。無ければ いちばん新しい仲間。 */
+	benchFirst?: string[];
 };
 
 // ───────────────── シナリオ API ─────────────────
@@ -358,12 +372,23 @@ export type Story = {
 	 * canLose: true なら負けてもそのまま "lose" を返す（負けイベント）。
 	 */
 	battle(groupId: string, opt?: { canLose?: boolean }): Promise<BattleResult>;
-	join(charId: string): void;
+	/**
+	 * 仲間にする（たたかう仲間の平均レベルで入る）。bench: true なら控えで入る。
+	 * たたかう仲間が MAX_ACTIVE 人いるときは、控えに入れて知らせる（シナリオで先に bench するか bench: true で）。
+	 */
+	join(charId: string, opt?: { bench?: boolean }): void;
+	/** パーティから外す。たたかう仲間が抜けて控えがいれば、控えの先頭が入る。 */
 	leave(charId: string): void;
+	/** 控えに回す（キリコは回せない）。隊列からも外れる。 */
+	bench(charId: string): void;
+	/** 控えから戻す（たたかう仲間がいっぱいなら何もしない）。 */
+	unbench(charId: string): void;
+	/** 控えもふくめて全員を隊列に出す（見た目だけ。マップを移るまで）。エンディング用。 */
+	gather(): void;
 	give(itemId: string, n?: number): void;
 	take(itemId: string, n?: number): boolean;
 	has(itemId: string): number;
-	/** 全員全回復。 */
+	/** 全員（控えもふくむ）全回復。 */
 	heal(): void;
 	shake(ms?: number): Promise<void>;
 	flash(color?: string, ms?: number): Promise<void>;
@@ -381,7 +406,10 @@ export type Story = {
 	 * キリコと誰かの二人きりの場面で使う。マップを移っても続く。
 	 */
 	followers(show: boolean): void;
-	/** 経験値を全員に足す（戦わずに越えた・負けて通してもらった）。獲得とレベルアップの文も出す。 */
+	/**
+	 * 経験値を たたかう仲間（控えでない）に足す（戦わずに越えた・負けて通してもらった）。
+	 * 獲得・レベルアップ・覚えたうたの文も出す。
+	 */
 	gainExp(n: number): Promise<void>;
 	/** エンディング（スタッフロール → まとめカード → おわり → タイトルへ）。 */
 	ending(opt?: { summary?: EndingSummary }): Promise<void>;

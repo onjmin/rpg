@@ -67,6 +67,7 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 /**
  * 開発用：URL でタイトルを飛ばして好きな場所から始める（pnpm dev のときだけ）。
  * 例 `?map=town&x=11&y=16&dir=up&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
+ * `&bench=nanj` でその仲間を控えにして始める。
  */
 const devStart = (): GameState | null => {
 	if (!import.meta.env.DEV) return null;
@@ -96,6 +97,11 @@ const devStart = (): GameState | null => {
 			m.exp = expFor(lv);
 		}
 		healAll(data, st.party);
+	}
+	// 控えにする仲間（bench=nanj,teto）。無ければ たたかう仲間の多すぎる分を start が控えに回す
+	for (const id of q.get("bench")?.split(",") ?? []) {
+		const m = st.party.find((x) => x.id === id);
+		if (m && m !== st.party[0]) m.bench = true;
 	}
 	return st;
 };

@@ -43,6 +43,7 @@ pnpm dev
 - `node scripts/make-sprites.mjs` … 素材が無かったドット絵（ムッジェ・ボツキリコ・蓄音機）を作り直す
 - 開発中は URL でタイトルを飛ばして好きな場所から始められます（`pnpm dev` のときだけ）:
   `http://localhost:5173/?map=town&x=11&y=16&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
+  - `&bench=nanj`（`,` で区切って複数）でその仲間を控えにして始めます。たたかう仲間が4人以上いると、古いセーブと同じく自動で控えに回ります。
 - main に push すると GitHub Actions（`.github/workflows/gh-pages.yml`）がビルドして GitHub Pages に公開します（Settings → Pages の Source は「GitHub Actions」）。
 
 ### 構成
@@ -53,6 +54,14 @@ pnpm dev
   - マップとイベントは `src/data/maps/*.ts`。シナリオは `async (s) => { await s.say("kiriko", "……") }` の形で書きます（使える命令は `src/engine/defs.ts` の `Story`）。
   - マップチップは unj-reze と同じ同梱シート（`public/assets/rpg-reze/Base.png`・`field.png`、`public/assets/rpgen/map.png`）から切り出しています。
   - キャラ・敵の歩行グラと効果音は、unj-reze の GameMaker と同じく RPGEN（rpgen-search）の素材を id で直リンクしています。
+
+### なかま・控え と うたの習得
+
+- たたかって歩くのはキリコを入れて3人まで（`src/engine/party.ts` の `MAX_ACTIVE`）。ほかの仲間は「控え」で、隊列にも戦闘にも出ず、経験値も入りません（戦闘の経験値も `s.gainExp` も）。回復・どうぐ・会話やおでかけは控えもふくめた全員が対象です。
+- 控えとの入れかえは、フィールドのメニュー「なかま」→「いれかえ」でいつでもできます（キリコは外せません）。
+- 仲間のデータは `state.party` で、たたかう仲間（隊列の順・先頭がキリコ）のあとに控え（`bench: true` の印）が並びます。いれかえで入った仲間は、抜けた仲間の隊列の位置に入ります。シナリオでは `s.bench(id)`・`s.unbench(id)`・`s.join(id, { bench: true })` を使います。たたかう仲間が3人いるときに `s.join` すると、控えに入れて知らせます（シナリオでは先に `s.bench` で誰かを下げる）。
+- 古いセーブ（たたかう仲間が4人）は、読みこんだときに本編で控えに回る順（`src/data/index.ts` の `benchFirst`）で控えに回して知らせ、知らせのあとに保存しなおします（次に読んだとき また出ないように）。
+- うた（戦闘の「うたう」）はレベルで覚えます。`src/data/cast.ts` の `battle.skills` に `{ id, lv }` で覚える順に書きます。加入したときは、そのレベル以下のうたを覚えています。レベルが上がると「キリコは　「〇〇」を　おぼえた！」が出ます。セリフで覚えたかどうかを見るときは `knows(s.state, "kiriko", "replay")`（`src/data/story.ts`）。
 
 ### 効果音の音量（ラウドネス）
 

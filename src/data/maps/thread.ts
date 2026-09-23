@@ -8,6 +8,7 @@ import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
 import { SPR } from "../sprites";
+import { knows } from "../story";
 import { threadSummary, VARIANTS } from "../threadlog";
 import { INDOOR } from "../tiles";
 
@@ -137,6 +138,11 @@ const opening = async (s: Story): Promise<void> => {
 	s.set("p_tut");
 	s.hide("bot1");
 	s.hide("bot2");
+	// はじめての　うた（g_tut の勝利で Lv2 → ワカサギつり。序章「……うたも」の回収）
+	if (knows(s.state, "kiriko")) {
+		await s.say("kiriko", "……いま、うたが　ひとつ\nうかんだンゴ");
+		await s.say("nanj", "お、ええやん。次は「うたう」で\n聞かせてや");
+	}
 
 	// 目的
 	s.face("player", "up");
@@ -164,6 +170,8 @@ const opening = async (s: Story): Promise<void> => {
 const ending = async (s: Story): Promise<void> => {
 	const st = s.state;
 	s.bgm("town");
+	// 控えの仲間も隊列に出す（見た目だけ。みんなで輪になる）
+	s.gather();
 	// 仲間をキリコのまわりに並べ、みんなをキリコに向ける（見た目だけ）
 	s.place("follower:roze", 5, 6, "up");
 	s.place("follower:teto", 7, 6, "up");

@@ -15,7 +15,7 @@ import type {
 import type { Dir } from "../../engine/types";
 import { chest, npc, sign, warp } from "../helpers";
 import { SPR } from "../sprites";
-import { ks, lockedDoor, phono, resLine, silent } from "../story";
+import { knows, ks, lockedDoor, phono, resLine, silent } from "../story";
 import { base, TOWN } from "../tiles";
 
 /** J民系のモブ（黄色の名前欄・読み上げなし）。 */
@@ -295,7 +295,13 @@ const igo = async (s: Story): Promise<void> => {
 	s.set("tsumego");
 	s.se("item");
 	await s.narrate("のどあめを　2こ　てにいれた！");
-	await s.say("kiriko", "ふふん。シチョウは、吾輩の\nとっておきンゴ");
+	// シチョウ（Lv4 で覚えるうた）をまだ覚えていなければ、うたの予感にする
+	await s.say(
+		"kiriko",
+		knows(s.state, "kiriko", "shicho")
+			? "ふふん。シチョウは、吾輩の\nとっておきンゴ"
+			: "シチョウ……なんだか、\nうたに　なりそうンゴ",
+	);
 };
 
 const nanjAku = async (s: Story): Promise<void> => {

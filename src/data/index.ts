@@ -43,6 +43,9 @@ export const data: GameData = {
 		items: { candy: 3 },
 		flags: { ch: 0, res: 0 },
 	},
+	// 古いセーブ（たたかう仲間が4人）で先に控えへ回す順＝本編で控えに回る順
+	// （第二章でおんJ民、スタジオでテト）
+	benchFirst: ["nanj", "teto"],
 	credits: [
 		"# 蓄音キリコ　〜1000レス目のうた〜",
 		"",

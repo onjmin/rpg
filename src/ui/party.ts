@@ -1,4 +1,4 @@
-// メニューの「なかま」：ひとやすみ会話・なかまと話す・プロフィール（仲間との親睦）。
+// メニューの「なかま」：ひとやすみ会話・いれかえ（控え）・なかまと話す・プロフィール（仲間との親睦）。
 
 import { silent } from "../data/story";
 import {
@@ -10,8 +10,76 @@ import {
 } from "../engine/bonds";
 import type { DateDef } from "../engine/defs";
 import type { Game } from "../engine/game";
+import {
+	activeOf,
+	benchOf,
+	fromBench,
+	MAX_ACTIVE,
+	statsOf,
+	swapBench,
+	toBench,
+} from "../engine/party";
 import { el } from "./dom";
 import { listWindow } from "./menu";
+
+/** 控えなら名前のあとに（控え）。 */
+const benchMark = (game: Game, who: string): string =>
+	game.state.party.find((m) => m.id === who)?.bench ? "（控え）" : "";
+
+/**
+ * いれかえ：たたかう仲間（キリコを入れて3人まで）と控えを選ぶ。
+ * たたかう人を選ぶと控えへ、控えを選ぶと たたかう側へ（いっぱいなら、だれと かわるか聞く）。
+ */
+const swapMenu = async (game: Game): Promise<void> => {
+	const { data, state } = game;
+	state.flags.seen_swap = true;
+	let start = 0;
+	for (;;) {
+		const party = state.party;
+		const n = activeOf(party).length;
+		const rows = party.map((m, i) => {
+			const st = statsOf(data.cast[m.id], m.lv);
+			return {
+				label: `${data.cast[m.id]?.name ?? m.id}　Lv${m.lv}`,
+				sub: i === 0 ? "リーダー" : m.bench ? "控え" : "たたかう",
+				desc: `HP ${m.hp}/${st.maxHp}${st.maxMp ? `　こえ ${m.mp}/${st.maxMp}` : ""}`,
+				value: m.id,
+				disabled: i === 0,
+			};
+		});
+		const v = await listWindow(
+			game,
+			`いれかえ　たたかう ${n}/${MAX_ACTIVE}`,
+			rows,
+			{ start },
+		);
+		if (v === null) return;
+		start = party.findIndex((m) => m.id === v);
+		const m = party[start];
+		if (!m) continue;
+		if (!m.bench) {
+			toBench(party, v);
+		} else if (n < MAX_ACTIVE) {
+			fromBench(party, v);
+		} else {
+			// いっぱいなので、たたかう仲間のだれと かわるか
+			const outs = activeOf(party).slice(1);
+			const out = await listWindow(
+				game,
+				`${data.cast[v]?.name ?? v}が　だれと　かわる？`,
+				outs.map((o) => ({
+					label: `${data.cast[o.id]?.name ?? o.id}　Lv${o.lv}`,
+					sub: "たたかう",
+					value: o.id,
+				})),
+			);
+			if (out === null || !swapBench(party, out, v)) continue;
+		}
+		// 並びが変わる（たたかう仲間が前、控えが後ろ）ので、選んだ人の新しい位置にカーソルを置く
+		start = party.findIndex((x) => x.id === v);
+		game.refreshFollowers();
+	}
+};
 
 /** プロフィール（なかよし度で読めるページが増える）。 */
 const profileView = (game: Game, who: string): Promise<void> =>
@@ -25,7 +93,7 @@ const profileView = (game: Game, who: string): Promise<void> =>
 		box.appendChild(
 			el("div", {
 				class: "menu-title",
-				text: `${c?.name ?? who}　${hearts(bond)}`,
+				text: `${c?.name ?? who}${benchMark(game, who)}　${hearts(bond)}`,
 			}),
 		);
 		for (const page of prof?.pages ?? []) {
@@ -110,15 +178,29 @@ export const partyMenu = async (game: Game): Promise<void> => {
 				value: "__skit",
 				disabled: !fresh.length && !seen.length,
 			},
+			// 控えがいる・仲間が4人以上のときだけ出す
+			...(state.party.length > MAX_ACTIVE || benchOf(state.party).length
+				? [
+						{
+							label: "いれかえ",
+							sub: `たたかう ${activeOf(state.party).length}/${MAX_ACTIVE}`,
+							value: "__swap",
+						},
+					]
+				: []),
 			...members.map((m) => ({
 				label: data.cast[m.id]?.name ?? m.id,
-				sub: hearts(bondOf(state, m.id)),
+				sub: `${m.bench ? "控え　" : ""}${hearts(bondOf(state, m.id))}`,
 				value: m.id,
 			})),
 		];
 		const v = await listWindow(game, "なかま", items, { start });
 		if (v === null) return;
 		start = items.findIndex((i) => i.value === v);
+		if (v === "__swap") {
+			await swapMenu(game);
+			continue;
+		}
 		if (v === "__skit") {
 			if (fresh.length) {
 				await game.playSkit(fresh[0]);
@@ -136,11 +218,15 @@ export const partyMenu = async (game: Game): Promise<void> => {
 		const name = data.cast[v]?.name ?? v;
 		const date = data.bonds?.dates?.find((d) => d.who === v);
 		const dateItem = date ? dateMenuItem(game, date) : null;
-		const w = await listWindow(game, `${name}　${hearts(bondOf(state, v))}`, [
-			{ label: "はなす", value: "talk" },
-			...(dateItem ? [dateItem] : []),
-			{ label: "プロフィール", value: "profile" },
-		]);
+		const w = await listWindow(
+			game,
+			`${name}${benchMark(game, v)}　${hearts(bondOf(state, v))}`,
+			[
+				{ label: "はなす", value: "talk" },
+				...(dateItem ? [dateItem] : []),
+				{ label: "プロフィール", value: "profile" },
+			],
+		);
 		if (w === "talk") await talkWith(game, v);
 		else if (w === "profile") await profileView(game, v);
 		else if (w === "date" && date) {
@@ -204,6 +290,13 @@ const goOnDate = async (game: Game, date: DateDef): Promise<void> => {
 	game.msg.close();
 };
 
-/** メニューに出す「なかま」の補足（あたらしい会話があれば知らせる）。 */
-export const partyMenuHint = (game: Game): string | undefined =>
-	availableSkits(game.data.bonds, game.state).length ? "会話あり！" : undefined;
+/**
+ * メニューに出す「なかま」の補足（あたらしい会話・まだ いれかえを開いていない控え）。
+ * メニューは幅 200px なので、補足は全角5字まで（長いと「なかま」が縦に折れる）。
+ */
+export const partyMenuHint = (game: Game): string | undefined => {
+	const { data, state } = game;
+	if (availableSkits(data.bonds, state).length) return "会話あり！";
+	if (benchOf(state.party).length && !state.flags.seen_swap) return "いれかえ";
+	return undefined;
+};

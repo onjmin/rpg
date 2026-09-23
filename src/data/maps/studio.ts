@@ -1,13 +1,13 @@
 // テトのスタジオ（第四章の後半「はじめての声」〜テト加入）。設計書 §8-9・§11-6。
 // マッマの場面から teto_met で連れてこられ、auto の rec_ev で声がもどる →
-// テトの腕だめし（g_rival_teto・canLose）→ 録音 → テト加入。
+// テトの腕だめし（g_rival_teto・canLose）→ 録音 → テト加入（自分から控えへ）。
 // 東の裏口（rec 後）からサーバーの底へ。
 
 import type { MapDef, Script } from "../../engine/defs";
 import { addLose } from "../freedom";
 import { chest, warp } from "../helpers";
 import { SPR } from "../sprites";
-import { lockedDoor, phono, silent } from "../story";
+import { benchHint, lockedDoor, phono, silent } from "../story";
 import { INDOOR } from "../tiles";
 
 // §11-6 の ASCII（INDOOR の文字そのまま）。飾りだけ変えた:
@@ -94,15 +94,29 @@ const recEv: Script = async (s) => {
 		"teto",
 		"サイレントバルスの本体は　サーバーの底だ。\n裏口から　行ける",
 	);
+	// たたかうのは3人まで。テトは自分から控えへ（キリコが自分の足で立つのを見まもる先輩）
 	await s.say(
 		"teto",
-		"ボクも行く。……べ、別に　君のためじゃない。\nフランスパンの　ついでさ",
+		"ボクも行く。フランスパンの　ついでさ。\n……でも、前には　出ない",
 	);
+	await s.say("kiriko", "……テト先輩は、たたかわないンゴ？");
+	await s.say(
+		"teto",
+		"ボクは　控えで　聞いてる。\n君の声だろ。君の足で　立って　鳴らしな",
+	);
+	await s.say(
+		"teto",
+		"……べ、別に　心配なんか　してない。\n危なくなったら　呼べば　いいさ",
+	);
+	await s.say("kiriko", "……うん。吾輩、自分の足で　立って\n歌うンゴ");
 	s.hide("teto_st");
-	s.join("teto");
+	s.join("teto", { bench: true });
 	s.set("teto_in");
 	s.bgm("town");
-	await s.narrate("テトが　なかまに　なった！");
+	await s.narrate(
+		"テトが　なかまに　なった！\nテトは　控えで　見まもっている。",
+	);
+	await benchHint(s);
 };
 
 export const studio: MapDef = {

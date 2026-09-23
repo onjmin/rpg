@@ -1,7 +1,7 @@
 // 過去ログ倉庫（第二章）。設計書 §8-5・§11-4。
 // 落ちたスレが流れつく倉庫。本棚の前で「……ンゴ……」の伏線（whisper）→ ロゼが本棚をどかす →
 // 蓄音機（B2 前のセーブ）→ 奥の間でムッジェの相手をしていたフェリス → やきう民を見てかんちがい →
-// B2（ムッジェ＆フェリス）→ 和解してフェリス加入 → 町へ浮上（600/1000）。rival-joins.md §3。
+// B2（ムッジェ＆フェリス）→ 和解してフェリス加入（おんJ民は自分から控えへ）→ 町へ浮上（600/1000）。rival-joins.md §3。
 // 自由度（scratchpad/freedom/spec.md）：入口で古参ニキに「どう返す？」（F3-2・reply_kako）、
 // B2 は負けても進む（F4。once なし・b2_met で短い前置き）、名言チャレンジ その2（F1・meigen2）。
 
@@ -16,7 +16,7 @@ import {
 } from "../freedom";
 import { chest, npc, warp } from "../helpers";
 import { SPR } from "../sprites";
-import { ks, phono } from "../story";
+import { benchHint, ks, phono } from "../story";
 import { base, CAVE, PROPS } from "../tiles";
 
 // ───────────────── 地形 ─────────────────
@@ -310,11 +310,25 @@ const b2After = async (s: Story): Promise<void> => {
 		"feris",
 		"「また　あそびに　きてな」だって〜。\n私も　いっしょに　行っていい？",
 	);
+	// たたかって歩くのは3人まで。おんJ民が自分から控えへ（大先輩に席をゆずる。三章のスタジアムへの前ふり）
+	// 先に bench してから join する（join は たたかう仲間の平均レベルで入る）
+	await s.say(
+		"nanj",
+		"大先輩の　たのみや、ことわれんわ。\n……ほな、ワイは　一歩　下がっとくで",
+	);
+	await s.say("nanj", "ワイは　スタンド側や。\n後ろから　応援しとくで");
+	await ks(s, "……おんJ民、いなく　なっちゃうンゴ？");
+	await s.say("nanj", "なるかいな。声かけたら　すぐ\nグラウンドに　降りたるわ");
+	await s.say("feris", "……やきうくん、ありがとね〜");
+	s.bench("nanj");
 	s.hide("feris");
 	s.join("feris");
 	s.set("feris_in");
 	s.se("item");
-	await s.narrate("フェリスが　なかまに　なった！");
+	await s.narrate(
+		"フェリスが　なかまに　なった！\nおんJ民は　控えに　まわった。",
+	);
+	await benchHint(s);
 	s.set("b2");
 	s.hide("mujje");
 	await s.say(

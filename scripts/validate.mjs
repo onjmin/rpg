@@ -10,6 +10,8 @@
 //   「メニュー → レスで返す → >>1」のような入れ子の選択や、釣りの「つる → まつ → いまだ！」も通す）。
 //   2周目は、ほかのスクリプトが set した値（"uke"・0〜2 など）をフラグに入れて走らせる
 //   （reply_kako・daida・meigen1〜3・sym_* などで変わる文も通す）。
+//   仲間のレベルもフラグの組で変える（空＝Lv1・すべて＝Lv30・2周目＝Lv5）。覚えたうたで変わる文（knows）も通す。
+// - 仲間: うた（battle.skills の { id, lv }）の形と順、覚えたときの文・控えの知らせの長さ、benchFirst
 // - 自由度（scratchpad/freedom/spec.md §5-3）
 //   - エンディングのまとめカード（1行22字・1セクション10行まで）
 //   - threadlog.ts の組み立てる文（レスの洪水・差分・まとめ）を FLAG_DOMAIN の組み合わせで検査
@@ -170,6 +172,8 @@ let scripts = 0;
 
 try {
 	const { data } = await server.ssrLoadModule("/src/data/index.ts");
+	// 仲間のレベル・うた・控えの文（engine/party.ts）
+	const P = await server.ssrLoadModule("/src/engine/party.ts");
 	const maps = data.maps;
 
 	// ── マップの形 ──
@@ -271,7 +275,8 @@ try {
 			y: pos.y,
 			dir: "down",
 			flags,
-			party: [{ id: "kiriko", lv: 5, exp: 0, hp: 50, mp: 20 }],
+			// レベルはフラグの組で変わる（none=1・all=MAX_LV・2周目=5）。覚えたうたの分岐（knows）を両側とも通す
+			party: [{ id: "kiriko", lv: ctx.lv, exp: 0, hp: 50, mp: 20 }],
 			items: { candy: 3 },
 			playMs: 0,
 		};
@@ -416,11 +421,50 @@ try {
 				}
 				return "win";
 			},
-			join: (id) => {
+			join: (id, opt) => {
 				if (!data.cast[id]?.battle)
 					err(`${where}: join の "${id}" に戦闘能力が無い`, note);
+				if (
+					opt !== undefined &&
+					(typeof opt !== "object" ||
+						opt === null ||
+						Object.keys(opt).some((k) => k !== "bench"))
+				)
+					err(`${where}: join の opt が変`, note);
+				// 仲間の数・控えのあふれは調べない（どのスクリプトも1人から走らせるので。実行時は console.warn）
+				if (!state.party.some((m) => m.id === id))
+					state.party.push({
+						id,
+						lv: ctx.lv,
+						exp: 0,
+						hp: 1,
+						mp: 0,
+						...(opt?.bench ? { bench: true } : {}),
+					});
 			},
-			leave: () => {},
+			leave: (id) => {
+				state.party = state.party.filter((m) => m.id !== id);
+			},
+			bench: (id) => {
+				if (id === data.start.party[0])
+					err(`${where}: リーダー "${id}" は控えに回せない`, note);
+				else if (!data.cast[id]?.battle)
+					err(`${where}: bench の "${id}" に戦闘能力が無い`, note);
+				const m = state.party.find((x) => x.id === id);
+				if (m) m.bench = true;
+			},
+			unbench: (id) => {
+				if (id === data.start.party[0])
+					err(
+						`${where}: リーダー "${id}" は控えにならない（unbench 不要）`,
+						note,
+					);
+				else if (!data.cast[id]?.battle)
+					err(`${where}: unbench の "${id}" に戦闘能力が無い`, note);
+				const m = state.party.find((x) => x.id === id);
+				if (m) delete m.bench;
+			},
+			gather: () => {},
 			give: (id) => {
 				if (!data.items[id]) err(`${where}: 道具 "${id}" が無い`, note);
 			},
@@ -465,10 +509,12 @@ try {
 		loseFirst,
 		label,
 		path = null,
+		lv = 5,
 	) => {
 		const ctx = {
 			pick,
 			path,
+			lv,
 			taken: [],
 			counts: [],
 			loseFirst,
@@ -500,13 +546,33 @@ try {
 	 * 選び方（pick 0〜4）と負け方（0回・LOSE_FIRST 回）を変えて走らせる。
 	 * 結果が変わらない組み合わせ（選択肢が足りない・負けイベントが無い）は飛ばす。
 	 */
-	const runVariants = async (where, fn, mapId, mkFlags, label) => {
+	const runVariants = async (where, fn, mapId, mkFlags, label, lv) => {
 		let maxAll = 0;
 		let canLose = false;
 		for (const pick of PICKS) {
-			const a = await runOnce(where, fn, mapId, mkFlags(), pick, 0, label);
+			const a = await runOnce(
+				where,
+				fn,
+				mapId,
+				mkFlags(),
+				pick,
+				0,
+				label,
+				null,
+				lv,
+			);
 			const b = a.canLose
-				? await runOnce(where, fn, mapId, mkFlags(), pick, LOSE_FIRST, label)
+				? await runOnce(
+						where,
+						fn,
+						mapId,
+						mkFlags(),
+						pick,
+						LOSE_FIRST,
+						label,
+						null,
+						lv,
+					)
 				: null;
 			const maxN = Math.max(a.maxN, b?.maxN ?? 0);
 			maxAll = Math.max(maxAll, maxN);
@@ -515,8 +581,9 @@ try {
 		}
 		// 選択肢が2つ以上あれば、選び方の組み合わせもたどる（pick を固定すると通らない入れ子の選択）
 		if (maxAll > 1) {
-			await explore(where, fn, mapId, mkFlags, label, 0);
-			if (canLose) await explore(where, fn, mapId, mkFlags, label, LOSE_FIRST);
+			await explore(where, fn, mapId, mkFlags, label, 0, lv);
+			if (canLose)
+				await explore(where, fn, mapId, mkFlags, label, LOSE_FIRST, lv);
 		}
 	};
 
@@ -524,7 +591,7 @@ try {
 	 * 選び方の組み合わせを幅優先でたどる（浅い選択のちがいから先に。MAX_PATHS 本まで）。
 	 * 1本走らせるごとに、道の先で出た選択肢の「ほかの番号」を次の道として積む。
 	 */
-	const explore = async (where, fn, mapId, mkFlags, label, loseFirst) => {
+	const explore = async (where, fn, mapId, mkFlags, label, loseFirst, lv) => {
 		const queue = [[]];
 		for (let n = 0; n < MAX_PATHS && queue.length; n++) {
 			const path = queue.shift();
@@ -537,6 +604,7 @@ try {
 				loseFirst,
 				label,
 				path,
+				lv,
 			);
 			for (let k = path.length; k < ctx.counts.length; k++)
 				for (let j = 1; j < ctx.counts[k]; j++)
@@ -547,13 +615,16 @@ try {
 	/** フラグの組 base で走らせ、読んだフラグを1つずつ反転させて走らせ直す（ほかの分岐の先も通す）。 */
 	const runBase = async (where, fn, mapId, base) => {
 		const tag = typeof base === "number" ? `typed${base}` : base;
+		// 仲間のレベルもフラグの組に合わせる（はじめ＝1・ぜんぶ＝MAX_LV・2周目＝5）
+		const lv = base === "none" ? 1 : base === "all" ? P.MAX_LV : 5;
 		const reads = new Set();
 		await runVariants(
 			where,
 			fn,
 			mapId,
 			() => makeFlags(base, null, reads),
-			`flags=${tag}`,
+			`flags=${tag} lv=${lv}`,
+			lv,
 		);
 		for (const k of [...reads].slice(0, MAX_FLIPS))
 			await runVariants(
@@ -561,7 +632,8 @@ try {
 				fn,
 				mapId,
 				() => makeFlags(base, k, null),
-				`flags=${tag} ${base === "none" ? "+" : "-"}${k}`,
+				`flags=${tag} lv=${lv} ${base === "none" ? "+" : "-"}${k}`,
+				lv,
 			);
 	};
 
@@ -660,10 +732,55 @@ try {
 		if (en.drop && !data.items[en.drop.item])
 			err(`enemy ${id}: ドロップ "${en.drop.item}" が無い`);
 	}
+	// うた（battle.skills）は { id, lv } で、覚えるレベルの順。覚えたときの文も長さを調べる
 	for (const [id, c] of Object.entries(data.cast)) {
-		for (const s of c.battle?.skills ?? [])
-			if (!data.skills[s]) err(`cast ${id}: 技 "${s}" が無い`);
+		const list = c.battle?.skills ?? [];
+		if (!Array.isArray(list)) {
+			err(`cast ${id}: battle.skills が配列でない`);
+			continue;
+		}
+		const ids = new Set();
+		let prev = 0;
+		for (const s of list) {
+			if (
+				typeof s !== "object" ||
+				s === null ||
+				typeof s.id !== "string" ||
+				!Number.isInteger(s.lv) ||
+				s.lv < 1 ||
+				s.lv > P.MAX_LV
+			) {
+				err(
+					`cast ${id}: うた ${JSON.stringify(s)} が { id, lv: 1〜${P.MAX_LV} } になっていない`,
+				);
+				continue;
+			}
+			if (!data.skills[s.id]) err(`cast ${id}: 技 "${s.id}" が無い`);
+			if (ids.has(s.id)) err(`cast ${id}: うた "${s.id}" が重複`);
+			ids.add(s.id);
+			if (s.lv < prev)
+				warn(
+					`cast ${id}: うたが 覚えるレベルの順に並んでいない（${s.id} Lv${s.lv}）`,
+				);
+			prev = Math.max(prev, s.lv);
+		}
+		const mp = c.battle?.mp;
+		if (list.length && mp && mp[0] === 0 && mp[1] === 0)
+			warn(`cast ${id}: こえが 0 なのに うたが ある`);
+		// Lv2 から上で覚えるうたの知らせ（加入したときに覚えている Lv1 のうたは出ない）
+		for (const t of P.learnTexts(data, id, 1, P.MAX_LV)) {
+			checkText(`cast ${id} おぼえた`, t);
+			checkValue(`cast ${id} おぼえた`, t);
+		}
+		if (c.battle) {
+			checkText(`engine benchText ${id}`, P.benchText(c.name));
+			checkText(`engine backText ${id}`, P.backText(c.name));
+		}
 	}
+	checkText("engine BENCH_HINT", P.BENCH_HINT);
+	for (const id of data.benchFirst ?? [])
+		if (!data.cast[id]?.battle)
+			err(`benchFirst: "${id}" が cast に無い（戦闘能力が無い）`);
 	const st = data.start;
 	if (!maps[st.mapId]) err(`start: マップ "${st.mapId}" が無い`);
 	else if (!passable(st.mapId, st.x, st.y))

@@ -9,7 +9,7 @@ import type {
 	ProfileDef,
 	SkitDef,
 } from "../../engine/defs";
-import { silent } from "../story";
+import { knows, silent } from "../story";
 
 const ch = (st: GameState) => Number(st.flags.ch ?? 0);
 
@@ -94,9 +94,12 @@ export const skits: SkitDef[] = [
 			await s.say("kiriko", "じゃあ、その応援を\n蓄音機に　ためよう");
 			await s.say("nanj", "お、おう。……キリコ、がんばれ！");
 			await s.narrate("蓄音機に「がんばれ」が　きざまれた。");
+			// ちくおんリプレイ（Lv6）をまだ覚えていなければ、これからの約束にする
 			await s.say(
 				"kiriko",
-				"ちくおんリプレイの「がんばれ」は\nおんJ民の　声に　なったンゴ！",
+				knows(s.state, "kiriko", "replay")
+					? "ちくおんリプレイの「がんばれ」は\nおんJ民の　声に　なったンゴ！"
+					: "この「がんばれ」、いつか\nうたにして　鳴らすンゴ！",
 			);
 		},
 	},

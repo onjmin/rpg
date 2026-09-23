@@ -1,6 +1,8 @@
 // 戦闘（ドラクエ風の正面視点・コマンド式）。
 //
+// たたかうのは控えでない仲間（3人まで）。経験値も その仲間だけに入る。
 // 操作するのは先頭のキリコだけで、仲間は「おまかせ」（設定で全員操作にもできる）。
+// 「うたう」は覚えたうただけ（レベルで覚える。engine/party.ts の songsAt）。
 // 「オート」を押すと全員おまかせで進む。負けたら「もういちど」ですぐ再戦できる。
 // エンカウントの音が鳴り終わるまではフィールドを崩す演出でつなぎ、それから戦闘の画面と曲を出す。
 // 文の早送りとコマンドを出すのは、鳴らしたばかりの効果音の区切りまで待つ（engine/audio.ts）。
@@ -13,7 +15,14 @@ import type {
 	SkillDef,
 } from "../engine/defs";
 import { type Game, ResetToTitle } from "../engine/game";
-import { gainExp, healAll, statsOf } from "../engine/party";
+import {
+	activeOf,
+	gainExp,
+	healAll,
+	learnTexts,
+	songsAt,
+	statsOf,
+} from "../engine/party";
 import { settings } from "../engine/settings";
 import { isWalkRef } from "../engine/sprite";
 import { sleep, TILE } from "../engine/types";
@@ -293,7 +302,8 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 			bar,
 		};
 	});
-	const party: Fighter[] = state.party.map((m) => {
+	// 控えは戦闘に出ない（経験値も入らない）
+	const party: Fighter[] = activeOf(state.party).map((m) => {
 		const c = data.cast[m.id];
 		const st = statsOf(c, m.lv);
 		const view = el("div", { class: "member" });
@@ -310,7 +320,8 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 			def: st.def,
 			spd: st.spd,
 			member: m,
-			skills: (c.battle?.skills ?? [])
+			// 覚えたうただけ（おまかせも「うたう」の一覧も）
+			skills: songsAt(c, m.lv)
 				.map((s) => data.skills[s])
 				.filter(Boolean),
 			guard: false,
@@ -516,7 +527,13 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const v = await menu(
 				[
 					{ label: "たたかう", value: "attack" },
-					{ label: "うたう", value: "skill", disabled: !f.skills.length },
+					{
+						label: "うたう",
+						// こえはあるのに、まだ　うたを覚えていない（キリコの Lv1 など）
+						sub: !f.skills.length && f.maxMp ? "まだ　ない" : undefined,
+						value: "skill",
+						disabled: !f.skills.length,
+					},
 					{ label: "どうぐ", value: "item", disabled: !hasItem },
 					{ label: "ぼうぎょ", value: "guard" },
 					{ label: "にげる", value: "flee", disabled: isBoss },
@@ -861,6 +878,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		let leveled = false;
 		for (const f of party) {
 			if (!f.member) continue;
+			const from = f.member.lv;
 			const ups = gainExp(data, f.member, exp);
 			if (ups > 0) {
 				// ドラクエのように、勝利の曲を絞って止めてからレベルアップの音を鳴らす（2つを重ねない）
@@ -871,6 +889,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				leveled = true;
 				renderParty();
 				await log(`${f.name}は　レベル${f.member.lv}に　あがった！`, 1000);
+				// 覚えたうた（音はレベルアップの1回だけ）
+				for (const t of learnTexts(data, f.member.id, from, f.member.lv))
+					await log(t, 1000);
 			}
 		}
 		for (const e of enemies) {

@@ -2,7 +2,7 @@
 
 import { bondOf, hearts } from "../engine/bonds";
 import type { Game } from "../engine/game";
-import { statsOf } from "../engine/party";
+import { nextSongLv, songsAt, statsOf } from "../engine/party";
 import { writeSave } from "../engine/save";
 import { saveSettings, settings } from "../engine/settings";
 import { el } from "./dom";
@@ -140,16 +140,24 @@ const statusView = (game: Game): Promise<void> =>
 		for (const m of state.party) {
 			const c = data.cast[m.id];
 			const st = statsOf(c, m.lv);
-			const card = el("div", { class: "status-card" });
+			// 控えは少し淡く（style.css の .status-card.bench）
+			const card = el("div", {
+				class: `status-card${m.bench ? " bench" : ""}`,
+			});
 			card.style.setProperty("--char", c.color);
-			const skills = (c.battle?.skills ?? [])
+			// 覚えたうたと、次に覚えるレベル（うたの名前は伏せておく）
+			const known = songsAt(c, m.lv)
 				.map((s) => data.skills[s]?.name)
 				.filter(Boolean)
 				.join("・");
-			card.innerHTML = `<div class="s-name">${c.name}<span>Lv ${m.lv}</span></div>
+			const next = nextSongLv(c, m.lv);
+			const uta = !st.maxMp
+				? "なし（UTAUの声がない）"
+				: `${known || "まだ　ない"}${next ? `　（つぎは Lv${next}）` : ""}`;
+			card.innerHTML = `<div class="s-name">${c.name}<span>${m.bench ? "控え　" : ""}Lv ${m.lv}</span></div>
 <div class="s-row">HP ${m.hp}/${st.maxHp}　${st.maxMp ? `こえ ${m.mp}/${st.maxMp}` : "こえ ―"}</div>
 <div class="s-row">こうげき ${st.atk}　まもり ${st.def}　すばやさ ${st.spd}</div>
-<div class="s-row small">うた：${skills || (st.maxMp ? "なし" : "なし（UTAUの声がない）")}</div>${m.id === "kiriko" ? "" : `<div class="s-row small">なかよし度　${hearts(bondOf(state, m.id))}</div>`}`;
+<div class="s-row small">うた：${uta}</div>${m.id === "kiriko" ? "" : `<div class="s-row small">なかよし度　${hearts(bondOf(state, m.id))}</div>`}`;
 			box.appendChild(card);
 		}
 		box.appendChild(
@@ -213,7 +221,8 @@ const itemMenu = async (game: Game): Promise<void> => {
 						const st = statsOf(data.cast[m.id], m.lv);
 						return {
 							label: data.cast[m.id].name,
-							sub: `HP ${m.hp}/${st.maxHp}${st.maxMp ? `　こえ ${m.mp}/${st.maxMp}` : ""}`,
+							// 控えも回復できる
+							sub: `${m.bench ? "控え　" : ""}HP ${m.hp}/${st.maxHp}${st.maxMp ? `　こえ ${m.mp}/${st.maxMp}` : ""}`,
 							value: m.id,
 						};
 					}),

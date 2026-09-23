@@ -19,7 +19,23 @@ import type {
 } from "./defs";
 import { Actor, Field } from "./field";
 import type { Input } from "./input";
-import { gainExp as addExp, healAll, newMember } from "./party";
+import {
+	activeOf,
+	gainExp as addExp,
+	BENCH_HINT,
+	backText,
+	benchOf,
+	benchText,
+	fixParty,
+	fromBench,
+	healAll,
+	learnTexts,
+	MAX_ACTIVE,
+	newMember,
+	swapBench,
+	tidyParty,
+	toBench,
+} from "./party";
 import { writeSave } from "./save";
 import type { Screen } from "./screen";
 import { settings } from "./settings";
@@ -64,6 +80,10 @@ export class Game {
 	private followersShown = true;
 	/** マップを移ったので、スクリプトが終わったら自動セーブする。 */
 	private autosavePending = false;
+	/** スクリプトの終わりに出す知らせ（控えに回った・もどった）。 */
+	private notes: string[] = [];
+	/** gather のあと（マップを移るまで）控えも隊列に出す。 */
+	private gatherAll = false;
 	private path: Dir[] = [];
 	private pathTalk: Actor | null = null;
 	private marker: { x: number; y: number; t: number } | null = null;
@@ -127,6 +147,14 @@ export class Game {
 		this.state = state;
 		this.followersShown = true;
 		this.running = true;
+		this.notes = [];
+		this.autosavePending = false;
+		// 古いセーブ（たたかう仲間が4人）は、本編で控えに回る順に回して知らせる。
+		// 直したら、知らせのあと（runEnter のスクリプトの終わり）に保存して、次に読んだとき また出ないように
+		for (const id of fixParty(state.party, this.data.benchFirst ?? [])) {
+			this.note(benchText(this.data.cast[id]?.name ?? id), true);
+			this.autosavePending = true;
+		}
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
 		await this.loadMap(state.mapId, state.x, state.y, state.dir);
@@ -139,6 +167,7 @@ export class Game {
 
 	stop(): void {
 		this.running = false;
+		this.notes = [];
 		cancelAnimationFrame(this.rafId);
 		this.msg.close();
 		// エンディングなどで暗転したままタイトルへ戻らないようにする
@@ -193,18 +222,10 @@ export class Game {
 		this.player = new Actor("player", x, y, dir, leader?.walk ?? "", null);
 		this.player.through = false;
 		this.trail = [];
-		this.followers = this.state.party.slice(1).map((m) => {
-			const a = new Actor(
-				`follower:${m.id}`,
-				x,
-				y,
-				dir,
-				this.data.cast[m.id]?.walk ?? "",
-				null,
-			);
-			a.through = true;
-			return a;
-		});
+		this.gatherAll = false;
+		this.followers = this.lineup().map((m) =>
+			this.newFollower(m.id, x, y, dir),
+		);
 		this.refreshActors();
 		this.spreadFollowers();
 		this.stepPending = false;
@@ -221,6 +242,68 @@ export class Game {
 		if (def.bgm !== undefined) this.audio.bgm(def.bgm);
 		this.updateCamera();
 		this.toast(def.name);
+	}
+
+	/** 隊列に出す仲間（リーダーの後ろ）。ふだんは控えを出さない。 */
+	private lineup() {
+		const party = this.state.party;
+		return (this.gatherAll ? party : activeOf(party)).filter(
+			(m) => m !== party[0],
+		);
+	}
+
+	private newFollower(id: string, x: number, y: number, dir: Dir): Actor {
+		const a = new Actor(
+			`follower:${id}`,
+			x,
+			y,
+			dir,
+			this.data.cast[id]?.walk ?? "",
+			null,
+		);
+		a.through = true;
+		a.visible = this.followersShown;
+		return a;
+	}
+
+	/**
+	 * 隊列を仲間の並び（加入・脱退・いれかえ）に合わせる。メニューのいれかえからも呼ぶ。
+	 * 隊列のN番目は、いまのN番目の立ち位置（その後ろは足跡の最後尾）に立つ。
+	 * だれかが抜けたら後ろの人が詰め（となりなら歩く）、入れかえで入る人は抜けた人の場所から、
+	 * 加わる人は最後尾（場所が無ければプレイヤーの位置）から出る。
+	 */
+	refreshFollowers(): void {
+		const old = this.followers;
+		const next = this.lineup();
+		const spots = old.map((f) => ({ x: f.x, y: f.y, dir: f.dir }));
+		// 最後尾の後ろは足跡から（前の人のとなりのときだけ。ワープなどで ずれていたら使わない）
+		for (let i = spots.length; i < next.length + 1; i++) {
+			const t = this.trail[i];
+			const front = spots[i - 1] ?? this.player;
+			if (!t || Math.abs(t.x - front.x) + Math.abs(t.y - front.y) !== 1) break;
+			spots.push({ ...t });
+		}
+		this.followers = next.map((m, i) => {
+			const spot = spots[i];
+			const keep = old.find((f) => f.id === `follower:${m.id}`);
+			if (!keep) {
+				const at = spot ?? this.player;
+				return this.newFollower(m.id, at.x, at.y, at.dir);
+			}
+			if (spot && (spot.x !== keep.x || spot.y !== keep.y)) {
+				const dx = spot.x - keep.x;
+				const dy = spot.y - keep.y;
+				if (Math.abs(dx) + Math.abs(dy) === 1 && !keep.moving)
+					void keep.walk(
+						dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up",
+						WALK_MS,
+					);
+				else keep.setPos(spot.x, spot.y);
+			}
+			return keep;
+		});
+		// 足跡を新しい立ち位置にそろえる（次の1歩で、みんなが1マスずつ前へ）
+		this.trail = spots.slice(0, this.followers.length + 1);
 	}
 
 	/** マップに入ったとき、隊列をプレイヤーの後ろへ並べる（通れなければ同じマスに重ねる）。 */
@@ -600,11 +683,22 @@ export class Game {
 
 	private runEnter(): void {
 		const def = this.field?.def;
-		if (def?.onEnter) {
-			const fn = def.onEnter;
-			void this.runScript(fn).then(() => this.checkAuto());
+		// 知らせ（古いセーブで控えに回った）があれば、onEnter が無くても出してから自動イベントへ
+		if (def?.onEnter || this.notes.length) {
+			void this.runScript(async (s) => {
+				await def?.onEnter?.(s);
+			}).then(() => this.checkAuto());
 		} else {
 			this.checkAuto();
+		}
+	}
+
+	/** スクリプトの終わりに出す知らせをためる。hint ならいれかえの案内も（まだなら1回だけ）。 */
+	private note(text: string, hint = false): void {
+		this.notes.push(text);
+		if (hint && !this.state.flags.bench_hint) {
+			this.state.flags.bench_hint = true;
+			this.notes.push(BENCH_HINT);
 		}
 	}
 
@@ -634,6 +728,9 @@ export class Game {
 		this.input.clearField();
 		try {
 			await fn(this.story);
+			// いちばん外のスクリプトの終わりに、たまった知らせ（控えに回った・もどった）を出す
+			while (this.scriptDepth === 1 && this.notes.length)
+				await this.say(null, this.notes.shift() as string);
 		} catch (e) {
 			if (e instanceof ResetToTitle) {
 				this.scriptDepth = 0;
@@ -846,29 +943,45 @@ export class Game {
 				this.stepsSinceBattle = 0;
 				return r;
 			},
-			join: (id) => {
-				if (this.state.party.some((m) => m.id === id)) return;
-				this.state.party.push(newMember(this.data, id, this.state.party));
-				const a = new Actor(
-					`follower:${id}`,
-					this.player.x,
-					this.player.y,
-					this.player.dir,
-					this.data.cast[id]?.walk ?? "",
-					null,
-				);
-				a.through = true;
-				this.followers.push(a);
+			join: (id, opt) => {
+				const party = this.state.party;
+				if (party.some((m) => m.id === id)) return;
+				const m = newMember(this.data, id, activeOf(party));
+				const full = activeOf(party).length >= MAX_ACTIVE;
+				if (opt?.bench || full) m.bench = true;
+				// たたかう仲間なら隊列の最後尾、控えなら控えの最後に入る
+				party.push(m);
+				tidyParty(party);
+				if (full && !opt?.bench) {
+					console.warn(
+						`[join] たたかう仲間が いっぱいなので ${id} を控えに入れた（先に s.bench するか { bench: true }）`,
+					);
+					this.note(benchText(this.data.cast[id]?.name ?? id), true);
+				}
+				this.refreshFollowers();
 			},
 			leave: (id) => {
-				this.state.party = this.state.party.filter((m) => m.id !== id);
-				this.followers = this.followers.filter(
-					(f) => f.id !== `follower:${id}`,
-				);
-				this.trail.length = Math.min(
-					this.trail.length,
-					this.followers.length + 1,
-				);
+				const party = this.state.party;
+				const gone = party.find((m) => m.id === id);
+				if (!gone) return;
+				// たたかう仲間が抜けたら、控えの先頭が その隊列の位置に入る
+				const next = gone.bench ? undefined : benchOf(party)[0];
+				if (next && swapBench(party, id, next.id))
+					this.note(backText(this.data.cast[next.id]?.name ?? next.id));
+				this.state.party = party.filter((m) => m !== gone);
+				this.refreshFollowers();
+			},
+			bench: (id) => {
+				if (toBench(this.state.party, id)) this.refreshFollowers();
+				else console.warn(`[bench] ${id} は控えに回せない`);
+			},
+			unbench: (id) => {
+				if (fromBench(this.state.party, id)) this.refreshFollowers();
+				else console.warn(`[unbench] ${id} は控えから戻せない`);
+			},
+			gather: () => {
+				this.gatherAll = true;
+				this.refreshFollowers();
 			},
 			give: (id, n = 1) => {
 				this.state.items[id] = (this.state.items[id] ?? 0) + n;
@@ -916,9 +1029,10 @@ export class Game {
 			gainExp: async (n) => {
 				if (!(n > 0)) return;
 				await this.say(null, `${n}ポイントの　けいけんちを　かくとく！`);
-				// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）
+				// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）。控えには入らない
 				let leveled = false;
-				for (const m of this.state.party) {
+				for (const m of activeOf(this.state.party)) {
+					const from = m.lv;
 					if (addExp(this.data, m, n) > 0) {
 						if (!leveled) this.audio.se("levelup");
 						leveled = true;
@@ -926,6 +1040,8 @@ export class Game {
 							null,
 							`${this.data.cast[m.id]?.name ?? m.id}は　レベル${m.lv}に　あがった！`,
 						);
+						for (const t of learnTexts(this.data, m.id, from, m.lv))
+							await this.say(null, t);
 					}
 				}
 			},
