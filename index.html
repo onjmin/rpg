@@ -2,6 +2,21 @@
 <html lang="ja">
 	<head>
 		<meta charset="UTF-8" />
+		<!-- Google tag (gtag.js)。公開サイト（onjmin.github.io）でだけ読みこむ（開発中の表示を数えないため） -->
+		<script>
+			if (location.hostname === "onjmin.github.io") {
+				const s = document.createElement("script");
+				s.async = true;
+				s.src = "https://www.googletagmanager.com/gtag/js?id=G-DC1CXVMLXR";
+				document.head.appendChild(s);
+				window.dataLayer = window.dataLayer || [];
+				window.gtag = function gtag() {
+					window.dataLayer.push(arguments);
+				};
+				window.gtag("js", new Date());
+				window.gtag("config", "G-DC1CXVMLXR");
+			}
+		</script>
 		<meta
 			name="viewport"
 			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
