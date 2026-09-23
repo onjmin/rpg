@@ -96,7 +96,8 @@ export type CharDef = {
 	 * ファイルが無い／読めないときはダミー表示になる。
 	 * - side: いつも立つ側（ほかの話し手でふさがっていれば自動で反対側へ回る）
 	 * - facing: 絵のキャラが向いている向き（既定 "right"）。立つ側と合わなければ自動で左右反転する
-	 * 透明な余白は自動で切り詰めて大きさをそろえるので、キャンバスの大きさは自由。
+	 * 透明な余白を切り詰め、全身の高さ・頭の位置を測って自動でそろえるので、キャンバスの大きさや余白は自由。
+	 * scale / offsetX / offsetY は自動でそろえたあとの手直し（ふつうは要らない）。
 	 */
 	portrait?: {
 		src: string;
@@ -104,6 +105,12 @@ export type CharDef = {
 		facing?: "left" | "right";
 		/** 全身絵の上から何割を見せるか（既定 0.58 ＝頭〜腰あたり。1 で全身）。 */
 		crop?: number;
+		/** 大きさの倍率（既定 1）。 */
+		scale?: number;
+		/** 描いた絵の右へずらす（全身の高さに対する割合。反転したときは逆へ）。 */
+		offsetX?: number;
+		/** 下へずらす（全身の高さに対する割合）。 */
+		offsetY?: number;
 	};
 	/** 仲間になるキャラの戦闘能力。 */
 	battle?: MemberStats;
@@ -169,6 +176,39 @@ export type EnemyDef = {
 	}[];
 	/** 表示の大きさの倍率（既定 1、ボス戦は 1.5）。 */
 	scale?: number;
+	/**
+	 * 召喚する敵（裏ボス）。stock を上から1体ずつ場に出す。ストックが残っているか、
+	 * 呼んだ手下が場にいる間は、攻撃を必ずかわす。どちらも尽きると、どんな攻撃でも一撃で倒れる。
+	 */
+	summon?: SummonConfig;
+	/** 倒れたときの文（既定「{user}を　たおした！」）。 */
+	downText?: string;
+};
+
+/** 裏ボスが呼び出す1体。文は1要素＝ログ1枚（改行は効かない）。{user}＝呼ぶ敵、{name}＝出る敵。 */
+export type SummonDef = {
+	/** 出す敵の ID（data/battle.ts の enemies）。 */
+	enemy: string;
+	/** 出す前の文（1枚ごとにキーの音で すばやく。せりふ「名前「…」」は ふつうの待ち）。 */
+	text: string[];
+	/** 出した直後の文（既定「{name}を　デプロイした！」）。 */
+	deploy?: string;
+	/** 出したあとの文（手下のひと声など）。 */
+	after?: string[];
+	/** 出す前に、なかまの HP・こえを 最大値の rate だけ戻す（長いボスラッシュの息つぎ）。 */
+	restore?: { rate: number; text: string };
+};
+
+export type SummonConfig = {
+	stock: SummonDef[];
+	/** 守りのあるうちに攻撃されたときの文（ランダムに1つ）。 */
+	evade: string[];
+	/** だれにも攻撃されずにターンが終わり、自分から呼ぶときの文。 */
+	early?: string;
+	/** ストックが尽きて守りがとけたときの文（順に流す）。 */
+	exposed: string[];
+	/** 守りがとけたあとの一撃の直前の文。 */
+	finish: string;
 };
 
 export type EnemyGroup = {

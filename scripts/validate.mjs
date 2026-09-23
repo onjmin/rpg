@@ -12,6 +12,7 @@
 //   （reply_kako・daida・meigen1〜3・sym_* などで変わる文も通す）。
 //   仲間のレベルもフラグの組で変える（空＝Lv1・すべて＝Lv30・2周目＝Lv5）。覚えたうたで変わる文（knows）も通す。
 // - 仲間: うた（battle.skills の { id, lv }）の形と順、覚えたときの文・控えの知らせの長さ、benchFirst
+// - 裏ボスの召喚（summon.stock の敵・入れ子・restore の値）と、戦闘の文（召喚・downText）の長さ
 // - 自由度（scratchpad/freedom/spec.md §5-3）
 //   - エンディングのまとめカード（1行22字・1セクション10行まで）
 //   - threadlog.ts の組み立てる文（レスの洪水・差分・まとめ）を FLAG_DOMAIN の組み合わせで検査
@@ -31,6 +32,8 @@ const MAX_LINES = 2;
 // 選択肢の全角文字数。375px 幅のスマホ縦で1行に収まる幅（.choice の max-width 80vw・
 // .choice-item の 17px と余白から、文字の入る幅は 約240px＝全角14字）
 const MAX_CHOICE = 14;
+// 戦闘のログ1枚の全角文字数（375px 幅の .battle-log で2行に収まる目安。改行は効かない）
+const MAX_LOG = 28;
 const MAX_SUMMARY_LINES = 10; // まとめカードの1セクションの行数
 const PICKS = [0, 1, 2, 3, 4]; // choose が返す番号（選択肢が少なければ最後のもの）
 const LOSE_FIRST = 3; // 負けイベント（canLose）で最初に負ける回数
@@ -731,6 +734,64 @@ try {
 			warn(`enemy ${id}: 名前が長い（8字まで）: ${en.name}`);
 		if (en.drop && !data.items[en.drop.item])
 			err(`enemy ${id}: ドロップ "${en.drop.item}" が無い`);
+	}
+	// 戦闘の文（ログ1枚）：改行なし・MAX_LOG 字まで・使わない言葉・変な値
+	const checkLog = (where, text) => {
+		if (typeof text !== "string") {
+			err(`${where}: 文が文字列でない`);
+			return;
+		}
+		if (text.includes("\n"))
+			warn(`${where}: 戦闘の文に改行がある（効かない）: ${oneLine(text)}`);
+		if (width(text) > MAX_LOG)
+			warn(
+				`${where}: 戦闘の文が長い（${width(text)}字・${MAX_LOG}字まで）: ${text}`,
+			);
+		checkWords(where, text);
+		checkValue(where, text);
+	};
+	for (const [id, en] of Object.entries(data.enemies)) {
+		for (const act of en.acts ?? []) checkWords(`enemy ${id}`, act.text);
+		if (en.downText !== undefined)
+			checkLog(`enemy ${id} downText`, en.downText.replace("{user}", en.name));
+		const sm = en.summon;
+		if (!sm) continue;
+		const who = (t) => t.replace("{user}", en.name);
+		if (!sm.stock?.length) err(`enemy ${id}: summon.stock が空`);
+		if (!sm.evade?.length) err(`enemy ${id}: summon.evade が空`);
+		for (const t of [
+			...(sm.evade ?? []),
+			...(sm.exposed ?? []),
+			sm.finish,
+			...(sm.early ? [sm.early] : []),
+		])
+			checkLog(`enemy ${id} summon`, who(t));
+		for (const [k, st] of (sm.stock ?? []).entries()) {
+			const d = data.enemies[st.enemy];
+			if (!d) {
+				err(`enemy ${id}: summon.stock[${k}] の敵 "${st.enemy}" が無い`);
+				continue;
+			}
+			if (d.summon)
+				err(
+					`enemy ${id}: 呼ぶ敵 "${st.enemy}" も summon を持っている（入れ子は不可）`,
+				);
+			if ((d.scale ?? 1.5) > 2)
+				warn(
+					`enemy ${id}: 呼ぶ敵 "${st.enemy}" の scale が 2 より大きい（スマホ縦で並ばない）`,
+				);
+			const r = st.restore;
+			if (r && !(r.rate > 0 && r.rate <= 1))
+				err(`enemy ${id}: summon.stock[${k}].restore.rate が 0〜1 でない`);
+			const fill = (t) => who(t).replace("{name}", d.name);
+			for (const t of [
+				...(st.text ?? []),
+				st.deploy ?? "{name}を　デプロイした！",
+				...(st.after ?? []),
+				...(r ? [r.text] : []),
+			])
+				checkLog(`enemy ${id} summon ${st.enemy}`, fill(t));
+		}
 	}
 	// うた（battle.skills）は { id, lv } で、覚えるレベルの順。覚えたときの文も長さを調べる
 	for (const [id, c] of Object.entries(data.cast)) {

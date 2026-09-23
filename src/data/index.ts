@@ -6,6 +6,7 @@ import { bgm } from "./bgm";
 import { bonds } from "./bonds";
 import { cast } from "./cast";
 import { registerItemNames } from "./helpers";
+import { admin } from "./maps/admin";
 import { kakolog } from "./maps/kakolog";
 import { last } from "./maps/last";
 import { odekake } from "./maps/odekake";
@@ -20,7 +21,18 @@ import { sfx } from "./sfx";
 export const data: GameData = {
 	title: "蓄音キリコ\n〜1000レス目のうた〜",
 	subtitle: "おんJ発UTAU RPG",
-	maps: { thread, town, road, kakolog, stadium, studio, server, last, odekake },
+	maps: {
+		thread,
+		town,
+		road,
+		kakolog,
+		stadium,
+		studio,
+		server,
+		last,
+		odekake,
+		admin,
+	},
 	cast,
 	enemies,
 	groups,
@@ -71,6 +83,13 @@ export const data: GameData = {
 		"",
 		"（本作のキャラクターの口調・設定の一部は",
 		"　非公式の創作です）",
+		"",
+		"# おまけ（管理人室）",
+		"矢野さとる（おんJ管理人）",
+		"ひろゆき（元2ch管理人）",
+		"（実在の人物を　もとにした　非公式の",
+		"　ファン描写です。ご本人・各サイトとは",
+		"　関係ありません。セリフは　すべて創作です）",
 		"",
 		"# 原案・ディレクション",
 		"このゲームの作者",

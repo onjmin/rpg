@@ -78,13 +78,13 @@ export const skills: Record<string, SkillDef> = {
 		mp: 5,
 		text: "{user}「やる気は　アル？」　みんな「アル！」",
 	}),
-	// テト（終章で入れても入れなくても同じぐらいになるよう、ロゼ・フェリスとそろえた強さ）
+	// テト（最後に加入する いちばん強い仲間。うたも ロゼより強い）
 	baguette: sk({
 		id: "baguette",
 		name: "フランスパン・スマッシュ",
 		kind: "attack",
 		target: "enemy",
-		power: 1.6,
+		power: 1.9,
 		mp: 4,
 		text: "{user}の　フランスパンが　{target}を　とらえた！",
 		se: "attack",
@@ -94,7 +94,7 @@ export const skills: Record<string, SkillDef> = {
 		name: "テト第二形態",
 		kind: "attack",
 		target: "enemies",
-		power: 1.1,
+		power: 1.3,
 		mp: 7,
 		text: "{user}の　ツインテールが　回転を　はじめた！",
 	}),
@@ -125,10 +125,13 @@ const a = (
 const en = (d: EnemyDef) => d;
 
 export const enemies: Record<string, EnemyDef> = {
-	// 雑魚の目安（ふつうに進めた人・オート）：2〜3 ターン、HP が1割〜1割半へる。敵は 2〜3 体で、
+	// 雑魚の目安（ふつうに進めた人・オート）：2〜3 ターン、HP が1割〜1割半へる。敵は 2〜3 体（街道は 1〜2 体）で、
 	// 仲間より少しおそい〜同じぐらいの素早さ（先に動く敵がいる）。何もしない行動は 1〜3 割。
 	// 経験値は 1 レベルに 3〜5 戦（段階2 から）。
-	// ── 段階1（序章・スレ街道／Lv2〜4。ロゼ加入前の2人は Lv2 で 4 ターン・HP 3割へる） ──
+	// ── 段階1（序章・スレ街道／Lv2〜4） ──
+	// 同じ組み合わせを ロゼ加入前の2人（Lv2）と 3人（Lv3〜4）が戦うので、敵は2体まで・全体攻撃を多めにして
+	// 人数の差を小さくした。2人は 3 ターン・HP 2割、3人は 2 ターン・HP 1割、番長の前は 2 ターン・HP 7分。
+	// 敵を速くして、3人でも先に動かれるようにした
 	kskbot: en({
 		id: "kskbot",
 		name: "kskボット",
@@ -147,14 +150,14 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "arashi",
 		name: "荒らし",
 		sprite: SPR.e_sand,
-		hp: 36,
-		atk: 10,
+		hp: 50,
+		atk: 14,
 		def: 3,
-		spd: 10,
-		exp: 4,
+		spd: 14,
+		exp: 6,
 		drop: { item: "candy", rate: 0.1 },
 		acts: [
-			a(4, 1.0, "{user}は　{target}に　すなを　まきちらした！"),
+			a(4, 0.6, "{user}は　すなを　まきちらした！", "all"),
 			a(1, 0, "{user}は「ｱﾗｼｱﾗｼ」と　つぶやいている。"),
 		],
 	}),
@@ -162,11 +165,11 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "copipe",
 		name: "コピペ荒らし",
 		sprite: SPR.e_mystery,
-		hp: 40,
-		atk: 9,
+		hp: 48,
+		atk: 11,
 		def: 4,
-		spd: 9,
-		exp: 4,
+		spd: 13,
+		exp: 6,
 		drop: { item: "candy", rate: 0.15 },
 		acts: [
 			a(4, 0.6, "{user}は　おなじ文を　みんなに　はりつけた！", "all"),
@@ -178,11 +181,11 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "natsukids",
 		name: "夏休みキッズ",
 		sprite: SPR.j_sekimen,
-		hp: 43,
-		atk: 10,
+		hp: 60,
+		atk: 13,
 		def: 4,
-		spd: 14,
-		exp: 5,
+		spd: 18,
+		exp: 8,
 		scale: 1,
 		acts: [
 			a(4, 1.0, "{user}の「ﾌｧｰwww」こうげき！"),
@@ -196,7 +199,7 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "zonj",
 		name: "ゾンJ民",
 		sprite: SPR.j_zon,
-		hp: 72,
+		hp: 79,
 		atk: 16,
 		def: 8,
 		spd: 8,
@@ -211,7 +214,7 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "mojibake",
 		name: "文字化け",
 		sprite: SPR.e_unknown,
-		hp: 54,
+		hp: 59,
 		atk: 15,
 		def: 10,
 		spd: 12,
@@ -227,7 +230,7 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "kaso",
 		name: "過疎",
 		sprite: SPR.e_shin1,
-		hp: 48,
+		hp: 53,
 		atk: 14,
 		def: 6,
 		spd: 14,
@@ -242,7 +245,7 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "ninpo",
 		name: "忍法帖エラー",
 		sprite: SPR.e_pc,
-		hp: 60,
+		hp: 66,
 		atk: 17,
 		def: 9,
 		spd: 11,
@@ -258,8 +261,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "yaji",
 		name: "ヤジJ民",
 		sprite: SPR.j_tights,
-		hp: 60,
-		atk: 20,
+		hp: 66,
+		atk: 21,
 		def: 10,
 		spd: 14,
 		exp: 8,
@@ -273,8 +276,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "makemood",
 		name: "負けムードJ民",
 		sprite: SPR.j_hakkyo,
-		hp: 66,
-		atk: 23,
+		hp: 73,
+		atk: 24,
 		def: 9,
 		spd: 12,
 		exp: 8,
@@ -287,8 +290,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "ouen",
 		name: "応援団J民",
 		sprite: SPR.j_sen,
-		hp: 64,
-		atk: 20,
+		hp: 70,
+		atk: 21,
 		def: 12,
 		spd: 11,
 		exp: 8,
@@ -303,8 +306,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "pitcher",
 		name: "ピッチャー",
 		sprite: SPR.j_yakiu,
-		hp: 60,
-		atk: 22,
+		hp: 66,
+		atk: 23,
 		def: 11,
 		spd: 15,
 		exp: 9,
@@ -317,12 +320,13 @@ export const enemies: Record<string, EnemyDef> = {
 	}),
 
 	// ── 段階4（サーバーの底／Lv9〜10） ──
+	// テトを入れた3人で 2 ターン・HP 1割ほど、入れない3人（キリコ・ロゼ・フェリス）だと 3 ターン・HP 2割
 	jien: en({
 		id: "jien",
 		name: "自演",
 		sprite: SPR.j_nanashi,
-		hp: 70,
-		atk: 24,
+		hp: 84,
+		atk: 27,
 		def: 12,
 		spd: 16,
 		exp: 9,
@@ -335,8 +339,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "err503",
 		name: "503エラー",
 		sprite: SPR.e_tv,
-		hp: 95,
-		atk: 25,
+		hp: 114,
+		atk: 28,
 		def: 16,
 		spd: 13,
 		exp: 14,
@@ -351,8 +355,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "popup",
 		name: "ニセ警告",
 		sprite: SPR.e_pc,
-		hp: 80,
-		atk: 26,
+		hp: 96,
+		atk: 29,
 		def: 12,
 		spd: 17,
 		exp: 13,
@@ -365,8 +369,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "resuba",
 		name: "レスバトラー",
 		sprite: SPR.e_idiot,
-		hp: 100,
-		atk: 25,
+		hp: 120,
+		atk: 28,
 		def: 14,
 		spd: 14,
 		exp: 14,
@@ -380,8 +384,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "matome",
 		name: "まとめキッズ",
 		sprite: SPR.j_hikoki,
-		hp: 85,
-		atk: 25,
+		hp: 102,
+		atk: 28,
 		def: 13,
 		spd: 16,
 		exp: 13,
@@ -395,8 +399,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "shinshoku",
 		name: "バルス侵蝕",
 		sprite: SPR.e_shin2,
-		hp: 105,
-		atk: 26,
+		hp: 126,
+		atk: 29,
 		def: 16,
 		spd: 15,
 		exp: 15,
@@ -409,8 +413,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "barusan",
 		name: "バルサン",
 		sprite: SPR.e_sand,
-		hp: 90,
-		atk: 25,
+		hp: 108,
+		atk: 28,
 		def: 15,
 		spd: 12,
 		exp: 14,
@@ -457,8 +461,8 @@ export const enemies: Record<string, EnemyDef> = {
 		id: "rival_roze",
 		name: "ロゼ",
 		sprite: cast.roze.walk,
-		hp: 110,
-		atk: 14,
+		hp: 125,
+		atk: 16,
 		def: 6,
 		spd: 9,
 		exp: 24,
@@ -501,13 +505,13 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 	}),
 	// 第四章: キリコ／ロゼ／フェリス Lv8〜9。声がもどった直後の「ためし」。
-	// 負けても進むが勝たないと経験値が無いので、オートで 9 割ほど勝てる強さ
+	// 負けても進むが勝たないと経験値が無いので、オートで 9 割ほど勝てる強さ（6 ターン前後）
 	rival_teto: en({
 		id: "rival_teto",
 		name: "テト",
 		sprite: cast.teto.walk,
-		hp: 400,
-		atk: 45,
+		hp: 420,
+		atk: 48,
 		def: 16,
 		spd: 15,
 		exp: 40,
@@ -521,19 +525,20 @@ export const enemies: Record<string, EnemyDef> = {
 
 	// ── ボス・イベント戦 ──
 	// ボスの目安（ふつうに進めた人・オート）：B1〜B3 は勝率 6〜7 割・6〜8 ターン（3回負けたら通してもらえる）。
-	// F1・F2 は勝率 6 割前後で、急いで来た人（1 レベルほど下）が手動で 4 割ほど勝てる強さ。
+	// F1・F2 はテトを入れた3人で勝率 6〜7 割（ふつう）。入れない3人（キリコ・ロゼ・フェリス）だと 4 割ほど
+	// （むずかしい。手動で 5〜6 割、道具を使えば 9 割）。急いで来た人（1 レベルほど下）もテト入り・手動なら 4〜5 割。
 	// B1〜B3 の経験値の合計は freedom.ts の BOSS_EXP と同じにする（負けて通してもらったときと そろえる）。
-	// B1: キリコ／おんJ民／ロゼ Lv4 前後で 6 ターン前後。53＋キッズ 5 ＝ 58
+	// B1: キリコ／おんJ民／ロゼ Lv4 前後で 7 ターン前後。50＋キッズ 8 ＝ 58
 	natsuboss: en({
 		id: "natsuboss",
 		name: "夏休みキッズ番長",
 		sprite: SPR.j_kasa,
 		scale: 1.5,
-		hp: 250,
+		hp: 275,
 		atk: 23,
 		def: 5,
 		spd: 10,
-		exp: 53,
+		exp: 50,
 		drop: { item: "mabo", rate: 1 },
 		acts: [
 			a(6, 1.2, "{user}の　虫とりあみ　アタック！　{target}に　ヒット！"),
@@ -541,14 +546,14 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「……しゅくだい　おわってへん」　すこし　あせっている。"),
 		],
 	}),
-	// B2 はフェリス（rival_feris）といっしょに出る（Lv6 の3人で 7 ターン前後）。70＋フェリス 25 ＝ 95。はねは rival_feris が落とす
+	// B2 はフェリス（rival_feris）といっしょに出る（Lv6 の3人で 8 ターン前後）。70＋フェリス 25 ＝ 95。はねは rival_feris が落とす
 	mujje: en({
 		id: "mujje",
 		name: "ムッジェ",
 		sprite: SPR.mujje,
 		scale: 1.5,
-		hp: 220,
-		atk: 33,
+		hp: 242,
+		atk: 35,
 		def: 10,
 		spd: 11,
 		exp: 70,
@@ -558,14 +563,15 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「ホゲェ……」　さびしそうに　ないている。"),
 		],
 	}),
-	// B3: キリコ／ロゼ／フェリス Lv7〜8 で 8 ターン前後。113＋ピッチャー 9 ＝ 122
+	// B3: キリコ／ロゼ／フェリス Lv7〜8 で 7〜8 ターン。おんJ民を入れもどすと少し（ロゼの代わり）〜
+	// かなり（フェリスの代わり）むずかしくなる。113＋ピッチャー 9 ＝ 122
 	kantoku: en({
 		id: "kantoku",
 		name: "テノヒラ監督",
 		sprite: SPR.j_black,
 		scale: 1.5,
-		hp: 300,
-		atk: 45,
+		hp: 340,
+		atk: 49,
 		def: 14,
 		spd: 12,
 		exp: 113,
@@ -594,15 +600,16 @@ export const enemies: Record<string, EnemyDef> = {
 			),
 		],
 	}),
-	// F1: 3人 Lv9〜10 で 8 ターン前後。1ターンに1回しか動けないので、守りを低く・攻めを高くし、
-	// 何もしない行動を多めにした（レベルが1つ下でも勝ち目が残る）。経験値は F2 の前のレベルの差を縮める分
+	// F1: 3人 Lv9〜10 で テト入り 7 ターン前後・テトなし 8〜9 ターン。1ターンに1回しか動けないので、
+	// 守りを低く・攻めを高くし、何もしない行動を多めにした（レベルが1つ下でも勝ち目が残る）。
+	// 経験値は F2 の前のレベルの差を縮める分
 	balus: en({
 		id: "balus",
 		name: "サイレントバルス",
 		sprite: SPR.e_shinmax,
 		scale: 2,
-		hp: 650,
-		atk: 52,
+		hp: 810,
+		atk: 58,
 		def: 6,
 		spd: 14,
 		exp: 200,
@@ -612,14 +619,14 @@ export const enemies: Record<string, EnemyDef> = {
 			a(2, 0, "{user}は　勢い欄を　しずかに　みおろしている……"),
 		],
 	}),
-	// F2: F1 のあと（3人 Lv10〜11）で 10 ターン前後
+	// F2: F1 のあと（3人 Lv10〜11）で テト入り 8〜10 ターン・テトなし 11 ターン前後
 	botsu: en({
 		id: "botsu",
 		name: "ボツキリコ",
 		sprite: SPR.botsu,
 		scale: 2,
-		hp: 900,
-		atk: 52,
+		hp: 1100,
+		atk: 59,
 		def: 8,
 		spd: 13,
 		exp: 0,
@@ -630,7 +637,122 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}は　111年ぶんの　ためいきを　ついた。"),
 		],
 	}),
+
+	// ── 裏ボス（クリア後の管理人室。data/maps/admin.ts） ──
+	// 矢野さとる（おんJ管理人）は実在の人物をもとにした非公式のファン描写。文はすべて創作。
+	// 攻撃しない（power 0 だけ）。ストックのボスを1体ずつ呼び、ストックと手下が尽きるまで攻撃をかわす。
+	// 尽きたら どんな攻撃でも一撃（ui/battle.ts の召喚）。HP 1000＝「1000の　ダメージ！」
+	satoru: en({
+		id: "satoru",
+		name: "矢野さとる",
+		sprite: SPR.satoru,
+		scale: 1.2,
+		hp: 1000,
+		atk: 1,
+		def: 0,
+		spd: 1, // なかまが先に動く（最初の攻撃 → かわす → 呼ぶ）
+		exp: 0, // 経験値は呼んだボスの分だけ
+		acts: [
+			a(3, 0, "{user}は　ログを　ながめている。"),
+			a(2, 0, "{user}は　新機能を　コンパイルしている。"),
+			a(1, 0, "{user}は　ねこの　画像を　ひらいた。"),
+			a(2, 0, "うしろで　ひろゆきが　うまい棒を　かじっている。"),
+			a(1, 0, "ひろゆき「……お、おう」"),
+		],
+		summon: {
+			// 本編の順（B1 → B2 → B3 → F1 → F2）。ライバル（いまは なかま）は呼ばない
+			stock: [
+				{
+					enemy: "ex_bancho",
+					text: [
+						"{user}「ボス、いまから　つくってみるね」",
+						"{user}は　すごい速さで　キーボードを　たたいた！",
+						"カタカタカタカタ……ッターン！",
+					],
+					deploy: "過去ログから　{name}を　デプロイした！",
+					after: ["{user}「でけた。つかってみてねえ」"],
+				},
+				{
+					enemy: "ex_mujje",
+					text: [
+						"{user}「次のボス、もう　うpしといた」",
+						"「{name}.js」を　1秒で　書きあげた！",
+					],
+					after: ["{name}「ホゲェ！」"],
+				},
+				{
+					enemy: "ex_kantoku",
+					restore: { rate: 0.25, text: "ひろゆきが　うまい棒を　くばった！" },
+					text: [
+						"ひろゆき「その場で　ボス作るの、ずるくないですか？」",
+						"{user}「ずるくないよ。仕様です」",
+						"カタカタカタ……ッターン！",
+					],
+				},
+				{
+					enemy: "ex_balus",
+					text: ["{user}は　だまって　キーを　たたいた……", "…………ッターン。"],
+					deploy: "{name}を　しずかに　じっそうした。",
+				},
+				{
+					enemy: "ex_botsu",
+					restore: {
+						rate: 0.25,
+						text: "ひろゆきが　うまい棒を　もう1本　くばった！",
+					},
+					text: [
+						"{user}「最後は、ボツ案フォルダから……」",
+						"カタカタカタカタカタ……ッターン！",
+					],
+					deploy: "{name}を　再ビルドした！",
+					after: ["キリコ「……ボツの　吾輩ンゴ！？」"],
+				},
+			],
+			evade: [
+				"{user}は　当たり判定を　けしていた！",
+				"{user}は　キーを　たたきながら　よけた！",
+				"{user}「そこ、当たり判定　消しとるけん」",
+				"こうげきは　{user}を　すりぬけた！",
+			],
+			early: "{user}「待ちきれんから、先に　呼ぶねー」",
+			exposed: [
+				"{user}「あれ、ボスの　ストック　切れとる……」",
+				"{user}「のこりは……みんな　なかまに　なっとるね」",
+				"{user}の　当たり判定が　もどった！",
+			],
+			finish: "{user}の　当たり判定に　みんなの　レスが　とどく！",
+		},
+		downText: "{user}は　ログアウトした。",
+	}),
 };
+
+/**
+ * 裏ボス（矢野さとる）が過去ログから呼ぶボス＝本編のボスの写し。見た目・行動・名前は そのまま、
+ * 強さだけクリア後（Lv10〜12・3人）に合わせる。落とし物は なし。
+ * Lv11 のオートの勝率を 終章2戦目（ボツキリコ）と そろえてある：キリコ・ロゼ・フェリス 約6割、
+ * キリコ・ロゼ・テト 約7割半、キリコ・テト・フェリス 約9割（Lv10 は 約2割半／3割／5割）。
+ * 負けても たおしたボスの経験値は残るので、何回か挑めば追いつける（Lv10 から 平均2〜3回）。
+ */
+const remake = (id: string, from: string, d: Partial<EnemyDef>): void => {
+	enemies[id] = { ...enemies[from], id, drop: undefined, ...d };
+};
+remake("ex_bancho", "natsuboss", {
+	hp: 384,
+	atk: 39,
+	def: 14,
+	spd: 12,
+	exp: 30,
+});
+remake("ex_mujje", "mujje", { hp: 432, atk: 41, def: 15, spd: 13, exp: 30 });
+remake("ex_kantoku", "kantoku", {
+	hp: 480,
+	atk: 43,
+	def: 16,
+	spd: 14,
+	exp: 30,
+});
+remake("ex_balus", "balus", { hp: 552, atk: 46, def: 18, spd: 15, exp: 30 });
+remake("ex_botsu", "botsu", { hp: 672, atk: 51, def: 20, spd: 15, exp: 30 });
 
 const g = (d: EnemyGroup) => d;
 
@@ -666,10 +788,11 @@ export const groups: Record<string, EnemyGroup> = {
 		bgm: "battle",
 		intro: "kskボットが　スレを　ながしにきた！",
 	}),
-	g_road1: g({ id: "g_road1", enemies: ["arashi", "arashi"] }),
+	// 街道は2体まで（ロゼ加入前の2人でも 3 ターンで おわるように）
+	g_road1: g({ id: "g_road1", enemies: ["arashi", "kskbot"] }),
 	g_road2: g({ id: "g_road2", enemies: ["copipe", "kskbot"] }),
-	g_road3: g({ id: "g_road3", enemies: ["natsukids", "arashi"] }),
-	g_road4: g({ id: "g_road4", enemies: ["kskbot", "kskbot", "copipe"] }),
+	g_road3: g({ id: "g_road3", enemies: ["natsukids"] }),
+	g_road4: g({ id: "g_road4", enemies: ["kskbot", "copipe"] }),
 	g_b1: g({
 		id: "g_b1",
 		enemies: ["natsuboss", "natsukids"],
@@ -741,6 +864,15 @@ export const groups: Record<string, EnemyGroup> = {
 		bgm: "lastboss",
 		intro: "ボツキリコが　111年ぶんの　重さで　立ちあがった！",
 		victory: "ボツキリコは　しずかに　ひざを　ついた。",
+	}),
+	// 裏ボス（管理人室）。canLose: true で呼ぶ（負けても なにも へらない。たおしたボスの経験値は入る）
+	g_admin: g({
+		id: "g_admin",
+		enemies: ["satoru"],
+		boss: true,
+		bgm: "lastboss",
+		intro: "矢野さとるが　新機能の　テストを　はじめた！",
+		victory: "管理人の　テストを　クリアした！",
 	}),
 };
 
@@ -825,6 +957,13 @@ export const items: Record<string, ItemDef> = {
 		id: "rec_botsu",
 		name: "レコード「ボツの声」",
 		desc: "角刈りで、100トンで、111歳の　吾輩の声。",
+		key: true,
+	}),
+	// 管理人室で ひろゆきに もらう（見た目だけの だいじなもの）
+	umaibo: it({
+		id: "umaibo",
+		name: "うまい棒（めんたい味）",
+		desc: "ひろゆきに　もらった。めんたい味。",
 		key: true,
 	}),
 };

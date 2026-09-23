@@ -2,6 +2,7 @@
 
 import type { EndingSummary } from "../engine/defs";
 import { type Game, ResetToTitle } from "../engine/game";
+import { writeSave } from "../engine/save";
 import { sleep } from "../engine/types";
 import { el, nextFrame } from "./dom";
 
@@ -164,6 +165,9 @@ export const endingRoll = async (
 	game.ui.appendChild(end);
 	await nextFrame();
 	end.classList.add("shown");
+	// クリア後も遊べるよう、ここで記録する（thread の ending で ending_seen が立っている）。
+	// ロールの途中で閉じたときは記録されず、次の「つづきから」でエンディングがもう一度流れる
+	writeSave(game.state);
 	await waitClose(game, end, 1500);
 	guard();
 	end.remove();

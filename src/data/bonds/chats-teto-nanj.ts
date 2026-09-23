@@ -33,6 +33,19 @@ export const skits: SkitDef[] = [];
 export const chats: ChatDef[] = [
 	// ───────── テト ─────────
 	{
+		// T0 クリア後（管理人室の予告）
+		who: "teto",
+		when: (st) => !!st.flags.clear,
+		run: async (s) => {
+			await s.say(
+				"teto",
+				"……スレの　下の扉、だれかが\nキーボードを　たたいてるな",
+			);
+			await s.say("kiriko", "見に　いくンゴ？");
+			await s.say("teto", "ボクは　べつに。……君が　行くなら");
+		},
+	},
+	{
 		// T1 終章・扉のあと
 		who: "teto",
 		when: (st) => !!st.flags.door_open,

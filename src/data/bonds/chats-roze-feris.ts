@@ -15,6 +15,15 @@ export const skits: SkitDef[] = [];
 export const chats: ChatDef[] = [
 	// ───────── ロゼ ─────────
 	{
+		// R0 クリア後
+		who: "roze",
+		when: (st) => !!st.flags.clear,
+		run: async (s) => {
+			await s.say("roze", "完走、おめでとうアル。\n……次スレも、いっしょアル");
+			await s.say("kiriko", "もちろんンゴ！");
+		},
+	},
+	{
 		// R1 沈黙（第四章・声が出ない）
 		who: "roze",
 		when: (st) => silent(st),
@@ -122,6 +131,15 @@ export const chats: ChatDef[] = [
 	},
 
 	// ───────── フェリス ─────────
+	{
+		// F0 クリア後
+		who: "feris",
+		when: (st) => !!st.flags.clear,
+		run: async (s) => {
+			await s.say("feris", "完走したら、なんだか\nおなか　すいちゃったよ〜");
+			await s.say("kiriko", "吾輩も　ぺこぺこンゴ");
+		},
+	},
 	{
 		// F1 沈黙（第四章・声が出ない）
 		who: "feris",

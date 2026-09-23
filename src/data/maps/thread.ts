@@ -3,6 +3,7 @@
 //        kskボット → おんJ民加入 → チュートリアル戦）。
 // 終章: last から (6,6) に着くと ending_ev（みんなが集まる → s.ending()）。
 //       住民の一言とまとめカードは、それまでの安価・返し方で変わる（data/threadlog.ts）。
+// クリア後: エンディングを見たら（ending_seen）下の扉が 管理人室へ（data/maps/admin.ts）。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { addLose } from "../freedom";
@@ -230,6 +231,9 @@ const ending = async (s: Story): Promise<void> => {
 	if (date) await s.say("nanj", date);
 	await s.say("teto", "……じゃあ、一曲いこうか。ボクと、君で");
 	await s.say("kiriko", "吾輩、歌うンゴ！");
+	// クリア後も遊べるように（管理人室のおまけ）。記録は おわりの札で（ui/scenes.ts）
+	s.heal();
+	s.set("ending_seen");
 	// スタッフロール → まとめカード → おわり → タイトルへ
 	await s.ending({ summary: threadSummary(st) });
 };
@@ -244,7 +248,8 @@ const events: EventDef[] = [
 		y: 9,
 		trigger: "auto",
 		once: true,
-		when: clear,
+		// エンディングを見たあと（おわりの札で記録）は、つづきからで もう流さない
+		when: (st) => clear(st) && !st.flags.ending_seen,
 		run: ending,
 	},
 
@@ -267,10 +272,27 @@ const events: EventDef[] = [
 
 	// 誕生スレの住民（カウンターの向こう）
 	npc("j_a", 3, 4, SPR.j_yakiu, async (s) =>
-		J(s, clear(s.state) ? "1000取られたァ！" : "宣伝　たのんだで！", "J民A"),
+		J(
+			s,
+			!clear(s.state)
+				? "宣伝　たのんだで！"
+				: s.state.flags.satoru_win
+					? "管理人に　勝ったんか！？　草"
+					: "1000取られたァ！",
+			"J民A",
+		),
 	),
+	// クリア後は 管理人室（下の扉）の案内もする
 	npc("j_b", 9, 4, SPR.j_tights, async (s) =>
-		J(s, clear(s.state) ? "ええんやで" : "名付け親は　ワイやで", "J民B"),
+		J(
+			s,
+			!clear(s.state)
+				? "名付け親は　ワイやで"
+				: s.state.flags.satoru_met
+					? "ええんやで"
+					: "下の扉、いまは　管理人室に\nつながっとるらしいで",
+			"J民B",
+		),
 	),
 	npc("j_c", 6, 3, SPR.j_hikoki, async (s) =>
 		J(
@@ -308,6 +330,22 @@ const events: EventDef[] = [
 			when: (st) => !!st.flags.p_tut && !clear(st),
 		},
 	),
+	// クリア後（エンディングを見たあと）：下の扉は 管理人室へ（おまけ。data/maps/admin.ts）
+	{
+		id: "to_admin",
+		x: 6,
+		y: 10,
+		trigger: "touch",
+		through: true,
+		when: (st) => !!st.flags.ending_seen,
+		run: async (s) => {
+			if (!s.flag("admin_door")) {
+				s.set("admin_door");
+				await s.narrate("扉の　札が「管理人室」に\nかわっている……");
+			}
+			await s.warp("admin", 5, 8, "up", { se: "door" });
+		},
+	},
 
 	// エンディングに集まる人たち
 	npc(

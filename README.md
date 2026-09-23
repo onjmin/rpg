@@ -44,6 +44,7 @@ pnpm dev
 - 開発中は URL でタイトルを飛ばして好きな場所から始められます（`pnpm dev` のときだけ）:
   `http://localhost:5173/?map=town&x=11&y=16&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
   - `&bench=nanj`（`,` で区切って複数）でその仲間を控えにして始めます。たたかう仲間が4人以上いると、古いセーブと同じく自動で控えに回ります。
+  - 管理人室（クリア後）: `?map=admin&x=5&y=8&dir=up&flags={"clear":true,"ending_seen":true,"res":1000}&party=kiriko,roze,feris,teto&bench=teto&lv=12`
 - main に push すると GitHub Actions（`.github/workflows/gh-pages.yml`）がビルドして GitHub Pages に公開します（Settings → Pages の Source は「GitHub Actions」）。
 
 ### 構成
@@ -81,6 +82,7 @@ pnpm dev
 - 重音テト © 線・小山乃舞世／TWINDRILL https://kasaneteto.jp/
 - 足立レイ © Mechanical Girl https://mechanicalgirl.jp/
 - フェリス・おんJ民（やきう民）: なんJ・おんJ のみんな
+- 矢野さとる（おんJ管理人）・ひろゆき（元2ch管理人）: クリア後の管理人室に出てくる、実在の人物をもとにした非公式のファン描写です。ご本人や各サイトとは関係ありません。セリフはすべて創作です。
 - 原案・ディレクション・立ち絵・BGM: このゲームの作者
 - シナリオ・ゲームデザイン・マップ・プログラム・デバッグ: Claude Code（Claude Opus 5.5）
 - 歩行グラ・マップチップ・効果音: RPGEN の素材（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png

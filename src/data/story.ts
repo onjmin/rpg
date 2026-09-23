@@ -13,6 +13,12 @@ export const silent = (st: GameState): boolean =>
 /** いまの目的（蓄音機で表示）。 */
 export const objective = (st: GameState): string => {
 	const f = st.flags;
+	// クリア後（管理人室のおまけ）
+	if (f.clear) {
+		if (!f.satoru_met) return "スレの　下の扉の　むこうへ";
+		if (!f.satoru_win) return "管理人の　テストに　付き合う";
+		return "スレは　完走！　おつかれさま";
+	}
 	if (!f.ikioi_seen) return "広場の　勢い欄を　見る";
 	if (!f.roze_in) return "北の　スレ街道へ";
 	if (!f.b1)

@@ -6,6 +6,8 @@
 // 「オート」を押すと全員おまかせで進む。負けたら「もういちど」ですぐ再戦できる。
 // エンカウントの音が鳴り終わるまではフィールドを崩す演出でつなぎ、それから戦闘の画面と曲を出す。
 // 文の早送りとコマンドを出すのは、鳴らしたばかりの効果音の区切りまで待つ（engine/audio.ts）。
+// 裏ボス（EnemyDef.summon）は、ストックのボスを1体ずつ呼び、尽きるまで攻撃をかわす（召喚のブロック）。
+// 負けても、たおした手下の分の経験値は入る（決着のブロック）。
 
 import { cropOf, getImage, loadImage } from "../engine/assets";
 import type {
@@ -13,6 +15,7 @@ import type {
 	EnemyDef,
 	MemberState,
 	SkillDef,
+	SummonDef,
 } from "../engine/defs";
 import { type Game, ResetToTitle } from "../engine/game";
 import {
@@ -52,6 +55,10 @@ type Fighter = {
 	buff: number;
 	view: HTMLElement;
 	bar?: HTMLElement;
+	/** 召喚する敵のみ：まだ出していない手下（EnemyDef.summon.stock の写し。data は書きかえない） */
+	stock?: SummonDef[];
+	/** 呼ばれた手下のみ：呼んだ敵 */
+	master?: Fighter;
 };
 
 type Action =
@@ -266,27 +273,30 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	void sleep(300).then(clearFx);
 
 	// ── 戦う人 ──
-	const enemies: Fighter[] = group.enemies.map((id, i) => {
+	// 画面の短辺に合わせて拡大（スマホ縦で 4 倍前後、ボスは 1.5 倍）
+	const base = Math.max(
+		3,
+		Math.min(
+			9,
+			Math.round(Math.min(window.innerWidth, window.innerHeight) / 95),
+		),
+	);
+	/** 敵を1体つくって列の後ろに並べる（はじめの顔ぶれと、召喚で使う）。 */
+	const spawn = (id: string, name: string): Fighter => {
 		const e = data.enemies[id];
-		// 画面の短辺に合わせて拡大（スマホ縦で 4 倍前後、ボスは 1.5 倍）
-		const base = Math.max(
-			3,
-			Math.min(
-				9,
-				Math.round(Math.min(window.innerWidth, window.innerHeight) / 95),
-			),
-		);
 		const scale = Math.round(base * (e.scale ?? (isBoss ? 1.5 : 1)));
 		const sprite = enemyCanvas(e.sprite, scale);
 		const bar = el("div", { class: "hpbar" }, [el("i")]);
 		const view = el("div", { class: "enemy" }, [sprite, bar]);
 		enemyRow.appendChild(view);
-		const same = group.enemies.filter((x) => x === id).length > 1;
+		// 呼ぶ予定のボスの絵は先に読んでおく（出た瞬間に空の枠にならないように）
+		for (const s of e.summon?.stock ?? []) {
+			const d = data.enemies[s.enemy];
+			if (d) void loadImage(d.sprite);
+		}
 		return {
 			side: "enemy",
-			name: same
-				? `${e.name}${"ABCDEFG"[group.enemies.slice(0, i + 1).filter((x) => x === id).length - 1]}`
-				: e.name,
+			name,
 			hp: e.hp,
 			maxHp: e.hp,
 			mp: 0,
@@ -300,8 +310,28 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 			buff: 0,
 			view,
 			bar,
+			// 写しなので「もういちど」や再戦のたびに最初から
+			stock: e.summon ? [...e.summon.stock] : undefined,
 		};
+	};
+	const enemies: Fighter[] = group.enemies.map((id, i) => {
+		const e = data.enemies[id];
+		const same = group.enemies.filter((x) => x === id).length > 1;
+		return spawn(
+			id,
+			same
+				? `${e.name}${"ABCDEFG"[group.enemies.slice(0, i + 1).filter((x) => x === id).length - 1]}`
+				: e.name,
+		);
 	});
+	/** 呼んだ手下が場にいるか（裏ボス）。 */
+	const hasMinion = (m: Fighter): boolean =>
+		enemies.some((f) => f.master === m && f.hp > 0);
+	/** 守り：ストックが残っているか、手下がいる間は、攻撃を必ずかわす（裏ボス）。 */
+	const shielded = (f: Fighter): boolean =>
+		!!f.stock && (f.stock.length > 0 || hasMinion(f));
+	/** このターンに呼ばれた手下（守りのある敵への ねらいを こっちへ移す）。 */
+	const fresh: Fighter[] = [];
 	// 控えは戦闘に出ない（経験値も入らない）
 	const party: Fighter[] = activeOf(state.party).map((m) => {
 		const c = data.cast[m.id];
@@ -348,6 +378,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	const renderEnemies = (dying?: Fighter) => {
 		for (const e of enemies) {
 			e.view.classList.toggle("dead", e.hp <= 0 && e !== dying);
+			e.view.classList.toggle("shielded", shielded(e)); // 守りの間は HP のバーが灰色
 			const i = e.bar?.firstElementChild as HTMLElement | null;
 			if (i) i.style.width = `${Math.max(0, (e.hp / e.maxHp) * 100)}%`;
 		}
@@ -475,11 +506,19 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			side === "party" && includeDown
 				? party
 				: alive(side === "enemy" ? enemies : party);
+		// 守りのある敵（裏ボス）は後ろへ（カーソルが当たる敵から始まるように）
+		if (side === "enemy")
+			list.sort((a, b) => Number(shielded(a)) - Number(shielded(b)));
 		if (list.length === 1 && side === "enemy") return list[0];
 		const v = await menu(
 			list.map((f, i) => ({
 				label: f.name,
-				sub: side === "party" ? `HP ${f.hp}/${f.maxHp}` : undefined,
+				sub:
+					side === "party"
+						? `HP ${f.hp}/${f.maxHp}`
+						: shielded(f)
+							? "むてき"
+							: undefined,
 				value: String(i),
 			})),
 			true,
@@ -487,12 +526,26 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		return v === null ? null : list[Number(v)];
 	};
 
+	/** このターンに回復のうたが決まった仲間（おまかせが同じ人を重ねて回復して、こえを むだにしないように）。 */
+	const healing = new Set<Fighter>();
+	/** 決めた行動が回復のうたなら、その相手を healing に入れる（手で選んだ回復も）。 */
+	const noteHeal = (f: Fighter, action: Action): void => {
+		if (action.kind !== "skill" || action.skill.kind !== "heal") return;
+		const ts =
+			action.skill.target === "allies" ? alive(party) : [action.target ?? f];
+		for (const t of ts) healing.add(t);
+	};
+
 	/** おまかせの行動。 */
 	const aiAction = (f: Fighter): Action => {
-		const foes = alive(enemies);
+		const all = alive(enemies);
+		const open = all.filter((x) => !shielded(x));
+		// 守りのある敵（裏ボス）は、ほかに ねらえる敵が いれば ねらわない
+		const foes = open.length ? open : all;
 		const friends = alive(party);
+		// 回復は、このターンに まだ だれも回復しない仲間だけ
 		const hurt = friends
-			.filter((x) => x.hp / x.maxHp < 0.4)
+			.filter((x) => x.hp / x.maxHp < 0.4 && !healing.has(x))
 			.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
 		const usable = f.skills.filter((s) => s.mp <= f.mp);
 		const heal = usable.find((s) => s.kind === "heal");
@@ -502,6 +555,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				skill: heal,
 				target: heal.target === "ally" ? hurt[0] : null,
 			};
+		// 守りのある敵しかいない（裏ボスの最初）：かならず かわされるので、こえは つかわない
+		if (!open.length && all.some(shielded))
+			return { kind: "attack", target: all[0] };
 		const aoe = usable.find(
 			(s) => s.kind === "attack" && s.target === "enemies",
 		);
@@ -611,6 +667,84 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		await sleep(120);
 	};
 
+	// ── 召喚（裏ボス。EnemyDef.summon） ──
+	/** ストックの次の1体を、キーを たたく文を流してから場に出す。early＝ターンの終わりに自分から。 */
+	const summonNext = async (m: Fighter, early = false): Promise<void> => {
+		const next = m.stock?.shift();
+		const def = next ? data.enemies[next.enemy] : undefined;
+		if (!next || !def) return;
+		const fill = (t: string) =>
+			t.replace("{user}", m.name).replace("{name}", def.name);
+		const cfg = m.enemy?.summon;
+		if (early && cfg?.early) await log(fill(cfg.early));
+		if (next.restore) {
+			audio.se("heal");
+			await log(fill(next.restore.text));
+			for (const p of alive(party)) {
+				p.hp = Math.min(
+					p.maxHp,
+					p.hp + Math.round(p.maxHp * next.restore.rate),
+				);
+				p.mp = Math.min(
+					p.maxMp,
+					p.mp + Math.round(p.maxMp * next.restore.rate),
+				);
+			}
+			renderParty();
+			await log("みんなの　HPと　こえが　すこし　もどった！", 600);
+		}
+		for (const t of next.text) {
+			const line = fill(t);
+			// せりふ（名前「…」）は ふつうの待ちで読ませる
+			if (line.indexOf("「") > 0) {
+				await log(line);
+				continue;
+			}
+			audio.se("cursor"); // キーの音（待ちが短いので「一瞬で」作っているように見える）
+			await log(line, 320);
+		}
+		const f = spawn(next.enemy, def.name);
+		f.master = m;
+		fresh.push(f);
+		f.view.classList.add("summoned"); // 1行ずつ組み上がる演出（style.css）
+		f.view.addEventListener(
+			"animationend",
+			() => f.view.classList.remove("summoned"),
+			{ once: true },
+		);
+		enemies.push(f);
+		renderEnemies();
+		audio.se("warp");
+		await log(fill(next.deploy ?? "{name}を　デプロイした！"), 700);
+		for (const t of next.after ?? []) await log(fill(t));
+	};
+
+	/** 守りのあるうちの攻撃：かならず かわし、手下がいなければ かわりに呼ぶ。 */
+	const evade = async (t: Fighter): Promise<void> => {
+		audio.se("miss");
+		t.view.classList.remove("dodge");
+		void t.view.offsetWidth;
+		t.view.classList.add("dodge");
+		const list = t.enemy?.summon?.evade ?? [];
+		const text =
+			list[Math.floor(Math.random() * list.length)] ??
+			"{user}は　ひらりと　みをかわした！";
+		await log(text.replace("{user}", t.name));
+		if (!hasMinion(t)) await summonNext(t);
+	};
+
+	/** 手下が倒れたら次を呼ぶ。ストックも尽きたら守りがとける。 */
+	const minionDown = async (m: Fighter): Promise<void> => {
+		// 倒れた手下の枠を片付ける（フェードは「たおした」の文と撃破音の待ちの間に終わっている）
+		for (const f of enemies) if (f.master === m && f.hp <= 0) f.view.remove();
+		if (m.hp <= 0 || hasMinion(m)) return;
+		if (m.stock?.length) return summonNext(m);
+		renderEnemies(); // 守りの灰色が消える（もう当たる）
+		audio.se("shock");
+		for (const t of m.enemy?.summon?.exposed ?? [])
+			await log(t.replace("{user}", m.name), 800);
+	};
+
 	const damage = (
 		a: Fighter,
 		t: Fighter,
@@ -626,7 +760,19 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	};
 
 	const applyDamage = async (a: Fighter, t: Fighter, power: number) => {
-		const { dmg, crit } = damage(a, t, power);
+		// 召喚する敵：守りのあるうちは必ずかわす。とけたら一撃で決まる
+		if (t.stock && shielded(t)) return evade(t);
+		const hit = damage(a, t, power);
+		if (t.stock) {
+			hit.dmg = t.hp;
+			hit.crit = false;
+			audio.se("critical");
+			await log(
+				(t.enemy?.summon?.finish ?? "いちげき！").replace("{user}", t.name),
+				600,
+			);
+		}
+		const { dmg, crit } = hit;
 		if (crit) {
 			audio.se("critical");
 			await log("かいしんの　レス！", 450);
@@ -641,7 +787,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				// 撃破音とフェードアウトを同時に始める
 				audio.se("enemyDown");
 				renderEnemies();
-				await log(`${t.name}を　たおした！`, 500);
+				await log(
+					(t.enemy?.downText ?? "{user}を　たおした！").replace(
+						"{user}",
+						t.name,
+					),
+					500,
+				);
+				if (t.master) await minionDown(t.master);
 			}
 		} else {
 			audio.se("damage");
@@ -665,9 +818,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	const act = async (a: Fighter, action: Action) => {
 		if (a.hp <= 0 || result) return;
 		const retarget = (t: Fighter): Fighter | null => {
+			// 裏ボス：守りのある敵をねらっていて、このターンに手下が呼ばれていれば、そっちに当てる
+			if (shielded(t)) {
+				const f = fresh.find((x) => x.hp > 0);
+				if (f) return f;
+			}
 			if (t.hp > 0) return t;
 			const pool = alive(t.side === "enemy" ? enemies : party);
-			return pool[0] ?? null;
+			return pool.find((f) => !shielded(f)) ?? pool[0] ?? null;
 		};
 		if (action.kind === "attack") {
 			const t = retarget(action.target);
@@ -778,6 +936,8 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 
 	// ── ターン ──
 	while (!result) {
+		fresh.length = 0;
+		healing.clear();
 		const plans: { f: Fighter; action: Action; order: number }[] = [];
 		for (const f of alive(party)) {
 			const leader = f === party.find((p) => p.hp > 0);
@@ -800,6 +960,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					action = chosen;
 				}
 			}
+			noteHeal(f, action);
 			plans.push({ f, action, order: f.spd * rand(0.8, 1.2) });
 			if (action.kind === "flee") break;
 		}
@@ -850,6 +1011,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (result) break;
 			await act(p.f, p.action);
 		}
+		// 召喚する敵は、だれにも攻撃されず 手下もいなければ、ターンの終わりに自分で呼ぶ（止まらない）
+		if (!result)
+			for (const e of alive(enemies))
+				if (e.stock?.length && !hasMinion(e)) await summonNext(e, true);
 		for (const f of [...party, ...enemies]) {
 			f.guard = false;
 			if (f.buff > 0) f.buff--;
@@ -868,11 +1033,8 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	}
 
 	// ── 決着 ──
-	if (result === "win") {
-		const exp = enemies.reduce((s, e) => s + (e.enemy?.exp ?? 0), 0);
-		audio.bgm(null);
-		if (data.victoryBgm) void audio.jingle(data.victoryBgm, 21, 5500);
-		await log(group.victory ?? "あらしを　しずめた！", 900);
+	/** 経験値を なかまに入れ、上がったレベルと覚えたうたを出す。 */
+	const share = async (exp: number): Promise<void> => {
 		if (exp > 0) await log(`${exp}ポイントの　けいけんちを　かくとく！`, 900);
 		// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）
 		let leveled = false;
@@ -894,6 +1056,13 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					await log(t, 1000);
 			}
 		}
+	};
+	if (result === "win") {
+		const exp = enemies.reduce((s, e) => s + (e.enemy?.exp ?? 0), 0);
+		audio.bgm(null);
+		if (data.victoryBgm) void audio.jingle(data.victoryBgm, 21, 5500);
+		await log(group.victory ?? "あらしを　しずめた！", 900);
+		await share(exp);
 		for (const e of enemies) {
 			const d = e.enemy?.drop;
 			if (d && Math.random() < d.rate) {
@@ -907,6 +1076,17 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		}
 		// 戦闘不能の仲間は HP1 で起き上がる（サクッと遊べるように）
 		for (const m of state.party) if (m.hp <= 0) m.hp = 1;
+	} else if (result === "lose") {
+		// 裏ボス：負けても、たおした手下（呼ばれたボス）の分の経験値は入る（挑むほど追いつける）
+		const exp = enemies.reduce(
+			(s, e) => s + (e.master && e.hp <= 0 ? (e.enemy?.exp ?? 0) : 0),
+			0,
+		);
+		if (exp > 0) {
+			audio.bgm(null);
+			await log("たおした　ボスの　けいけんちは　のこった！", 900);
+			await share(exp);
+		}
 	}
 	popFast();
 	root.classList.remove("shown");

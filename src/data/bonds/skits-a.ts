@@ -94,7 +94,7 @@ export const skits: SkitDef[] = [
 			await s.say("kiriko", "じゃあ、その応援を\n蓄音機に　ためよう");
 			await s.say("nanj", "お、おう。……キリコ、がんばれ！");
 			await s.narrate("蓄音機に「がんばれ」が　きざまれた。");
-			// ちくおんリプレイ（Lv6）をまだ覚えていなければ、これからの約束にする
+			// ちくおんリプレイ（Lv5）をまだ覚えていなければ、これからの約束にする
 			await s.say(
 				"kiriko",
 				knows(s.state, "kiriko", "replay")

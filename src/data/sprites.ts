@@ -62,4 +62,10 @@ export const SPR = {
 	e_shin3: "sa:JiWaz3", // 侵蝕レベル3
 	e_shinmax: "sa:kXfKfE", // 侵蝕レベル最大
 	e_bat: "sa:Z7zM7m", // バット
+
+	// ── 管理人室（クリア後のおまけ。実在の人物をもとにした非公式のファン描写） ──
+	/** 矢野さとる（おんJ管理人）。似顔ではない汎用の人物グラ（rpgen no.751「白の民(眼鏡)」） */
+	satoru: "sa:JDYaGN",
+	/** ひろゆき（元2ch管理人）。rpgen no.1932 の歩行シート（no.1902 の sa:qhy37c は使わない） */
+	hiro: "sa:sx28Sp",
 } as const;

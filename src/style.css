@@ -903,6 +903,33 @@ body.shake #app {
 	filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35));
 }
 
+/* 裏ボスの手下：1行ずつ組み上がるように出る（コンパイル） */
+.enemy.summoned .enemy-sprite {
+	animation: compile 0.5s steps(8) both;
+}
+
+@keyframes compile {
+	from {
+		clip-path: inset(0 0 100% 0);
+		filter: brightness(3);
+	}
+	to {
+		clip-path: inset(0);
+		filter: none;
+	}
+}
+
+/* 裏ボス：守りのある間の攻撃を よける */
+.enemy.dodge .enemy-sprite {
+	animation: dodge 0.3s ease-out;
+}
+
+@keyframes dodge {
+	40% {
+		transform: translateX(-14px);
+	}
+}
+
 .enemy.hit .enemy-sprite {
 	animation: hit 0.35s steps(2);
 }
@@ -944,6 +971,11 @@ body.shake #app {
 	height: 100%;
 	background: var(--danger);
 	transition: width 0.3s;
+}
+
+/* 守りのある間は HP のバーを灰色に（とけたら赤にもどる＝もう当たる合図） */
+.enemy.shielded .hpbar i {
+	background: var(--muted);
 }
 
 .party-row {
