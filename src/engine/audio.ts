@@ -6,10 +6,9 @@
 // - dtm のシーケンサは 0.5 秒以上止まる（タブ切替・画面ロック・重い処理）と黙って再生をやめる。
 //   onStop で「自分で止めたのではない」停止を見分け、最後の位置から鳴らし直す。
 // - 読み上げは既定 OFF（初回に約35MBの TTS データを取得するため）。設定で ON にする。
-//   頭が欠けないよう、合成の最初のかたまりが出来てから頭から鳴らす（awaitRender: "first-chunk"）。
+//   頭が欠けないよう、合成の最初のかたまり（＋声ごとの貯め。SPEECH_BUFFER_SEC）が出来てから
+//   頭から鳴らす（awaitRender: "first-chunk"）。合成が追いつかなければ後ろをずらす（言葉は欠けない）。
 //   鳴り始める時刻を返すので、メッセージ窓は文字送りをそこまで待たせる（ui/message.ts）。
-//   ただし入っている dtm が "first-chunk" に対応していると分かるまでは返さない（全部の合成を
-//   待つ古い dtm では揃わず、窓が遅れるだけなので。speak を参照）。
 // - dtm は重いので、最初の音が要るまで動的 import で遅らせる。
 // - 大きさは測ったラウドネスでそろえる（data/loudness.ts）。既定の音量設定のとき、
 //   BGM は曲ごとの #volume で、効果音は1音ずつの倍率で、声は声ごとの倍率で目標の大きさになる。
@@ -124,6 +123,16 @@ export const speechText = (raw: string): string | null => {
 	return s;
 };
 
+/**
+ * 読み上げを鳴らし始める前に合成しておく秒数（dtm の minBufferSec。最初のモーラから）。
+ * 最初のかたまりは数モーラしかないので、合成が再生に追いつかないと行の途中に間が空く
+ * （dtm が後ろをずらす）。少し貯めてから鳴らすと減る。合成の遅い roze は多めにする。
+ * 鳴り出しはそのぶん遅れる（メッセージ窓の文字送りは声の頭まで待つ。ui/message.ts）。
+ */
+const SPEECH_BUFFER_SEC: Readonly<Record<string, number>> = { roze: 0.4 };
+/** {@link SPEECH_BUFFER_SEC} に無い声の貯め（秒）。 */
+const SPEECH_BUFFER_DEFAULT_SEC = 0.2;
+
 /** 読み上げの鳴り始め（{@link GameAudio.speak} の started）。 */
 export type SpeechStart = {
 	/** 最初のモーラが鳴る AudioContext の時刻（秒）。 */
@@ -134,7 +143,8 @@ export type SpeechStart = {
 	durationSec: number;
 	/**
 	 * 声が鳴り終わって聞こえる見込みの時刻（performance.now の時計、ms）。合成が遅れて
-	 * 後ろがずれる（dtm の shiftSec）と延びるので、読むたびに今の値を返す。
+	 * 後ろがずれる（dtm の shiftSec）と延び、次のかたまりを待って止まっている間
+	 * （dtm の position() が進まない間）も延びるので、読むたびに今の値を返す。
 	 */
 	endAt: () => number;
 };
@@ -144,9 +154,8 @@ export type Speaking = {
 	/** 止める（準備中なら準備ごと中断）。 */
 	stop: () => void;
 	/**
-	 * 鳴り始める時刻が決まったら解決する。鳴らない（OFF・読めない本文・失敗・
-	 * 鳴る前に止めた）ときは null。文字送りを声まで待たせてよいときだけある
-	 * （入っている dtm が "first-chunk" に対応していると分かったあと）。
+	 * 鳴り始める時刻が決まったら解決する。鳴らない（失敗・鳴る前に止めた）ときは null。
+	 * 読み上げない（OFF・読めない本文）ときは無い。
 	 */
 	started?: Promise<SpeechStart | null>;
 };
@@ -187,12 +196,6 @@ export class GameAudio {
 		abort: AbortController;
 		handle: SpeechHandle | null;
 	} | null = null;
-	/**
-	 * 入っている dtm が awaitRender: "first-chunk" に対応しているか（null はまだ分からない）。
-	 * 対応版の SpeechHandle にだけある position() で、最初に鳴らした声から見分ける。
-	 * 対応していないあいだ（と分かるまで）は、文字送りを声まで待たせない（{@link speak}）。
-	 */
-	private firstChunkSpeech: boolean | null = null;
 	/** 読み上げの準備の進み具合（設定画面の表示用）。 */
 	voiceProgress: { loaded: number; total: number } | null = null;
 	onVoiceProgress: (() => void) | null = null;
@@ -681,17 +684,12 @@ export class GameAudio {
 	 * セリフを読み上げる。stop を呼ぶと止まる（準備中なら準備ごと中断）。
 	 * 合成が終わる前に次のセリフへ進んだときは、遅れて届いた声を捨てる。
 	 * started で鳴り始める時刻が分かる（文字送りを声の頭に合わせる用）。
-	 *
-	 * started は、入っている dtm が "first-chunk" に対応していると分かったときだけ返す。
-	 * 対応していない dtm（2.1.23 まで）は "first-chunk" を true と同じ＝全部の合成を待ってから
-	 * 鳴らすので、文字送りを声まで待たせても長いセリフほど窓が遅れるだけで揃わない。
-	 * そのあいだは従来どおり文字送りをすぐ始める（声は合成が済んでから頭から鳴る）。
 	 */
 	speak(text: string, voice: VoiceDef): Speaking {
 		this.stopSpeech();
 		const body = speechText(text);
-		if (!settings.voice || !this.ctx || !body) return { stop: () => {} };
-		const waitable = this.firstChunkSpeech === true;
+		const ctx = this.ctx;
+		if (!settings.voice || !ctx || !body) return { stop: () => {} };
 		const entry = {
 			abort: new AbortController(),
 			handle: null as SpeechHandle | null,
@@ -711,31 +709,34 @@ export class GameAudio {
 					// 既定（80）で声ごとの倍率＝目標の大きさ（data/loudness.ts）
 					volume:
 						voiceGain(voice.model) * (settings.voiceVolume / REF_VOLUME.voice),
-					// "first-chunk": 最初のかたまりが出来たら頭から鳴らし、合成が遅れたら後ろをずらす
-					// （新しい dtm）。いま入っている 2.1.23 は型が boolean だけだが、文字列は true と
-					// 同じ（全部の合成を待ってから鳴らす）に扱うので今も安全。新しい dtm で待ちが短くなる。
-					// TODO: "first-chunk" 対応の dtm を出したら package.json と lockfile を上げて cast を外し、
-					// firstChunkSpeech の見分けと下の cast も外す。途中で間が空きやすい roze には
-					// minBufferSec（0.3〜0.5 秒）を渡すことも考える。
-					awaitRender: "first-chunk" as unknown as boolean,
+					// 最初のかたまり（＋貯め）が出来たら頭から鳴らす。後続の合成が遅れたら
+					// 飛ばさずに後ろをずらす（lateChunks の既定 "shift"）
+					awaitRender: "first-chunk",
+					minBufferSec:
+						SPEECH_BUFFER_SEC[voice.model] ?? SPEECH_BUFFER_DEFAULT_SEC,
 					signal: entry.abort.signal,
 				});
-				if (handle)
-					this.firstChunkSpeech =
-						typeof (handle as { position?: unknown }).position === "function";
 				if (this.speaking !== entry || entry.abort.signal.aborted) {
 					handle?.stop();
 					return null;
 				}
 				if (!handle) return null;
 				entry.handle = handle;
-				const shiftSec = () => (handle as { shiftSec?: number }).shiftSec ?? 0;
 				return {
 					startTime: handle.startTime,
 					at: this.audibleAt(handle.startTime),
 					durationSec: handle.durationSec,
+					// 鳴り終わりの見込み。ずれが分かっていればその分（shiftSec）、次のかたまりを
+					// 待って止まっていれば今から残りの長さ（position() は止まっている間進まない）。
+					// 遅い方を取る
 					endAt: () =>
-						this.audibleAt(handle.startTime + shiftSec() + handle.durationSec),
+						this.audibleAt(
+							Math.max(
+								handle.startTime + handle.shiftSec + handle.durationSec,
+								ctx.currentTime +
+									Math.max(0, handle.durationSec - handle.position()),
+							),
+						),
 				};
 			} catch (e) {
 				if (!entry.abort.signal.aborted)
@@ -747,7 +748,7 @@ export class GameAudio {
 			stop: () => {
 				if (this.speaking === entry) this.stopSpeech();
 			},
-			started: waitable ? started : undefined,
+			started,
 		};
 	}
 

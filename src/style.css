@@ -188,11 +188,12 @@ body.shake #app {
 
 /* 立ち絵の枠。下の 40px はメッセージ窓の裏に潜らせて、上半身の切り口を隠す */
 .portrait-layer {
+	--layer-h: min(50vh, 440px);
 	position: absolute;
 	left: 0;
 	right: 0;
 	bottom: calc(118px + 12px - 40px + var(--safe-b));
-	height: min(50vh, 440px);
+	height: var(--layer-h);
 	pointer-events: none;
 	z-index: 21;
 	max-width: 900px;
@@ -200,9 +201,12 @@ body.shake #app {
 }
 
 .portrait {
+	--slot-w: min(46vw, 340px);
+	/* 左右の枠のあいだの空きの半分（レイヤーの幅は min(100vw, 900px)、枠は両端から 2%） */
+	--gap-half: max(0px, min(100vw, 900px) * 0.48 - var(--slot-w));
 	position: absolute;
 	bottom: -6px;
-	width: min(46vw, 340px);
+	width: var(--slot-w);
 	height: 100%;
 	display: flex;
 	align-items: flex-end;
@@ -215,11 +219,16 @@ body.shake #app {
 		filter 0.2s;
 }
 
+/* --ext-l・--ext-r: 絵を出してよい範囲を枠の左・右へ広げる幅（外側は画面の端の先まで、内側は真ん中まで） */
 .portrait.left {
 	left: 2%;
+	--ext-l: var(--slot-w);
+	--ext-r: var(--gap-half);
 }
 .portrait.right {
 	right: 2%;
+	--ext-l: var(--gap-half);
+	--ext-r: var(--slot-w);
 }
 
 .portrait.shown {
@@ -231,24 +240,71 @@ body.shake #app {
 	filter: brightness(0.55) saturate(0.7);
 }
 
-/* 余白を切り詰めた立ち絵（canvas）を、枠いっぱいに下端そろえで収める */
+/*
+ * 立ち絵を出してよい範囲（枠を左右へ --ext-l・--ext-r、上へ枠の高さの半分だけ広げた箱）。
+ * 横に広がる髪・腕・しっぽは、外側は画面の端まで出す。内側は左右の枠のあいだの真ん中で、
+ * 手前から少しずつ消す（となりのキャラに重ねず、切り口をまっすぐな壁に見せない）
+ */
+.portrait-art {
+	--fade-w: calc(var(--slot-w) * 0.12);
+	position: absolute;
+	top: -50%;
+	bottom: 0;
+	left: calc(var(--ext-l) * -1);
+	right: calc(var(--ext-r) * -1);
+}
+.portrait.left .portrait-art {
+	-webkit-mask-image: linear-gradient(to left, transparent, #000 var(--fade-w));
+	mask-image: linear-gradient(to left, transparent, #000 var(--fade-w));
+}
+.portrait.right .portrait-art {
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent,
+		#000 var(--fade-w)
+	);
+	mask-image: linear-gradient(to right, transparent, #000 var(--fade-w));
+}
+
+/*
+ * 余白を切り詰めた立ち絵（canvas。てっぺんの上のはみ出し〜切り口）。値は message.ts で測って入れる。
+ * - --body: 全身（てっぺん〜足もと）の高さ。どのキャラも同じ。切り口を枠の下端に置いたとき、
+ *   てっぺんが枠の上から 5% に来る大きさ。細い画面では枠の幅の 2.4 倍まで（頭が枠に収まるように）
+ * - --cut: この canvas の高さ（全身の高さに対する割合）
+ * - --hx: 枠の中央に合わせる点（頭の中心。canvas の幅に対する割合）
+ * - --scale・--dy: キャラごとの手直し（大きさの倍率・下へのずれ）
+ */
 .portrait-img {
-	width: 100%;
-	height: 100%;
-	object-fit: contain;
-	object-position: bottom;
+	--body: calc(
+		min(var(--layer-h) * 0.95 / var(--crop, 1), var(--slot-w) * 2.4) *
+		var(--scale, 1)
+	);
+	position: absolute;
+	left: calc(var(--ext-l) + var(--slot-w) / 2);
+	bottom: calc(var(--body) * var(--dy, 0) * -1);
+	height: calc(var(--body) * var(--cut, 1));
+	width: auto;
+	transform: translateX(calc(var(--hx, 0.5) * -100%));
 	filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
 /* 上半身だけ切り出したときは、下端をぼかして切り口を目立たせない */
 .portrait-img.cropped {
-	-webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
-	mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		#000 var(--fade-at, 82%),
+		transparent 100%
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		#000 var(--fade-at, 82%),
+		transparent 100%
+	);
 }
 
-/* 絵の向きと立つ側が合わないときは左右反転して中央を向かせる */
+/* 絵の向きと立つ側が合わないときは左右反転して中央を向かせる（--hx は反転後の位置） */
 .portrait-img.flip {
-	transform: scaleX(-1);
+	transform: translateX(calc(var(--hx, 0.5) * -100%)) scaleX(-1);
 }
 
 /* 立ち絵が届くまでのダミー（マップを隠しすぎないように小さめ・半透明） */
@@ -1433,8 +1489,8 @@ body.shake #app {
 		padding: 10px 14px 18px;
 	}
 	.portrait-layer {
+		--layer-h: 66vh;
 		bottom: calc(96px + 12px - 30px);
-		height: 66vh;
 	}
 	/*
 	 * 戦闘：左に敵・文・コマンド、右になかま（2人ずつ並べる）。

@@ -785,10 +785,8 @@ export class Game {
 			id: c.id,
 			name: c.name,
 			color: c.color,
-			src: c.portrait.src,
+			...c.portrait,
 			side: c.portrait.side ?? "right",
-			facing: c.portrait.facing,
-			crop: c.portrait.crop,
 		};
 	}
 
