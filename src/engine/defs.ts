@@ -310,6 +310,9 @@ export type SayOptions = {
 
 export type BattleResult = "win" | "lose" | "escape";
 
+/** エンディングのまとめカード（スタッフロールのあとに出す）。1行は全角22字まで。 */
+export type EndingSummary = { sections: { title: string; lines: string[] }[] };
+
 export type Story = {
 	readonly state: GameState;
 	/** セリフ。who は キャラID（data/cast.ts）か null（地の文）。 */
@@ -378,6 +381,8 @@ export type Story = {
 	 * キリコと誰かの二人きりの場面で使う。マップを移っても続く。
 	 */
 	followers(show: boolean): void;
-	/** エンディング（スタッフロール）→ タイトルへ。 */
-	ending(): Promise<void>;
+	/** 経験値を全員に足す（戦わずに越えた・負けて通してもらった）。獲得とレベルアップの文も出す。 */
+	gainExp(n: number): Promise<void>;
+	/** エンディング（スタッフロール → まとめカード → おわり → タイトルへ）。 */
+	ending(opt?: { summary?: EndingSummary }): Promise<void>;
 };

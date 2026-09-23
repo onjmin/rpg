@@ -1,6 +1,8 @@
 // 仲間との親睦：ひとやすみ会話（第一章〜第三章＝B3 まで。a_mabo だけ終章まで）。
 // 配列の順番＝優先度（蓄音機・メニューでは、まだ見ていない先頭の1つが流れる）。
 // 早い時期 → 遅い時期 の順に並べる。設計は bonds-plan.md §1-2。
+// ただし n_nighter（なんJ民のおでかけの予告）だけは先頭に置く（蓄音機では先頭の1つしか流れないため）。
+import { bondOf } from "../../engine/bonds";
 import type {
 	ChatDef,
 	GameState,
@@ -12,6 +14,23 @@ import { silent } from "../story";
 const ch = (st: GameState) => Number(st.flags.ch ?? 0);
 
 export const skits: SkitDef[] = [
+	// 0. なんJ民のおでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に、
+	//    シーズンの終わりという理由で知らせる（F5 の予告②）。B2〜B3
+	{
+		id: "n_nighter",
+		title: "今夜の　ナイター",
+		members: ["nanj"],
+		when: (st) =>
+			!!st.flags.b2 &&
+			!st.flags.b3 &&
+			!st.flags.date_nanj &&
+			bondOf(st, "nanj") >= 3,
+		run: async (s) => {
+			await s.say("nanj", "ナイター、今シーズンは\n今夜で　しまいなんや");
+			await s.say("kiriko", "……外野席、行ってみたいンゴ");
+			await s.say("nanj", "ほな、「なかま」から\nワイに　声かけてや");
+		},
+	},
 	// 1. 名前の漢字（町の誤字看板から）。A〜C
 	{
 		id: "a_nazuke",

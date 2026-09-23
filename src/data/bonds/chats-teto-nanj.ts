@@ -73,6 +73,20 @@ export const chats: ChatDef[] = [
 
 	// ───────── なんJ民 ─────────
 	{
+		// N0 おでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に知らせる（F5 の予告③）
+		who: "nanj",
+		when: (st) =>
+			!!st.flags.b2 &&
+			!st.flags.b3 &&
+			!st.flags.date_nanj &&
+			bondOf(st, "nanj") >= 3,
+		run: async (s) => {
+			await s.say("nanj", "外野席、今夜が　最後の\nチャンスやで");
+			await s.say("kiriko", "……行きたいンゴ");
+			await s.say("nanj", "「なかま」から　声かけてや");
+		},
+	},
+	{
 		// N1 第三章・スタジアム
 		who: "nanj",
 		when: (st) => ch(st) === 3,

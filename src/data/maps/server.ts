@@ -2,7 +2,9 @@
 // 保守ロボの足立レイ（セーブ・修復・恩赦の申請）と、端末のコマンドで開く「アク禁の扉」。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
+import { replyAnka } from "../freedom";
 import { chest, warp } from "../helpers";
+import { SPR } from "../sprites";
 import { objective, resLine } from "../story";
 import { base, CYBER, PROPS } from "../tiles";
 
@@ -29,6 +31,12 @@ export const reiCare = async (s: Story, ...lines: string[]): Promise<void> => {
 /** 足立レイ（初回は自己紹介・87％・恩赦の申請）。 */
 const reiRun = async (s: Story): Promise<void> => {
 	if (s.state.flags.rei_met) {
+		// !バルス でスレを崩壊させたあと、はじめて会うときだけ（F1 の呼び返し②）
+		if (Number(s.flag("balse_n") ?? 0) > 0 && !s.flag("rei_balse")) {
+			s.set("rei_balse");
+			await reiCare(s, "スレ崩壊の　ログを　検知。\n……修復します。");
+			return;
+		}
 		await reiCare(s, "修復します。");
 		return;
 	}
@@ -65,8 +73,57 @@ const reiRun = async (s: Story): Promise<void> => {
 	await s.saveMenu();
 };
 
+/** レスバJ民（J民系のモブ。黄色の名前欄）。 */
+const J = (s: Story, text: string) =>
+	s.say("nanj", text, { name: "レスバJ民" });
+
+/**
+ * 終章の「どう返す？」（F3-4）。レスバJ民の「ソースは？」に4択で返す（安価なら下は無し、
+ * 録音のあとなので「蓄音する」が増える）。話しかけたときか、端末をはじめて使ったときに始まる。
+ */
+const resubaRun = async (s: Story): Promise<void> => {
+	s.face("resuba", "player");
+	await J(s, "……ボカロスレが　1000いく？\nソースは？");
+	const r = await replyAnka(
+		s,
+		"reply_srv",
+		[
+			{ reply: "uke", label: "ソースは……まだ　ない" },
+			{ reply: "kaesu", label: "ソースは　吾輩ンゴ！" },
+			{ reply: "neta", label: "ソースは　マーボーに" },
+			{ reply: "chikuon", label: "そのレスも　蓄音する" },
+		],
+		false,
+	);
+	if (r === "uke") {
+		await s.say(
+			"kiriko",
+			"ソースは、まだ　ないンゴ。\nこれから　1000レス目で　作る",
+		);
+		await J(s, "……正直やな。\nほな、1000レス目で　見せてもらうわ");
+	} else if (r === "kaesu") {
+		await s.say("kiriko", "ソースは　吾輩ンゴ！\n吾輩が、ここに　いるンゴ");
+		await J(s, "……言うやんけ。\nほな、見届けたるわ");
+	} else if (r === "neta") {
+		await s.say("kiriko", "ソースは、マーボーに\nかけるンゴ");
+		await s.say("roze", "……それは　ちがう　ソースアル");
+		await J(s, "……草。\nそっちの　ソースちゃうわ");
+	} else {
+		await s.say(
+			"kiriko",
+			"そのレスも、蓄音しておく。\n吾輩の　スレの　一部ンゴ",
+		);
+		await J(s, "……ワイのレスまで　ためるんか。\n変な　ボカロやな");
+	}
+	await s.narrate("レスバJ民は　どこかへ\n書きこみに　いった。");
+	s.hide("resuba");
+	s.set("resuba_done");
+};
+
 /** 制御盤の端末（コマンドでアク禁の扉を操作する）。 */
 const terminalRun = async (s: Story): Promise<void> => {
+	// 端末は必ず使うので、レスバJ民とまだ話していなければ先にその場面（全員が見る）
+	if (!s.flag("resuba_done")) await resubaRun(s);
 	await s.narrate("端末だ。\n「アク禁中」の　扉を　操作できる　らしい。");
 	const c = await s.choose(["!aku", "!kaijo", "!バルス", "やめる"], {
 		cancel: 3,
@@ -83,6 +140,8 @@ const terminalRun = async (s: Story): Promise<void> => {
 		s.hide("aku_door"); // 貼り紙・端末も when で消える
 		await s.say("feris", "ひらいた〜。\nこの上が、1000レス目かな〜");
 	} else if (c === 2) {
+		// 唱えた回数（レイの再訪・エンディングのレイで拾う）
+		s.set("balse_n", Number(s.flag("balse_n") ?? 0) + 1);
 		s.se("explosion");
 		await s.flash();
 		await s.shake();
@@ -189,6 +248,17 @@ export const server: MapDef = {
 					"解除の　コマンドが　いるらしい。\n……下の　制御盤の　端末で　打てそうだ。",
 				);
 			},
+		},
+		{
+			// レスバJ民（端末の右下。(12,11) は広い床の行なので、扉への道も端末の前もふさがない）
+			id: "resuba",
+			x: 12,
+			y: 11,
+			sprite: SPR.j_cyclo,
+			dir: "down",
+			trigger: "talk",
+			when: (st) => !st.flags.resuba_done,
+			run: resubaRun,
 		},
 		{
 			id: "terminal",

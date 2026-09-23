@@ -1113,6 +1113,107 @@ body.shake #app {
 	animation: blink 1.4s steps(2) infinite;
 }
 
+/* まとめカード（スタッフロールのあと・おわりの前）。1行は全角22字まで */
+.matome {
+	position: absolute;
+	inset: 0;
+	z-index: 56;
+	background: #000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	/* 収まるときは上下中央、はみ出すときは上から（auto の余白で中央に寄せる） */
+	justify-content: flex-start;
+	gap: 16px;
+	padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r))
+		calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+	overflow-x: hidden;
+	overflow-y: auto;
+	touch-action: pan-y;
+	opacity: 0;
+	transition: opacity 0.8s;
+}
+
+.matome.shown {
+	opacity: 1;
+}
+
+.matome > :first-child {
+	margin-top: auto;
+}
+
+.matome > :last-child {
+	margin-bottom: auto;
+}
+
+.matome .the-end-tap {
+	margin-top: 4px;
+	flex: none;
+}
+
+.matome-card {
+	flex: none;
+	width: 100%;
+	max-width: calc(22em + 32px);
+	padding: 12px 14px;
+	border: 2px solid var(--win-border);
+	border-radius: 6px;
+	background: var(--win-bg);
+	text-align: left;
+	/* 狭い画面でも全角22字が1行に収まるように縮める（外と内の余白・枠で 66px） */
+	font-size: min(14px, calc((100vw - 66px) / 22));
+	line-height: 1.7;
+}
+
+.matome-head {
+	text-align: center;
+	color: #fff4c9;
+	font-size: 16px;
+	letter-spacing: 0.1em;
+	margin-bottom: 8px;
+}
+
+.matome-sec + .matome-sec {
+	margin-top: 12px;
+}
+
+.matome-title {
+	color: var(--accent);
+}
+
+.matome-line {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+/* 横持ちのスマホ：2つのセクションを横に並べて、縦にはみ出しにくくする */
+@media (orientation: landscape) and (max-height: 520px) {
+	.matome {
+		gap: 8px;
+		padding-top: calc(10px + var(--safe-t));
+		padding-bottom: calc(10px + var(--safe-b));
+	}
+	.matome-card {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr));
+		column-gap: 20px;
+		row-gap: 8px;
+		max-width: calc(44em + 52px);
+		font-size: 13px;
+		line-height: 1.55;
+	}
+	.matome-head {
+		grid-column: 1 / -1;
+		margin-bottom: 0;
+	}
+	.matome-sec + .matome-sec {
+		margin-top: 0;
+	}
+	.matome .the-end-tap {
+		margin-top: 0;
+	}
+}
+
 /* ───────── 横持ち・大きい画面 ───────── */
 
 @media (orientation: landscape) and (max-height: 520px) {

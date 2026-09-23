@@ -4,6 +4,7 @@
 // 東の裏口（rec 後）からサーバーの底へ。
 
 import type { MapDef, Script } from "../../engine/defs";
+import { addLose } from "../freedom";
 import { chest, warp } from "../helpers";
 import { SPR } from "../sprites";
 import { lockedDoor, phono, silent } from "../story";
@@ -56,6 +57,7 @@ const recEv: Script = async (s) => {
 			"君は　じつに　馬鹿だな。\n声が　出たとたん、全力で　歌うなんてさ",
 		);
 	} else {
+		if (r === "lose") addLose(s); // 負けた回数（まとめの >>990）。話はそのまま進む
 		await s.say("teto", "……ふらふらだね。でも　さいごまで\n声を　出してた");
 	}
 	await s.say("teto", "……合格だよ");

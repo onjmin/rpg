@@ -764,6 +764,13 @@ export const items: Record<string, ItemDef> = {
 		desc: "うまれた夜に　吹きこんだ　吾輩の声。",
 		key: true,
 	}),
+	// 番長の宿題（絵日記）の魚。技の wakasagi（ワカサギつり）と id が重ならないよう hw_ を付ける
+	hw_wakasagi: it({
+		id: "hw_wakasagi",
+		name: "ワカサギ",
+		desc: "番長の　絵日記に　のせる　魚。",
+		key: true,
+	}),
 	// おでかけ（デート）のおもいでの品
 	memo_roze: it({
 		id: "memo_roze",

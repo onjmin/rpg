@@ -13,7 +13,10 @@ export const objective = (st: GameState): string => {
 	const f = st.flags;
 	if (!f.ikioi_seen) return "広場の　勢い欄を　見る";
 	if (!f.roze_in) return "北の　スレ街道へ";
-	if (!f.b1) return "橋の　夏休みキッズ番長を　どかす";
+	if (!f.b1)
+		return f.hw_help
+			? "魚を　つって　番長に　見せる"
+			: "橋の　夏休みキッズ番長を　どかす";
 	if (!f.b2) return "過去ログ倉庫の　おくを　しらべる";
 	if (!f.b3)
 		return f.quiz_ok

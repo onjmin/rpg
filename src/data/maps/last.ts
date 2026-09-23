@@ -1,9 +1,11 @@
 // 終章「1000レス目のうた」後半：1000レス目（設計書 §11-8・§8-11）。
 // F1 サイレントバルス → ボツキリコの正体 → 恩赦とレスの洪水 → F2 ボツキリコ → 蓄音 → >>1000 → thread へ。
+// 洪水とボツキリコの一部は、それまでの安価・返し方で変わる（data/threadlog.ts）。
 
 import type { MapDef, SayOptions, Story, TileDef } from "../../engine/defs";
 import { warp } from "../helpers";
 import { SPR } from "../sprites";
+import { floodScreens, VARIANTS } from "../threadlog";
 import { CYBER } from "../tiles";
 import { reiCare } from "./server";
 
@@ -42,8 +44,8 @@ const lastRun = async (s: Story): Promise<void> => {
 	await botsuSay(s, "角刈り。体重100トン。111歳");
 	await botsuSay(s, "あの夜、最初に　えらばれて、\nすぐ「再安価」で　流された");
 	await botsuSay(s, "吾輩は、お前の　ボツンゴ");
-	if (s.state.flags.kakugari)
-		await botsuSay(s, "……お前は　一度、角刈りを　えらんでくれたな");
+	// 序章の髪型・体重の安価（角刈り・100トン）を、えらんだか
+	await botsuSay(s, VARIANTS.botsuPick(s.state));
 	await botsuSay(
 		s,
 		"流されたレスは、だれにも　ひろわれない。\nだから　ぜんぶ　無音に　するンゴ",
@@ -57,15 +59,8 @@ const lastRun = async (s: Story): Promise<void> => {
 	});
 	await s.say("nanj", "キリコォ！　恩赦や！\n書きこめるようになったで！");
 	s.set("onsha");
-	await s.narrate(
-		">>991 kskst　>>992 キリコがんばれ\n>>993 ホゲェ　>>994 宿題おわったで",
-	);
-	await s.narrate(
-		">>995 避難Jを研究しているヒナリーです\n>>996 ﾌｪﾆｯｸｽ　>>997 アル？ナイ！",
-	);
-	await s.narrate(
-		">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
-	);
+	// >>991〜>>999 の3画面（>>992 レスバJ民・>>994 番長は、返し方で変わる）
+	for (const text of floodScreens(s.state)) await s.narrate(text);
 	s.set("res", 999);
 	s.heal();
 	s.se("heal");
@@ -85,8 +80,8 @@ const lastRun = async (s: Story): Promise<void> => {
 		"kiriko",
 		"角刈りも、100トンも、111歳も。\nぜんぶ　あの夜の安価。吾輩の一部ンゴ",
 	);
-	if (s.state.flags.kakugari)
-		await s.say("kiriko", "それに　吾輩、いちどは　角刈りを\nえらんだンゴ");
+	const answer = VARIANTS.botsuAnswer(s.state);
+	if (answer) await s.say("kiriko", answer);
 	await botsuSay(s, "……ひろって、くれるンゴ？");
 	await s.narrate("キリコは　蓄音機を　ボツキリコに　むけた。");
 	s.give("rec_botsu");

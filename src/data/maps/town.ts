@@ -2,6 +2,7 @@
 // 第一章: ch1_intro・勢い欄（古参ニキ）・ボイスニキ。
 // 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → なんJ民アク禁）、
 //         沈黙期間（住民が消える）→ マッマ → テト登場 → スタジオへ。
+// 古参ニキは倉庫での返し方（reply_kako。kakolog の kosan_k）をナイター前と前夜祭で拾う。
 
 import type {
 	EventDef,
@@ -103,6 +104,22 @@ const ikioi = async (s: Story): Promise<void> => {
 	await s.narrate(`1 ${resLine(s.state)}\n2 ${second}`);
 };
 
+// ───────────────── 古参ニキの呼び返し（倉庫での reply_kako。spec §4 F3-2） ─────────────────
+
+/** 第三章（b2〜b3）に町で話しかけたとき。なしは既存の「今夜は　ナイターや」。 */
+const KOSAN_NIGHTER: Record<string, string> = {
+	uke: "今夜は　ナイターや。\n昔の　祭りを　思い出すわ",
+	kaesu: "今夜は　ナイターや。\n今の　おんJ、見せてもらうで",
+	neta: "今夜は　ナイターや。\n……「昔のおんJ」予備軍やな",
+};
+
+/** 第四章の前夜祭（nightEv）。なしは既存の「明日には　完走やな！」。 */
+const KOSAN_850: Record<string, string> = {
+	uke: "850レスやて！　昔の　祭りにも\n負けとらんで！",
+	kaesu: "850レスやて！　……しゃあない、\n今夜は　ワイも　書きこんだる",
+	neta: "850レスやて！　こら　ほんまに\n「昔のおんJ」に　なる　勢いや",
+};
+
 // ───────────────── 第四章・前半（負けイベント） ─────────────────
 
 const nightEv = async (s: Story): Promise<void> => {
@@ -110,7 +127,12 @@ const nightEv = async (s: Story): Promise<void> => {
 	s.set("ch", 4);
 	await s.narrate("その夜。町は　前夜祭で　おおにぎわいだった。");
 	s.face("kosan", "player");
-	await J(s, "850レスやて！　明日には　完走やな！", "古参ニキ");
+	await J(
+		s,
+		KOSAN_850[String(s.flag("reply_kako"))] ??
+			"850レスやて！　明日には　完走やな！",
+		"古参ニキ",
+	);
 	await s.say("kiriko", "あと150レス。明日には　完走だ");
 	s.bgm(null);
 	await s.wait(800);
@@ -236,9 +258,9 @@ const kosan = async (s: Story): Promise<void> => {
 		: !f.b1
 			? "1000いったら　ええもん　見れるで"
 			: !f.b2
-				? "過去ログ倉庫、閲覧専用やで"
+				? "過去ログ倉庫、閲覧専用やで" // ふだんは倉庫の kosan_k にいるので出ない
 				: !f.b3
-					? "今夜は　ナイターや"
+					? (KOSAN_NIGHTER[String(f.reply_kako)] ?? "今夜は　ナイターや")
 					: // b3 のあとに人がいる＝録音のあと
 						"スタジオから、歌が　聞こえたで。\n……ボカロも、悪ないな";
 	await J(s, line, "古参ニキ");
@@ -345,7 +367,11 @@ const events: EventDef[] = [
 	// 広場の勢い欄（掲示板の上。(11,8)(12,8) から話す）
 	{ id: "ikioi_l", x: 11, y: 7, trigger: "talk", run: ikioi },
 	{ id: "ikioi_r", x: 12, y: 7, trigger: "talk", run: ikioi },
-	npc("kosan", 9, 8, SPR.j_shinkan, kosan, { dir: "up", when: day }),
+	// 古参ニキ。B1 のあと B2 までは過去ログ倉庫にいる（kakolog の kosan_k）ので、町からは消える
+	npc("kosan", 9, 8, SPR.j_shinkan, kosan, {
+		dir: "up",
+		when: (st) => day(st) && !(st.flags.b1 && !st.flags.b2),
+	}),
 	phono("phono_town", 14, 8),
 
 	// マッマ（回復。第四章は無言のおにぎり）と開かない扉

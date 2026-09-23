@@ -2,8 +2,18 @@
 // 落ちたスレが流れつく倉庫。本棚の前で「……ンゴ……」の伏線（whisper）→ ロゼが本棚をどかす →
 // 蓄音機（B2 前のセーブ）→ 奥の間でムッジェの相手をしていたフェリス → やきう民を見てかんちがい →
 // B2（ムッジェ＆フェリス）→ 和解してフェリス加入 → 町へ浮上（600/1000）。rival-joins.md §3。
+// 自由度（scratchpad/freedom/spec.md）：入口で古参ニキに「どう返す？」（F3-2・reply_kako）、
+// B2 は負けても進む（F4。once なし・b2_met で短い前置き）、名言チャレンジ その2（F1・meigen2）。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
+import {
+	ankaChoose,
+	BOSS_EXP,
+	bossFight,
+	MEIGEN,
+	meigenQuote,
+	replyAnka,
+} from "../freedom";
 import { chest, npc, warp } from "../helpers";
 import { SPR } from "../sprites";
 import { ks, phono } from "../story";
@@ -50,10 +60,47 @@ const BOARD_R = base(5, 262, 1, 2);
 // ───────────────── セリフの部品 ─────────────────
 /** J民以外の人・生き物（名前欄だけ）。 */
 const N = (s: Story, name: string, text: string) => s.say(null, text, { name });
+/** 古参ニキ（町の古参ニキと同じ人。J民なので黄色の名前欄）。 */
+const K = (s: Story, text: string) => s.say("nanj", text, { name: "古参ニキ" });
+
+// ───────────────── 古参ニキ（第二章の「どう返す？」。spec §4 F3-2） ─────────────────
+
+/** 章カードのあとに必ず見る。返し方は reply_kako に残り、町の古参ニキとエンディングが拾う。 */
+const kosanMeet = async (s: Story): Promise<void> => {
+	await s.say("nanj", "お、古参ニキやんけ。\n倉庫に　おったんか");
+	s.face("kosan_k", "player");
+	await K(s, "過去ログ　読みに　来とったんや。\nここの　スレ、ええやろ");
+	await K(
+		s,
+		"昔の　おんJの　ほうが　よかったわ。\nボカロスレなんか　なかったしな",
+	);
+	const r = await replyAnka(s, "reply_kako", [
+		{ reply: "uke", label: "昔の　おんJ、教えて" },
+		{ reply: "kaesu", label: "今の　おんJも　たのしい" },
+		{ reply: "neta", label: "吾輩も　いつか　昔に　なる" },
+	]);
+	if (r === "uke") {
+		await ks(s, "昔の　おんJ、教えてほしいンゴ");
+		await K(s, "……しゃあないな。\n昔は　ここも、毎晩　祭りやった");
+	} else if (r === "kaesu") {
+		await ks(s, "今の　おんJも、たのしいンゴ。\n吾輩、ここで　生まれたから");
+		await K(s, "……生意気やな。\nほな、今の　おんJ、見せてもらおか");
+	} else {
+		await ks(s, "吾輩も、いつか\n「昔の　おんJ」に　なるンゴ");
+		await K(s, "……草。うまいこと　言うやんけ");
+	}
+};
+
+/** 倉庫の古参ニキに話しかけたとき（reply_kako しだい。なしは記録前のセーブ）。 */
+const KOSAN_K: Record<string, string> = {
+	uke: "2009年の　ナイター実況、\nそら　すごかったで",
+	kaesu: "今の　おんJ、\n見せてもらうで",
+	neta: "「昔のおんJ」予備軍か。草",
+};
 
 // ───────────────── イベント ─────────────────
 
-/** 第二章の章カード（入ったとき1回だけ）。 */
+/** 第二章の章カード（入ったとき1回だけ）。そのまま古参ニキの場面へ。 */
 const ch2: EventDef = {
 	id: "ch2",
 	x: 1,
@@ -66,6 +113,7 @@ const ch2: EventDef = {
 		s.set("ch", 2);
 		await s.say("roze", "ここは　落ちたスレが　ねむる　場所アル");
 		await s.say("nanj", "過去ログは　閲覧専用や。\nそっと　見て　まわろか");
+		await kosanMeet(s);
 	},
 };
 
@@ -86,8 +134,15 @@ const whisper: EventDef = {
 		await s.narrate(
 			"「角刈り」「100t」「111歳」……\n再安価で　流れた　レスが　ふきだまっている。",
 		);
-		if (s.flag("kakugari"))
+		// 序章の安価（髪型 kakugari・体重 anka_100t）で選ばれて流れたものを拾う（F1 ②）
+		const kaku = !!s.flag("kakugari");
+		const ton = !!s.flag("anka_100t");
+		if (kaku && ton)
+			await ks(s, "角刈りも、100トンも……。\nあの夜、いちど　えらばれたンゴ");
+		else if (kaku)
 			await ks(s, "角刈り……。あの夜、いちど\nえらばれた　髪型ンゴ");
+		else if (ton)
+			await ks(s, "100トン……。あの夜、いちど\nえらばれた　体重ンゴ");
 		s.bgm("dungeon");
 	},
 };
@@ -97,8 +152,19 @@ const botsuRun = async (s: Story): Promise<void> => {
 	await s.narrate(
 		"再安価で　流れた　レスの　ふきだまり。\n……ンゴ……と　聞こえた　気がする",
 	);
-	if (s.flag("kakugari"))
+	const kaku = !!s.flag("kakugari");
+	const ton = !!s.flag("anka_100t");
+	if (kaku && ton)
+		await ks(
+			s,
+			"吾輩が　えらんだ　角刈りも　100トンも、\nここに　流れついたンゴ？",
+		);
+	else if (kaku)
 		await ks(s, "吾輩が　えらんだ　角刈りも、\nここに　流れついたンゴ？");
+	else if (ton)
+		await ks(s, "吾輩が　えらんだ　100トンも、\nここに　流れついたンゴ？");
+	if (ton)
+		await s.say("roze", "……100トンのレスだけ、\nいちばん　底に　沈んでるアル");
 };
 const botsuPile: EventDef = {
 	id: "botsu_pile",
@@ -147,95 +213,166 @@ const shelfEv: EventDef = {
 	},
 };
 
-/** 奥の間の入口：ムッジェ＆フェリス → B2 → 和解してフェリス加入 → 町へ浮上。 */
+// ───────────────── B2（ムッジェ＆フェリス） ─────────────────
+
+/** はじめて奥の間に入ったとき。 */
+const b2First = async (s: Story): Promise<void> => {
+	await s.narrate(
+		"倉庫の　おく。赤い　けむくじゃらの　となりに\nだれかが　ちょこんと　すわっている。",
+	);
+	await N(s, "ムッジェ", "ホゲェ");
+	await s.say("feris", "あ、どうも〜。この子と　おるすばん中だよ〜");
+	await ks(s, "つかまってる……わけじゃ　ないンゴ？");
+	await s.say(
+		"feris",
+		"ちがうよ〜。この子も　私も、\n忘れられた　マスコットだからね〜",
+	);
+	await s.say("nanj", "フェリスやんけ！　なんJ時代からの　大先輩や");
+	await s.say("feris", "……あ、やきうくんだ");
+	await s.say("feris", "ムッジェを　いじめに　来たの？");
+	await s.say("nanj", "ち、ちゃうわ！　ワイらは……");
+	await s.say("feris", "やきうくんの　仲間は、敵だよ〜");
+	s.set("b2_met");
+	await s.shake(300);
+	await N(s, "ムッジェ", "ホゲェ！！");
+};
+
+/** 2回目以降（ひとやすみのあと、踏み直したとき）の短い前置き。 */
+const b2Again = async (s: Story): Promise<void> => {
+	await s.shake(300);
+	await N(s, "ムッジェ", "ホゲェ！！");
+	await s.say("feris", "また　来たの〜？\nやきうくんの　仲間は、敵だよ〜");
+};
+
+/** B2 の負けレス（1・2回目。spec §4 F4）。2回目は「遊びたいだけ」をそれとなく示す。 */
+const loseB2 = async (s: Story, n: number): Promise<void> => {
+	if (n === 1) {
+		await s.narrate("「ムッジェ　つよ」「ホゲェ」\n「倉庫で　全滅は　草」");
+		await s.say("roze", "……フェリス先輩、本気アル");
+		return;
+	}
+	await s.narrate(
+		"「過去ログに　残るで」\n「ムッジェ、あそびたいだけちゃう？」",
+	);
+	await s.say("nanj", "……ワイらの　せいかもな。\nすまん");
+};
+
+/** 名言チャレンジ その2 へのフェリスの返し（MEIGEN[1] の順）。 */
+const REACT2 = [
+	"ふふ、それは　ちょっと　いいかも〜",
+	"ムッジェが　よろこぶよ〜",
+	"……それ、私の　ことだよ〜",
+];
+
+/** 名言チャレンジ その2（F1）。ロゼが その1 を引用してから、安価で選ぶ。 */
+const meigen2 = async (s: Story): Promise<void> => {
+	await ks(s, "名言チャレンジ、その2。");
+	const q = meigenQuote(s.state, 0);
+	if (q) await s.say("roze", `「${q}」よりは\nましなのを　たのむアル`);
+	const i = await ankaChoose(
+		s,
+		"meigen2",
+		MEIGEN[1].map((m) => m.label),
+	);
+	await ks(s, MEIGEN[1][i].line);
+	await s.say("feris", REACT2[i]);
+};
+
+/**
+ * 勝っても、3回負けて通してもらっても、ここから先は同じ
+ * （バナー・加入・b2・2009年の話・600・名言その2）。
+ */
+const b2After = async (s: Story): Promise<void> => {
+	// 下の「バナー、ちゃんと　見る」の前ふり（mujje_after で回収）
+	await s.say(
+		"feris",
+		"この子の　バナー、ずっと　だれも\n見てくれなかったから〜",
+	);
+	await ks(s, "吾輩たち、スレの　宣伝に　来ただけンゴ");
+	await s.say(
+		"feris",
+		"そっか〜。いじめに　来たんじゃ\nなかったんだね〜。ごめんね〜",
+	);
+	await s.say("nanj", "まあ、やきう民は　前科　あるからな……");
+	// 2009年のマスコット争いの和解は第三章（テノヒラ監督戦）へ。ここは前ふりだけ。
+	// 「その話」だと直後の「私ね、2009年に…」と食いちがうので、先送りするのは決着だけ
+	// （スタジアムの「今夜は　その　つづきだね〜」につながる）。
+	await s.say("feris", "ふふ。その　決着は、また　こんどね〜");
+	await ks(s, "ムッジェの　バナー、ちゃんと　見る。約束する");
+	await N(s, "ムッジェ", "ホゲェ！");
+	await s.say(
+		"feris",
+		"「また　あそびに　きてな」だって〜。\n私も　いっしょに　行っていい？",
+	);
+	s.hide("feris");
+	s.join("feris");
+	s.set("feris_in");
+	s.se("item");
+	await s.narrate("フェリスが　なかまに　なった！");
+	s.set("b2");
+	s.hide("mujje");
+	await s.say(
+		"feris",
+		"私ね、2009年に　一回　消えたんだ〜。\nやきうくんたちに　マスコット争いで　負けて",
+	);
+	await s.say(
+		"feris",
+		"でも2015年に、だれかが「フェリスおったよな」\nって　書いてくれて。……不死鳥だからね〜",
+	);
+	await s.say("roze", "……わたしと、おなじアル");
+	await s.say(
+		"feris",
+		"落ちても、覚えてる人が　いれば\nage（あが）れるよ〜。くしゃみ出そう……",
+	);
+	await s.say("feris", "ふぇ……ふぇ……");
+	await ks(s, "――フェニックス！");
+	await s.flash("#ff7a2a", 300);
+	s.se("fire");
+	await s.say("feris", "あ、言われちゃった〜");
+	s.set("res", 600);
+	await s.warp("town", 12, 9, "down", { se: "warp" });
+	// ここからは町（勢い欄の前）
+	await s.narrate("ほのおに　のって、勢い欄の　上へ\nage（あが）った！");
+	s.se("item");
+	await s.narrate("蓄音機に　レスが　たまった！（600/1000）");
+	await meigen2(s);
+	await s.say("nanj", "お、東門が　あいとるで。今夜は　ナイターや！");
+};
+
+/**
+ * 奥の間の入口：ムッジェ＆フェリス → B2 → 和解してフェリス加入 → 町へ浮上。
+ * 負けても進む（F4）：ひとやすみなら入口の外 (10,7) へ下がり、踏み直すと短い前置きで再戦。
+ * そのため once にしない（b2 が立てば when で消える）。
+ */
 const bossfloor: EventDef = {
 	id: "bossfloor",
 	x: 10,
 	y: 6,
 	trigger: "touch",
-	once: true,
 	when: (st) => !st.flags.b2,
 	run: async (s) => {
 		await s.move("player", "u");
-		await s.narrate(
-			"倉庫の　おく。赤い　けむくじゃらの　となりに\nだれかが　ちょこんと　すわっている。",
-		);
-		await N(s, "ムッジェ", "ホゲェ");
-		await s.say("feris", "あ、どうも〜。この子と　おるすばん中だよ〜");
-		await ks(s, "つかまってる……わけじゃ　ないンゴ？");
-		await s.say(
-			"feris",
-			"ちがうよ〜。この子も　私も、\n忘れられた　マスコットだからね〜",
-		);
-		await s.say("nanj", "フェリスやんけ！　なんJ時代からの　大先輩や");
-		await s.say("feris", "……あ、やきうくんだ");
-		await s.say("feris", "ムッジェを　いじめに　来たの？");
-		await s.say("nanj", "ち、ちゃうわ！　ワイらは……");
-		await s.say("feris", "やきうくんの　仲間は、敵だよ〜");
-		await s.shake(300);
-		await N(s, "ムッジェ", "ホゲェ！！");
-		// B2 = ムッジェ＋フェリス（canLose なし。負けたら通常の「もういちど」）
-		if ((await s.battle("g_b2")) !== "win") return;
-		await N(s, "ムッジェ", "ホゲェ……♪");
-		await s.say("feris", "……あれ？　ムッジェ、たのしそう");
-		// 下の「バナー、ちゃんと　見る」の前ふり（mujje_after で回収）
-		await s.say(
-			"feris",
-			"この子の　バナー、ずっと　だれも\n見てくれなかったから〜",
-		);
-		await ks(s, "吾輩たち、スレの　宣伝に　来ただけンゴ");
-		await s.say(
-			"feris",
-			"そっか〜。いじめに　来たんじゃ\nなかったんだね〜。ごめんね〜",
-		);
-		await s.say("nanj", "まあ、やきう民は　前科　あるからな……");
-		// 2009年のマスコット争いの和解は第三章（テノヒラ監督戦）へ。ここは前ふりだけ。
-		// 「その話」だと直後の「私ね、2009年に…」と食いちがうので、先送りするのは決着だけ
-		// （スタジアムの「今夜は　その　つづきだね〜」につながる）。
-		await s.say("feris", "ふふ。その　決着は、また　こんどね〜");
-		await ks(s, "ムッジェの　バナー、ちゃんと　見る。約束する");
-		await N(s, "ムッジェ", "ホゲェ！");
-		await s.say(
-			"feris",
-			"「また　あそびに　きてな」だって〜。\n私も　いっしょに　行っていい？",
-		);
-		s.hide("feris");
-		s.join("feris");
-		s.set("feris_in");
-		s.se("item");
-		await s.narrate("フェリスが　なかまに　なった！");
-		s.set("b2");
-		s.hide("mujje");
-		await s.say(
-			"feris",
-			"私ね、2009年に　一回　消えたんだ〜。\nやきうくんたちに　マスコット争いで　負けて",
-		);
-		await s.say(
-			"feris",
-			"でも2015年に、だれかが「フェリスおったよな」\nって　書いてくれて。……不死鳥だからね〜",
-		);
-		await s.say("roze", "……わたしと、おなじアル");
-		await s.say(
-			"feris",
-			"落ちても、覚えてる人が　いれば\nage（あが）れるよ〜。くしゃみ出そう……",
-		);
-		await s.say("feris", "ふぇ……ふぇ……");
-		await ks(s, "――フェニックス！");
-		await s.flash("#ff7a2a", 300);
-		s.se("fire");
-		await s.say("feris", "あ、言われちゃった〜");
-		s.set("res", 600);
-		await s.warp("town", 12, 9, "down", { se: "warp" });
-		// ここからは町（勢い欄の前）
-		await s.narrate("ほのおに　のって、勢い欄の　上へ\nage（あが）った！");
-		s.se("item");
-		await s.narrate("蓄音機に　レスが　たまった！（600/1000）");
-		await ks(
-			s,
-			"名言チャレンジ、その2。\n「囲碁の石は、打ったら　消えないンゴ」",
-		);
-		await s.say("feris", "ふふ、それは　ちょっと　いいかも〜");
-		await s.say("nanj", "お、東門が　あいとるで。今夜は　ナイターや！");
+		if (s.flag("b2_met")) await b2Again(s);
+		else await b2First(s);
+		// 1・2回目の負けは負けレス → もういちど／ひとやすみ、3回目で通してもらう
+		const r = await bossFight(s, "b2", "g_b2", loseB2);
+		if (r === "rest") {
+			await s.say("feris", "……また　あそぼうね〜");
+			// (10,5) → (10,7)。スクリプトの move では踏んだ判定は起きない
+			await s.move("player", "dd");
+			return;
+		}
+		s.set("b2_how", r === "win" ? "win" : "lose");
+		if (r === "pass") {
+			await s.narrate("ムッジェは　あそびつかれて\nねむってしまった。");
+			await s.say("feris", "……ねちゃった〜");
+			await s.gainExp(BOSS_EXP.b2);
+			await s.say("feris", "……ねがお、たのしそう〜");
+		} else {
+			await N(s, "ムッジェ", "ホゲェ……♪");
+			await s.say("feris", "……あれ？　ムッジェ、たのしそう");
+		}
+		await b2After(s);
 	},
 };
 
@@ -286,7 +423,7 @@ export const kakolog: MapDef = {
 		"#,,,Kk,,,,,,,,,,,,,,,#", // y12 宝箱 (19,12)
 		"#,,,,,,,,p,,,,,,,,oo,#", // y13
 		"#,,,,,,,,,,,,,,,,p,,,#", // y14
-		"#,,p,,,,,,,,,.,,,,,,,#", // y15 ヒナリー (13,15)
+		"#,,p,,,,,,,,,.,,,,,,,#", // y15 古参ニキ (10,15)（b1〜b2）、ヒナリー (13,15)
 		"#,,,,,,,,,,.,,,,,,,,,#", // y16 到着 (11,16)
 		"###########.##########", // y17 入口 (11,17) → road
 	],
@@ -304,6 +441,19 @@ export const kakolog: MapDef = {
 			{ se: "stairs" },
 		),
 		hinary,
+		// 古参ニキ（B1 のあと B2 まで。その間、町の古参ニキ kosan は消える）
+		npc(
+			"kosan_k",
+			10,
+			15,
+			SPR.j_shinkan,
+			async (s) =>
+				K(
+					s,
+					KOSAN_K[String(s.flag("reply_kako"))] ?? "過去ログ倉庫、閲覧専用やで",
+				),
+			{ dir: "up", when: (st) => !!st.flags.b1 && !st.flags.b2 },
+		),
 		whisper,
 		botsuPile,
 		botsuPileR,

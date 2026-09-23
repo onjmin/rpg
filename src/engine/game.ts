@@ -7,6 +7,7 @@ import type { GameAudio } from "./audio";
 import { availableSkits, markSkitSeen } from "./bonds";
 import type {
 	BattleResult,
+	EndingSummary,
 	EventDef,
 	GameData,
 	GameState,
@@ -18,7 +19,7 @@ import type {
 } from "./defs";
 import { Actor, Field } from "./field";
 import type { Input } from "./input";
-import { healAll, newMember } from "./party";
+import { gainExp as addExp, healAll, newMember } from "./party";
 import { writeSave } from "./save";
 import type { Screen } from "./screen";
 import { settings } from "./settings";
@@ -38,7 +39,7 @@ export type Scenes = {
 	): Promise<BattleResult>;
 	menu(game: Game): Promise<void>;
 	chapter(game: Game, label: string, title: string): Promise<void>;
-	ending(game: Game): Promise<void>;
+	ending(game: Game, opt?: { summary?: EndingSummary }): Promise<void>;
 };
 
 export class Game {
@@ -906,7 +907,20 @@ export class Game {
 					);
 				}
 			},
-			ending: () => this.scenes.ending(this),
+			gainExp: async (n) => {
+				if (!(n > 0)) return;
+				await this.say(null, `${n}ポイントの　けいけんちを　かくとく！`);
+				for (const m of this.state.party) {
+					if (addExp(this.data, m, n) > 0) {
+						this.audio.se("levelup");
+						await this.say(
+							null,
+							`${this.data.cast[m.id]?.name ?? m.id}は　レベル${m.lv}に　あがった！`,
+						);
+					}
+				}
+			},
+			ending: (opt) => this.scenes.ending(this, opt),
 			followers: (show) => {
 				this.followersShown = show;
 				for (const f of this.followers) f.visible = show;

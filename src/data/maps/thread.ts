@@ -2,10 +2,13 @@
 // 序章: opening（安価 → 誕生 → おんJ民の冷やかし → キリコ vs おんJ民 → 蓄音機 →
 //        kskボット → なんJ民加入 → チュートリアル戦）。
 // 終章: last から (6,6) に着くと ending_ev（みんなが集まる → s.ending()）。
+//       住民の一言とまとめカードは、それまでの安価・返し方で変わる（data/threadlog.ts）。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
+import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
 import { SPR } from "../sprites";
+import { threadSummary, VARIANTS } from "../threadlog";
 import { INDOOR } from "../tiles";
 
 /** J民系のモブ（黄色の名前欄・読み上げなし）。 */
@@ -26,9 +29,9 @@ const opening = async (s: Story): Promise<void> => {
 	);
 	await s.narrate("【安価】安価でボカロ作ろうぜ");
 
-	// 安価は絶対（どちらを選んでも公式設定にもどる）
+	// 安価は絶対（どちらを選んでも公式設定にもどる。選んだことはボツキリコ・エンディングで拾う）
 	await J(s, "髪型は？", "名無し");
-	if ((await s.choose(["角刈り", "ポニーテール"])) === 0) {
+	if ((await s.choose([">>1 角刈り", ">>2 ポニーテール"])) === 0) {
 		await J(s, "角刈りで草。……再安価や！", "名無し");
 		s.set("kakugari");
 	} else {
@@ -36,7 +39,8 @@ const opening = async (s: Story): Promise<void> => {
 	}
 	await J(s, "若草色の　ポニテに　リボンで　決まりや", "名無し");
 	await J(s, "体重は？", "名無し");
-	const w = await s.choose(["100トン", "34キロ"]);
+	const w = await s.choose([">>1 100トン", ">>2 34キロ"]);
+	if (w === 0) s.set("anka_100t");
 	await J(
 		s,
 		w === 0 ? "物理的に　ムリやろ。34kgにしとこ" : "ガリガリで　ええやん",
@@ -81,7 +85,8 @@ const opening = async (s: Story): Promise<void> => {
 		await J(s, "ひえっ、つよ……！　ほな、また……", "冷やかしJ民");
 		await s.say("nanj", "……やるやんけ");
 	} else {
-		// 負けてもエンジンが全回復して "lose" が返る
+		// 負けてもエンジンが全回復して "lose" が返る（負けた回数はまとめカードで拾う）
+		addLose(s);
 		await s.say("kiriko", "……まだ。吾輩、まだ　立てるンゴ");
 		await J(s, "しつこ……。ほな、また……", "冷やかしJ民");
 		await s.say("nanj", "……根性　あるやんけ");
@@ -157,6 +162,7 @@ const opening = async (s: Story): Promise<void> => {
 // ───────────────── エンディング ─────────────────
 
 const ending = async (s: Story): Promise<void> => {
+	const st = s.state;
 	s.bgm("town");
 	// 仲間をキリコのまわりに並べ、みんなをキリコに向ける（見た目だけ）
 	s.place("follower:roze", 5, 6, "up");
@@ -173,17 +179,25 @@ const ending = async (s: Story): Promise<void> => {
 		"end_mujje",
 		"end_rei",
 		"end_raid",
+		"end_kosan",
 	])
 		s.face(id, "player");
 	await s.narrate("【安価】安価でボカロ作ろうぜ　1000/1000");
 	await J(s, "1000取ったの　キリコ本人やんけ　草", "J民A");
 	await s.say("nanj", "名言、できたやん");
+	// 名言チャレンジ その3 と >>1000 をくらべる（その3 がないときは出さない）
+	const jb = VARIANTS.meigenJb(st);
+	if (jb) await J(s, jb, "J民B");
 	await s.say("roze", "わたしにあって　キリコにないもの……\nもう、ないアル");
 	await s.say("feris", "34キロなのに、中身　ぎっしりだね〜");
 	await N(s, "……おめでとう。\n避難Jを研究している　ヒナリーです", "ヒナリー");
 	await N(s, "ホゲェ！", "ムッジェ");
-	await J(s, "宿題、おわったで！", "夏休みキッズ番長");
-	await s.say("rei", "本日のログ、保守完了。\n……当機も、うれしい、です");
+	// 番長の越え方・代打・古参ニキへの返し・!バルス で変わる
+	await J(s, VARIANTS.bancho(st), "夏休みキッズ番長");
+	await J(s, VARIANTS.kantoku(st), "テノヒラ監督");
+	const kosan = VARIANTS.kosan(st);
+	if (kosan) await J(s, kosan, "古参ニキ");
+	await s.say("rei", VARIANTS.rei(st));
 	// 序章の冷やかしJ民（「また、来てほしい」の回収）
 	await J(
 		s,
@@ -194,16 +208,19 @@ const ending = async (s: Story): Promise<void> => {
 	await s.narrate("蓄音機から、ちいさな　声が　ながれた。");
 	const B = { name: "ボツの声", noPortrait: true };
 	await s.say("kiriko", "……悪くない　安価だったンゴ", B);
-	if (s.state.flags.kakugari)
-		await s.say("kiriko", "角刈りも、けっこう　似合ってたンゴ", B);
+	await s.say("kiriko", VARIANTS.botsuVoice(st), B);
 	s.face("player", "right");
 	s.face("follower:teto", "left");
 	await s.say("teto", "……で、「ええもん」って　なんだったのさ");
 	await s.say("kiriko", "たぶん……これンゴ");
 	await s.say("nanj", "次スレ　立てといたで。\n「蓄音キリコのうた　Part2」や");
+	// 外野席のおでかけを見逃したときだけ
+	const date = VARIANTS.nanjDate(st);
+	if (date) await s.say("nanj", date);
 	await s.say("teto", "……じゃあ、一曲いこうか。ボクと、君で");
 	await s.say("kiriko", "吾輩、歌うンゴ！");
-	await s.ending(); // スタッフロール → タイトルへ
+	// スタッフロール → まとめカード → おわり → タイトルへ
+	await s.ending({ summary: threadSummary(st) });
 };
 
 // ───────────────── マップ ─────────────────
@@ -298,7 +315,7 @@ const events: EventDef[] = [
 		2,
 		6,
 		SPR.j_kasa,
-		async (s) => J(s, "宿題、おわったで！", "夏休みキッズ番長"),
+		async (s) => J(s, VARIANTS.bancho(s.state), "夏休みキッズ番長"),
 		{
 			dir: "right",
 			when: clear,
@@ -309,7 +326,7 @@ const events: EventDef[] = [
 		10,
 		6,
 		SPR.j_black,
-		async (s) => J(s, "やっぱ　キリコは　神やわ", "テノヒラ監督"),
+		async (s) => J(s, VARIANTS.kantoku(s.state), "テノヒラ監督"),
 		{
 			dir: "left",
 			when: clear,
@@ -357,6 +374,19 @@ const events: EventDef[] = [
 		async (s) => J(s, "……保守しに　来た　だけや", "冷やかしJ民"),
 		{
 			dir: "up",
+			when: clear,
+		},
+	),
+	// 町の古参ニキ（bot1 と同じマス。bot1 は p_tut 以降出ない）
+	npc(
+		"end_kosan",
+		4,
+		9,
+		SPR.j_shinkan,
+		async (s) =>
+			J(s, VARIANTS.kosan(s.state) ?? "……ええもん、見れたわ", "古参ニキ"),
+		{
+			dir: "right",
 			when: clear,
 		},
 	),

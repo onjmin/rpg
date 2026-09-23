@@ -1,5 +1,6 @@
-// 章タイトルとエンディング（スタッフロール）。
+// 章タイトルとエンディング（スタッフロール → まとめカード → おわり）。
 
+import type { EndingSummary } from "../engine/defs";
 import { type Game, ResetToTitle } from "../engine/game";
 import { sleep } from "../engine/types";
 import { el, nextFrame } from "./dom";
@@ -30,7 +31,86 @@ export const chapterCard = async (
 	card.remove();
 };
 
-export const endingRoll = async (game: Game): Promise<void> => {
+/**
+ * 画面いっぱいの札を、待ち時間のあと A/B かタップで閉じるまで待つ。
+ * 札の中はスクロールできる（指を動かしたときはタップとみなさない）。上下キーでもスクロールする。
+ */
+const waitClose = (
+	game: Game,
+	box: HTMLElement,
+	delay: number,
+	scroller?: HTMLElement,
+): Promise<void> =>
+	new Promise<void>((resolve) => {
+		let ready = false;
+		let done = false;
+		const timer = setTimeout(() => {
+			ready = true;
+		}, delay);
+		let start: { x: number; y: number } | null = null;
+		const finish = () => {
+			if (!ready || done) return;
+			done = true;
+			clearTimeout(timer);
+			pop();
+			box.removeEventListener("pointerdown", down);
+			box.removeEventListener("pointerup", up);
+			resolve();
+		};
+		const down = (e: PointerEvent) => {
+			game.input.onAnyInput?.();
+			start = { x: e.clientX, y: e.clientY };
+		};
+		const up = (e: PointerEvent) => {
+			if (!start) return;
+			const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+			start = null;
+			if (moved < 10) finish();
+		};
+		box.addEventListener("pointerdown", down);
+		box.addEventListener("pointerup", up);
+		// 押しっぱなし（スタッフロールの早送り）の自動くり返しでは閉じない。スクロールは続ける
+		const pop = game.input.push((k, repeat) => {
+			if (k === "a" || k === "b") {
+				if (!repeat) finish();
+			} else if (scroller && (k === "up" || k === "down"))
+				scroller.scrollBy({ top: k === "up" ? -48 : 48 });
+		});
+	});
+
+/** スタッフロールのあとの「このスレの　まとめ」カード。 */
+const matomeCard = async (
+	game: Game,
+	summary: EndingSummary,
+): Promise<void> => {
+	const card = el("div", { class: "matome-card" }, [
+		el("div", { class: "matome-head", text: "このスレの　まとめ" }),
+	]);
+	for (const sec of summary.sections) {
+		const block = el("div", { class: "matome-sec" }, [
+			el("div", { class: "matome-title", text: sec.title }),
+		]);
+		for (const line of sec.lines)
+			block.appendChild(el("p", { class: "matome-line", text: line }));
+		card.appendChild(block);
+	}
+	const box = el("div", { class: "matome" }, [
+		card,
+		el("div", { class: "the-end-tap", text: "タップで　つぎへ" }),
+	]);
+	game.ui.appendChild(box);
+	await nextFrame();
+	box.classList.add("shown");
+	await waitClose(game, box, 1500, box);
+	box.classList.remove("shown");
+	await sleep(600);
+	box.remove();
+};
+
+export const endingRoll = async (
+	game: Game,
+	opt?: { summary?: EndingSummary },
+): Promise<void> => {
 	const { data } = game;
 	game.msg.close();
 	await game.fadeOut(1200);
@@ -61,6 +141,8 @@ export const endingRoll = async (game: Game): Promise<void> => {
 		if (k === "a") speed = Math.min(8, speed * 2);
 		if (k === "b") speed = 8;
 	});
+	// ロールが画面を覆うので、フィールドの代わりにロール自身でタップを受ける
+	roll.addEventListener("pointerdown", () => game.input.press("a"));
 	for (const a of inner.getAnimations()) {
 		const tick = () => {
 			a.playbackRate = speed;
@@ -69,8 +151,11 @@ export const endingRoll = async (game: Game): Promise<void> => {
 		tick();
 		await a.finished;
 	}
+	// ロール → まとめ → おわり の切りかえ（札のない間）も入力を握り、HUD の十字キーを出さない
+	const guard = game.input.push(() => {});
 	pop();
 	roll.remove();
+	if (opt?.summary?.sections.length) await matomeCard(game, opt.summary);
 	const end = el("div", { class: "the-end" }, [
 		el("div", { class: "the-end-title", text: "おわり" }),
 		el("div", { class: "the-end-sub", text: "あそんでくれて　ありがとう！" }),
@@ -79,15 +164,8 @@ export const endingRoll = async (game: Game): Promise<void> => {
 	game.ui.appendChild(end);
 	await nextFrame();
 	end.classList.add("shown");
-	await sleep(1500);
-	await new Promise<void>((resolve) => {
-		const p = game.input.push((k) => {
-			if (k === "a" || k === "b") {
-				p();
-				resolve();
-			}
-		});
-	});
+	await waitClose(game, end, 1500);
+	guard();
 	end.remove();
 	game.audio.bgm(null);
 	throw new ResetToTitle();

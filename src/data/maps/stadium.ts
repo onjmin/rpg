@@ -1,17 +1,30 @@
 // おんJスタジアム（第三章「やきう場のマスコット決定戦」）。設計書 §8-6・§11-5。
 // ナイターの球場。門の応援団長のクイズ → シンボル敵（任意）→ マウンドのテノヒラ監督（B3）→ 夜の町へ。
 // ランダムエンカウントはなし。
+// 自由度（scratchpad/freedom/spec.md）：シンボルに「たたかう／レスする／スルー」（F3-3）、
+// 監督は負けても進む（F4。3回で雨天コールド）、代打と名言その3を安価で記録（F1）、
+// なんJ民のデートの予告（F5）。
 
+import { bondOf } from "../../engine/bonds";
 import type {
+	EventDef,
 	GameState,
 	MapDef,
 	Script,
 	Story,
 	TileDef,
 } from "../../engine/defs";
+import {
+	ankaChoose,
+	BOSS_EXP,
+	bossFight,
+	MEIGEN,
+	meigenQuote,
+	symCount,
+} from "../freedom";
 import { chest, warp } from "../helpers";
 import { SPR } from "../sprites";
-import { phono, silent, symbol } from "../story";
+import { ks, phono, silent } from "../story";
 import { base, STADIUM, TOWN } from "../tiles";
 
 // ── タイル ──
@@ -81,6 +94,12 @@ const arrive: Script = async (s) => {
 		"nanj",
 		"グラウンドへは　バックネットの　門からや。\n応援団長が　見張っとるで",
 	);
+	// F5 取り逃しの予告（デートは アク禁 で行けなくなる。理由は「シーズンの終わり」で言う）
+	if (bondOf(s.state, "nanj") >= 3 && !s.flag("date_nanj"))
+		await s.say(
+			"nanj",
+			"……外野席で　見られるのも、\n今シーズンは　今夜で　しまいや",
+		);
 };
 
 // ── §8-6 門の「フェリスのお勉強」クイズ ──
@@ -103,21 +122,70 @@ const quiz: Script = async (s) => {
 	s.hide("gate_quiz"); // 門をあける（gate_quiz2 がコンコースに出る）
 };
 
+// ── F3-3 スタンドの声援（シンボル J民に「レスする」と、監督戦の前に届く） ──
+const cheer = async (s: Story): Promise<void> => {
+	const r = symCount(s.state, "res");
+	const d = r - Number(s.flag("cheer_n") ?? 0);
+	if (d <= 0) return;
+	s.set("cheer_n", r);
+	s.give("spray", d);
+	s.se("item");
+	await s.narrate(
+		`スタンドから　声援が　とどいた！\nのどスプレーを　${d}こ　もらった！`,
+	);
+};
+
+// ── F4 B3 の負けレス（1・2回目）。2回目は「雨」をそれとなく示す ──
+const loseB3 = async (s: Story, n: number): Promise<void> => {
+	if (n === 1) {
+		await s.narrate("「代打　凡退で　草」\n「まだ　9回裏や」");
+		await s.say("nanj", "監督の　手首、今日は　かたいで");
+	} else {
+		await s.narrate("「手のひら　返らんやんけ」\n「雨でも　ふらんかな」");
+		await s.say("feris", "……雨の　においが　する〜");
+	}
+};
+
+/** 名言チャレンジ その3 への なんJ民の返し（MEIGEN[2] の順）。 */
+const REACT3 = [
+	"それは　名言やなくて　宣言や",
+	"それ、監督の　持ちネタやんけ",
+	"腹　へっとるだけやろ",
+];
+
 // ── §8-6 B3 テノヒラ監督（監督・ピッチャーのどちらに話しても同じ） ──
 const kantoku: Script = async (s) => {
-	await j(s, "テノヒラ監督", "フェリスやんけ！　なにしに　来たんや！");
-	await s.say("feris", "試合を　見にきたよ〜");
+	if (s.flag("b3_met")) {
+		await j(s, "テノヒラ監督", "まだ　やるんか！");
+	} else {
+		s.set("b3_met");
+		await j(s, "テノヒラ監督", "フェリスやんけ！　なにしに　来たんや！");
+		await s.say("feris", "試合を　見にきたよ〜");
+	}
 	await j(
 		s,
 		"テノヒラ監督",
 		"マスコットの座は　渡さへんで！\n代打、そこの　ンゴの子！",
 	);
-	const d = await s.choose(["打つ", "見送る", "バント"]);
+	// 代打は毎回えらぶ（daida は最後の選択で上書き）
+	const d = await ankaChoose(s, "daida", ["打つ", "見送る", "バント"]);
 	if (d === 0) await s.say("kiriko", "吾輩、フルスイングするンゴ！");
 	else if (d === 1) await s.say("kiriko", "……選球眼には　自信が　ある");
 	else await s.say("kiriko", "囲碁で　いえば、手堅い一手");
-	if ((await s.battle("g_b3")) !== "win") return;
-	await j(s, "テノヒラ監督", "……やっぱ　フェリスは　神やわ");
+	await cheer(s);
+	const r = await bossFight(s, "b3", "g_b3", loseB3);
+	if (r === "rest") {
+		await j(s, "テノヒラ監督", "……ベンチで　待っとるで！");
+		return;
+	}
+	s.set("b3_how", r === "win" ? "win" : "lose");
+	if (r === "pass") {
+		// 3回負けた：雨天コールドで通してもらう（「勝った」とは書かない）
+		await s.narrate("ぽつ、ぽつ……\n雨が　ふってきた。");
+		await j(s, "テノヒラ監督", "……雨天コールドや。\nひきわけで　ええな");
+		await s.gainExp(BOSS_EXP.b3);
+		await j(s, "テノヒラ監督", "……フェリス、ずぶぬれでも\n神やわ");
+	} else await j(s, "テノヒラ監督", "……やっぱ　フェリスは　神やわ");
 	await s.say("roze", "手のひら、くるっくるアル");
 	await s.say("nanj", "監督の手首は　モーター式やからな");
 	await j(
@@ -137,14 +205,66 @@ const kantoku: Script = async (s) => {
 	s.set("b3");
 	s.se("item");
 	await s.narrate("蓄音機に　レスが　たまった！（850/1000）");
-	await s.say(
-		"kiriko",
-		"名言チャレンジ、その3。\n「この厚着は　脱がないンゴ。夏でもンゴ」",
+	// F1 名言チャレンジ その3（フェリスが その2 を引用）
+	await ks(s, "名言チャレンジ、その3。");
+	const q = meigenQuote(s.state, 1);
+	if (q) await s.say("feris", `「${q}」の　つぎは\nなにかな〜`);
+	const i = await ankaChoose(
+		s,
+		"meigen3",
+		MEIGEN[2].map((m) => m.label),
 	);
-	await s.say("nanj", "それは　名言やなくて　宣言や");
+	await ks(s, MEIGEN[2][i].line);
+	await s.say("nanj", REACT3[i]);
 	s.set("night");
 	await s.warp("town", 12, 9, "down"); // ここで終了。町の night_ev（第四章）が続く
 };
+
+/**
+ * F3-3 見えるシンボル J民（story.ts の symbol() の代わり）。
+ * たたかう＝今までどおり（勝つと消える）／レスする＝1往復して スタンドに回る（消える）／スルー＝何も起きない。
+ * どちらで越えたかを sym_<id> に "fight" / "res" で入れる。
+ */
+const symbolReply = (
+	id: string,
+	x: number,
+	y: number,
+	sprite: string,
+	group: string,
+	name: string,
+	line: string,
+	reply: string,
+	answer: string,
+): EventDef => ({
+	id,
+	x,
+	y,
+	sprite,
+	trigger: "talk",
+	run: async (s) => {
+		await j(s, name, line);
+		const c = await s.choose([">>1 たたかう", ">>2 レスする", "スルー"], {
+			cancel: 2,
+		});
+		if (c === 0) {
+			if ((await s.battle(group)) !== "win") return;
+			s.set(`sym_${id}`, "fight");
+			s.hide(id);
+		} else if (c === 1) {
+			await ks(s, reply);
+			await j(s, name, answer);
+			s.set(`sym_${id}`, "res");
+			s.hide(id);
+		} else await j(s, name, "……スルーかい。草");
+	},
+});
+
+/** 試合のあとの実況J民（代打の選び方で変わる）。 */
+const JIKKYO_DAIDA = [
+	"代打の　フルスイング、\n実況スレ　わいとったで",
+	"代打の　見送り、\n選球眼で　草",
+	"代打で　バントて。\n渋すぎて　草",
+];
 
 const scoreRun: Script = async (s) => {
 	await s.narrate(
@@ -188,9 +308,15 @@ export const stadium: MapDef = {
 			trigger: "talk",
 			when: day,
 			run: async (s) => {
-				if (s.flag("b3"))
-					await j(s, "名無し（3-3）", "ひきわけや！　ええ試合やった");
-				else
+				if (s.flag("b3")) {
+					const d = s.flag("daida");
+					await j(
+						s,
+						"名無し（3-3）",
+						(typeof d === "number" && JIKKYO_DAIDA[d]) ||
+							"ひきわけや！　ええ試合やった",
+					);
+				} else
 					await j(
 						s,
 						"名無し（3-2）",
@@ -236,42 +362,48 @@ export const stadium: MapDef = {
 			},
 		},
 
-		// ── グラウンド：見えるシンボル敵（任意。勝つと消える） ──
+		// ── グラウンド：見えるシンボル敵（任意。たたかうか、レスで返すと消える） ──
 		{
-			...symbol(
+			...symbolReply(
 				"sym1",
 				5,
 				4,
 				SPR.j_tights,
 				"g_std1",
-				"ワイの　守備範囲や！",
 				"ヤジJ民",
+				"ワイの　守備範囲や！",
+				"守備、見せてほしいンゴ",
+				"……しゃあないな。\nスタンドから　声　出したるわ",
 			),
 			dir: "right",
 			when: day,
 		},
 		{
-			...symbol(
+			...symbolReply(
 				"sym2",
 				16,
 				5,
 				SPR.j_hakkyo,
 				"g_std2",
-				"負けや負けや！",
 				"負けムードJ民",
+				"負けや負けや！",
+				"まだ　9回裏ンゴ",
+				"……せやな。\n最後まで　見たるわ",
 			),
 			dir: "left",
 			when: day,
 		},
 		{
-			...symbol(
+			...symbolReply(
 				"sym3",
 				15,
 				10,
 				SPR.j_sen,
 				"g_std3",
-				"応援団の　意地、見せたる！",
 				"応援団J民",
+				"応援団の　意地、見せたる！",
+				"その声、蓄音機に　ためたい",
+				"……ほな、でっかい　声で\nいったるで！",
 			),
 			dir: "left",
 			when: day,

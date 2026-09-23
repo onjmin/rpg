@@ -1,8 +1,17 @@
-// スレ街道（第一章）。設計書 §8-3・§8-4・§11-3。
-// 町の北口から北へ。屋台でロゼが加入し、橋の前の夏休みキッズ番長（B1）を倒すと
-// 北の洞窟（過去ログ倉庫）へ行けるようになる。川では釣り（任意）。
+// スレ街道（第一章）。設計書 §8-3・§8-4・§11-3、自由度 spec §4 F2・F4・F1。
+// 町の北口から北へ。屋台でロゼが加入し、橋の前の夏休みキッズ番長（B1）を
+// 越えると北の洞窟（過去ログ倉庫）へ行けるようになる。越え方は3通り
+// （勝負／宿題の絵日記を手伝う／レスで返す）。川では釣り（任意。宿題の魚もここ）。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
+import {
+	addLose,
+	ankaChoose,
+	BOSS_EXP,
+	bossFight,
+	MEIGEN,
+	replyAnka,
+} from "../freedom";
 import { chest, npc, warp, warpLine } from "../helpers";
 import { SPR } from "../sprites";
 import { ks, phono } from "../story";
@@ -32,13 +41,152 @@ const J = (s: Story, name: string, text: string) =>
 	s.say("nanj", text, { name });
 /** J民以外の人（名前欄だけ）。 */
 const N = (s: Story, name: string, text: string) => s.say(null, text, { name });
+/** 宿題（絵日記）に使う魚（だいじなもの）。技の wakasagi と id を分ける。 */
+const WAKASAGI = "hw_wakasagi";
+
+// ───────────────── 番長（B1）の越え方 ─────────────────
+// 勝負／宿題（絵日記）／レスで返す の3通り。負けても3回で通してもらえる。
+// どの越え方でも最後は finishB1 を通り、b1・350レス・名言チャレンジその1 に進む。
+
+type B1How = "fight" | "shukudai" | "neta" | "lose";
+
+/** 見物のレス（2行目。1行目は共通）。 */
+const GALLERY: Record<B1How, string> = {
+	fight: "「ええ試合やった」「キリコがんばれ」",
+	shukudai: "「絵日記で　草」「キリコがんばれ」",
+	neta: "「レスで　通ったで」「キリコがんばれ」",
+	lose: "「通してもろて　草」「キリコがんばれ」",
+};
+
+/** 名言チャレンジ その1 へのロゼの返し（MEIGEN[0] と同じ順）。 */
+const REACT1 = [
+	"それは　ただの　欲アル",
+	"……かむアル。\nマーボーは　かむものアル",
+	"それは　番長の　せりふアル",
+];
+
+/** 番長を越えたあとの共通処理（越え方・勝ち負けにかかわらず必ずここを通る）。 */
+const finishB1 = async (s: Story, how: B1How): Promise<void> => {
+	s.set("b1_how", how);
+	// 番長と子分が走り去る（b1 を立てて when を評価し直す）
+	s.set("b1");
+	s.se("flee");
+	s.show("bancho");
+	await s.narrate(
+		`見物の　なんJ民が　つぎつぎに　かきこんだ。\n${GALLERY[how]}`,
+	);
+	s.set("res", 350);
+	s.se("item");
+	await s.narrate("蓄音機に　レスが　たまった！（350/1000）");
+	// 名言チャレンジ その1
+	await ks(s, "名言チャレンジ、その1。\n……安価で　決めるンゴ");
+	const i = await ankaChoose(
+		s,
+		"meigen1",
+		MEIGEN[0].map((m) => m.label),
+	);
+	await ks(s, MEIGEN[0][i].line);
+	await s.say("roze", REACT1[i]);
+};
+
+/** B1 の負けレス（1・2回目）と仲間の一言。2回目は宿題の道をそれとなく示す。 */
+const loseB1 = async (s: Story, n: number): Promise<void> => {
+	if (n === 1) {
+		await s.narrate("「番長に　負けとるやん　草」\n「ドンマイ、次　いけるで」");
+		await s.say("roze", "……宿題より　手ごわいアル");
+		return;
+	}
+	await s.narrate("「また　負けとる　草」\n「宿題、手伝ったら　ええやん」");
+	await s.say("nanj", "まだ　スレは　落ちとらんで");
+};
+
+/** 勝負（負けても進む。3回負けると番長のほうが折れる）。 */
+const fightB1 = async (s: Story): Promise<void> => {
+	const r = await bossFight(s, "b1", "g_b1", loseB1);
+	if (r === "rest") {
+		await J(s, BANCHO, "いつでも　来いや！");
+		return;
+	}
+	if (r === "pass") {
+		await J(s, BANCHO, "……あ、宿題の　時間や。\nしゃあない、通ってええで");
+		await s.gainExp(BOSS_EXP.b1);
+		await finishB1(s, "lose");
+		return;
+	}
+	await J(s, BANCHO, "あかん、明日　登校日やんけ！\nほな、また……");
+	await finishB1(s, "fight");
+};
+
+/** 宿題（絵日記）が書けた。 */
+const finishHomework = async (s: Story): Promise<void> => {
+	await s.narrate("「きょうは　キリコと\n魚を　つりました」");
+	await J(s, BANCHO, "ほな、帰って　清書するわ！\n通ってええで");
+	await s.gainExp(BOSS_EXP.b1);
+	await finishB1(s, "shukudai");
+};
+
+/** 宿題を手伝う（もう釣っていれば、その場で書ける）。 */
+const startHomework = async (s: Story): Promise<void> => {
+	await J(s, BANCHO, "……絵日記や。\n書くこと　あらへん");
+	await J(s, BANCHO, "なんか　おもろいこと　あったら\n書けるんやけどな");
+	if (Number(s.flag("fish_n") ?? 0) >= 1) {
+		await ks(s, "魚なら、さっき　つったンゴ");
+		await finishHomework(s);
+		return;
+	}
+	await s.say("roze", "……川で　魚でも　つってくるアル");
+	s.set("hw_help");
+};
+
+/** 宿題の再訪（hw_help のあと）。 */
+const homeworkAgain = async (s: Story): Promise<void> => {
+	if (s.flag("hw_fish")) {
+		await J(s, BANCHO, "おっ、ワカサギやんけ！\n……よっしゃ、書けた");
+		s.take(WAKASAGI);
+		await finishHomework(s);
+		return;
+	}
+	await J(s, BANCHO, "魚、まだか？\n絵日記、まっしろやねん");
+	const c = await s.choose(["つってくる", "やっぱり　勝負する"], { cancel: 0 });
+	if (c === 1) await fightB1(s);
+};
+
+/** レスで返す（第一章の「どう返す？」。新参への冷やかし）。 */
+const replyB1 = async (s: Story): Promise<void> => {
+	await J(s, BANCHO, "ボカロとか　だっさ。\nだれが　聞くねん");
+	const r = await replyAnka(s, "reply_b1", [
+		{ reply: "uke", label: "まだ　だれも　知らない" },
+		{ reply: "kaesu", label: "聞いてから　言うンゴ！" },
+		{ reply: "neta", label: "ファン1号に　する" },
+	]);
+	if (r === "uke") {
+		await ks(s, "……まだ、だれも　吾輩を\n知らないンゴ。ほんとに");
+		await J(s, BANCHO, "……なんや、調子　くるうわ");
+		await J(s, BANCHO, "……ほな、宿題　手伝って\nくれへん？");
+		await startHomework(s);
+		return;
+	}
+	if (r === "kaesu") {
+		await ks(
+			s,
+			"聞いてから　言うンゴ！\n吾輩の　うた、まだ　だれも　聞いてない",
+		);
+		await J(s, BANCHO, "言うやんけ！　ほな　勝負や！");
+		await fightB1(s);
+		return;
+	}
+	await ks(s, "じゃあ、番長を　吾輩の\nファン1号に　するンゴ");
+	await J(s, BANCHO, "……草。おもろいやんけ。\n通ってええで");
+	await s.gainExp(BOSS_EXP.b1);
+	await finishB1(s, "neta");
+};
 
 // ───────────────── イベント ─────────────────
 
 /**
  * §8-3 ロゼの加入（屋台の客）。rival-joins §2。
  * 名前安価で「束音ロゼ」を名乗りかけた新人を腕だめし → 勝つと和解して加入。
- * 負けたら（canLose。エンジンが全回復）「もう一度」か「ひと休み」を選ぶ。
+ * 負けたら（canLose。エンジンが全回復。lose_n に数える）「もう一度」か「ひと休み」を選ぶ。
  * ひと休みなら何も立てずに終わり、もう一度話すと最初から。
  */
 const roze: EventDef = {
@@ -69,6 +217,7 @@ const roze: EventDef = {
 		await s.say("nanj", "先輩の　かわいがりや！　気ぃつけや");
 		for (;;) {
 			if ((await s.battle("g_rival_roze", { canLose: true })) === "win") break;
+			addLose(s);
 			await s.say(
 				"roze",
 				"……まだ　声が　かたいアル。\nもう一度、聞かせるアル？",
@@ -105,7 +254,11 @@ const roze: EventDef = {
 	},
 };
 
-/** §8-4 B1 夏休みキッズ番長（橋の前）。 */
+/**
+ * §8-4 B1 夏休みキッズ番長（橋の前）。自由度 spec §4 F2。
+ * 初回はロゼとのやりとりのあと、2回目からは短い前置きのあとに越え方を選ぶ。
+ * 宿題を引き受けたあと（hw_help）は、魚を見せに来たかどうかだけ聞く。
+ */
 const bancho: EventDef = {
 	id: "bancho",
 	x: 12,
@@ -115,34 +268,37 @@ const bancho: EventDef = {
 	trigger: "talk",
 	when: (st) => !st.flags.b1,
 	run: async (s) => {
-		await J(
-			s,
-			BANCHO,
-			"ここは　ワイらの　ナワバリや！\n通りたかったら　勝負せえ！",
-		);
-		if (!s.flag("roze_in")) {
-			await s.say(
-				"nanj",
-				"……さすがに　2人は　きついで。\n屋台で　ひと休み　してこか",
-			);
+		if (s.flag("hw_help")) {
+			await homeworkAgain(s);
 			return;
 		}
-		await s.say("roze", "宿題は　おわったアルか？");
-		await J(s, BANCHO, "……あとで　やる！　いくで！");
-		if ((await s.battle("g_b1")) !== "win") return;
-		await J(s, BANCHO, "あかん、明日　登校日やんけ！\nほな、また……");
-		// 番長と子分が走り去る（b1 を立てて when を評価し直す）
-		s.set("b1");
-		s.se("flee");
-		s.show("bancho");
-		await s.narrate(
-			"見物の　なんJ民が　つぎつぎに　かきこんだ。\n「ええ試合やった」「キリコがんばれ」",
-		);
-		s.set("res", 350);
-		s.se("item");
-		await s.narrate("蓄音機に　レスが　たまった！（350/1000）");
-		await ks(s, "名言チャレンジ、その1。\n「釣れた魚は、ぜんぶ　吾輩のもの」");
-		await s.say("roze", "それは　ただの　欲アル");
+		if (!s.flag("b1_met")) {
+			await J(
+				s,
+				BANCHO,
+				"ここは　ワイらの　ナワバリや！\n通りたかったら　勝負せえ！",
+			);
+			if (!s.flag("roze_in")) {
+				await s.say(
+					"nanj",
+					"……さすがに　2人は　きついで。\n屋台で　ひと休み　してこか",
+				);
+				return;
+			}
+			await s.say("roze", "宿題は　おわったアルか？");
+			await J(s, BANCHO, "……あとで　やる！");
+			s.set("b1_met");
+		} else {
+			await J(s, BANCHO, "また　来たんか！\n通りたかったら　勝負せえ！");
+		}
+		const c = await s.choose([
+			">>1 勝負する",
+			">>2 宿題を　手伝う",
+			">>3 レスで　かえす",
+		]);
+		if (c === 0) await fightB1(s);
+		else if (c === 1) await startHomework(s);
+		else await replyB1(s);
 	},
 };
 
@@ -178,7 +334,10 @@ const yatai = npc(
 	{ dir: "down" },
 );
 
-/** 釣り（川の (4,7)。(4,8) から上を向いて調べる）。最大3回。 */
+/**
+ * 釣り（川の (4,7)。(4,8) から上を向いて調べる）。最大3回。
+ * 番長の宿題を引き受けていれば（hw_help）、つれたときに宿題のワカサギももらえる。
+ */
 const fish: EventDef = {
 	id: "fish",
 	x: 4,
@@ -187,7 +346,10 @@ const fish: EventDef = {
 	fixedDir: true,
 	run: async (s) => {
 		const done = Number(s.flag("fish_n") ?? 0);
-		if (done >= 3) {
+		// 宿題の魚がいる（引き受けて、まだつっていない。番長がもう通したあとは要らない）
+		const needHw = !!s.flag("hw_help") && !s.flag("hw_fish") && !s.flag("b1");
+		// 宿題の魚がまだなら、3回つったあとでも　つれる（詰み防止。ふつうは起きない）
+		if (done >= 3 && !needHw) {
 			await ks(s, "きょうは　もう　釣れないンゴ");
 			return;
 		}
@@ -217,6 +379,16 @@ const fish: EventDef = {
 			s.give("mabo");
 			await s.narrate("なぜか　マーボーが　つれた");
 			if (s.flag("roze_in")) await s.say("roze", "……いただくアル");
+		}
+		// 番長の宿題（絵日記）に見せる魚。1匹目は上の「ワカサギと　いっしょに…」の魚を指す
+		if (needHw) {
+			s.give(WAKASAGI);
+			s.set("hw_fish");
+			await s.narrate(
+				n === 1
+					? "その　ワカサギを　番長に\n見せに　いこう！"
+					: "番長に　見せる　ワカサギも\nつれた！",
+			);
 		}
 	},
 };
