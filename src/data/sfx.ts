@@ -49,7 +49,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		wipeout: "rpgen:rEaCCP", // [ﾄﾞﾗｸｴ]全滅
 		inn: "rpgen:L5Npni", // ﾄﾞﾗｸｴ宿屋
 		save: "rpgen:jVOw87", // [自然癒]セーブ
-		chapter: "rpgen:oFwlq5",
+		/** 章の切り替わり（システム音らしいチャイム。前の素材は「エンディング」と喋る声だった）。 */
+		chapter: "rpgen:thHyyN", // [ツクール]チャイム2
 	},
 };
 

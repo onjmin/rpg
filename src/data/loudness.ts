@@ -155,6 +155,6 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	wipeout: ["rEaCCP", -10.7, -5.8, -11.3, 0.272, 560, 6690, 1500], // jingle → -22.0
 	inn: ["L5Npni", -13, -5, -9, 0.355, 10, 3290, 1500], // jingle → -22.0
 	save: ["jVOw87", -10.4, -0.3, -11.6, 0.263, 90, 3730, 1100], // jingle → -22.0
-	chapter: ["oFwlq5", -6.8, 0.2, -15.2, 0.174, 0, 1370, 1140], // jingle → -22.0
+	chapter: ["thHyyN", -7.7, -2, -14.3, 0.193, 50, 1220, 410], // jingle → -22.0
 };
 // </loudness:se>
