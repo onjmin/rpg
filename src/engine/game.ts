@@ -581,10 +581,11 @@ export class Game {
 		void this.runEvent(target.def);
 	}
 
-	private onTap(clientX: number, clientY: number): void {
+	/** x・y は canvas の左上から数えた CSS 画素。 */
+	private onTap(x: number, y: number): void {
 		const field = this.field;
 		if (!field || !this.idle) return;
-		const p = this.screen.cssToSource(clientX, clientY);
+		const p = this.screen.cssToSource(x, y);
 		const tx = Math.floor((p.x + this.camX) / TILE);
 		const ty = Math.floor((p.y + this.camY) / TILE);
 		if (!field.inBounds(tx, ty)) return;

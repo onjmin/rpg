@@ -14,9 +14,26 @@
 	--safe-t: env(safe-area-inset-top, 0px);
 	--safe-l: env(safe-area-inset-left, 0px);
 	--safe-r: env(safe-area-inset-right, 0px);
+	/*
+	 * 画面の「いま見えている箱」（ブラウザのバーの裏は含まない）。
+	 * engine/viewport.ts が visualViewport で実測して px で入れ直す。
+	 * ここの値はその前・JS が動かないときの控え。100vh はバーが引っこんだときの
+	 * 大きい画面なので、バーの出ている小さいほう（svh）を使う
+	 */
+	--app-x: 0px;
+	--app-y: 0px;
+	--app-w: 100vw;
+	--app-h: 100vh;
 	--font:
 		"DotGothic16", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic",
 		sans-serif;
+}
+
+@supports (height: 100svh) {
+	:root {
+		--app-w: 100svw;
+		--app-h: 100svh;
+	}
 }
 
 * {
@@ -27,7 +44,8 @@
 html,
 body {
 	margin: 0;
-	height: 100%;
+	/* ページ自体を見えている高さに切りつめる（はみ出しでバーが出入りするのを防ぐ） */
+	height: var(--app-h);
 	background: var(--bg);
 	color: var(--text);
 	font-family: var(--font);
@@ -39,15 +57,35 @@ body {
 	-webkit-touch-callout: none;
 }
 
+/*
+ * iOS の Safari は overflow: hidden だけではページが指で動いてしまうことがある。
+ * ページが 1px でも画面より高いと、その分だけずれて上がバーの裏に入りタッチできなくなるので、
+ * ページ自体を画面に貼りつけて動かせなくする
+ */
+body {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+}
+
 button {
 	font-family: inherit;
 	color: inherit;
 	touch-action: manipulation;
 }
 
+/*
+ * ゲームの中身は必ず「見えている箱」の中だけに置く。
+ * inset: 0 だと position: fixed の基準がバーの裏まで広がる画面があり、
+ * そこに乗った右上の 🔇・☰ が隠れてタッチできなくなる
+ */
 #app {
 	position: fixed;
-	inset: 0;
+	left: var(--app-x);
+	top: var(--app-y);
+	width: var(--app-w);
+	height: var(--app-h);
 	overflow: hidden;
 }
 
@@ -120,7 +158,7 @@ body.shake #app {
 	max-width: 760px;
 	margin: 0 auto;
 	padding: 14px 10px 22px;
-	font-size: clamp(13px, calc((100vw - 34px) / 22.4), 17px);
+	font-size: clamp(13px, calc((var(--app-w) - 34px) / 22.4), 17px);
 	line-height: 1.65;
 	display: none;
 	z-index: 22;
@@ -188,7 +226,7 @@ body.shake #app {
 
 /* 立ち絵の枠。下の 40px はメッセージ窓の裏に潜らせて、上半身の切り口を隠す */
 .portrait-layer {
-	--layer-h: min(50vh, 440px);
+	--layer-h: min(var(--app-h) * 0.5, 440px);
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -201,9 +239,9 @@ body.shake #app {
 }
 
 .portrait {
-	--slot-w: min(46vw, 340px);
-	/* 左右の枠のあいだの空きの半分（レイヤーの幅は min(100vw, 900px)、枠は両端から 2%） */
-	--gap-half: max(0px, min(100vw, 900px) * 0.48 - var(--slot-w));
+	--slot-w: min(var(--app-w) * 0.46, 340px);
+	/* 左右の枠のあいだの空きの半分（レイヤーの幅は min(--app-w, 900px)、枠は両端から 2%） */
+	--gap-half: max(0px, min(var(--app-w), 900px) * 0.48 - var(--slot-w));
 	position: absolute;
 	bottom: -6px;
 	width: var(--slot-w);
@@ -366,7 +404,7 @@ body.shake #app {
 	bottom: calc(142px + var(--safe-b));
 	min-width: 180px;
 	/* 選択肢は全角14字まで（validate の MAX_CHOICE）。360px 幅の端末でも1行に収まるよう、左の余白まで使ってよい */
-	max-width: calc(100vw - 28px - var(--safe-l) - var(--safe-r));
+	max-width: calc(var(--app-w) - 28px - var(--safe-l) - var(--safe-r));
 	padding: 8px;
 	display: flex;
 	flex-direction: column;
@@ -394,7 +432,7 @@ body.shake #app {
 
 /* 320px 幅でも全角14字が1行に収まるよう、狭い画面では少し小さくする */
 .choice-item {
-	font-size: clamp(14px, calc((100vw - 90px) / 15), 17px);
+	font-size: clamp(14px, calc((var(--app-w) - 90px) / 15), 17px);
 }
 
 .choice-item.cur,
@@ -475,7 +513,7 @@ body.shake #app {
 	position: absolute;
 	top: calc(64px + var(--safe-t));
 	right: calc(12px + var(--safe-r));
-	width: min(360px, calc(100vw - 24px));
+	width: min(360px, calc(var(--app-w) - 24px));
 	max-height: calc(100% - 90px - var(--safe-t) - var(--safe-b));
 	overflow-y: auto;
 	padding: 10px;
@@ -806,7 +844,7 @@ body.shake #app {
 }
 
 .chapter-title {
-	font-size: clamp(18px, 6.2vw, 38px);
+	font-size: clamp(18px, var(--app-w) * 0.062, 38px);
 	word-break: keep-all;
 	text-shadow: 0 0 12px rgba(160, 120, 255, 0.8);
 }
@@ -1096,15 +1134,14 @@ body.shake #app {
 	font-size: 11px;
 }
 
-/* 幅のせまい端末（〜340px）でも戦闘の3人を1列に収める */
-@media (max-width: 340px) {
-	.member {
-		min-width: 0;
-		padding: 6px 5px;
-	}
-	.m-name {
-		font-size: 13px;
-	}
+/* 幅のせまい端末（〜340px）でも戦闘の3人を1列に収める。
+   .narrow は viewport.ts が付ける（@media だとバーの裏まで数えた幅で決まってしまう） */
+.narrow .member {
+	min-width: 0;
+	padding: 6px 5px;
+}
+.narrow .m-name {
+	font-size: 13px;
 }
 
 .m-bar {
@@ -1261,7 +1298,7 @@ body.shake #app {
 .title-logo {
 	margin: 0;
 	font-weight: normal;
-	font-size: clamp(30px, 10.5vw, 58px);
+	font-size: clamp(30px, var(--app-w) * 0.105, 58px);
 	word-break: keep-all;
 	line-height: 1.2;
 	color: #fff4c9;
@@ -1280,7 +1317,7 @@ body.shake #app {
 
 .title-walkers {
 	width: calc(80px * 4);
-	max-width: 80vw;
+	max-width: calc(var(--app-w) * 0.8);
 	image-rendering: pixelated;
 	aspect-ratio: 4 / 1;
 	height: auto;
@@ -1290,7 +1327,7 @@ body.shake #app {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	width: min(280px, 80vw);
+	width: min(280px, var(--app-w) * 0.8);
 }
 
 .title-btn {
@@ -1424,7 +1461,7 @@ body.shake #app {
 	background: var(--win-bg);
 	text-align: left;
 	/* 狭い画面でも全角22字が1行に収まるように縮める（外と内の余白・枠で 66px） */
-	font-size: min(14px, calc((100vw - 66px) / 22));
+	font-size: min(14px, calc((var(--app-w) - 66px) / 22));
 	line-height: 1.7;
 }
 
@@ -1449,88 +1486,85 @@ body.shake #app {
 	overflow-wrap: anywhere;
 }
 
-/* 横持ちのスマホ：2つのセクションを横に並べて、縦にはみ出しにくくする */
-@media (orientation: landscape) and (max-height: 520px) {
-	.matome {
-		gap: 8px;
-		/* 右上の 🔇・☰（.top-btns。#ui より手前の .hud にある。上から 10px＋44px）に重ならない */
-		padding-top: calc(58px + var(--safe-t));
-		padding-bottom: calc(10px + var(--safe-b));
-	}
-	.matome-card {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr));
-		column-gap: 20px;
-		row-gap: 8px;
-		max-width: calc(44em + 52px);
-		font-size: 13px;
-		line-height: 1.55;
-	}
-	.matome-head {
-		grid-column: 1 / -1;
-		margin-bottom: 0;
-	}
-	.matome-sec + .matome-sec {
-		margin-top: 0;
-	}
-	.matome .the-end-tap {
-		margin-top: 0;
-	}
+/* 横持ちのスマホ：2つのセクションを横に並べて、縦にはみ出しにくくする。
+   .short-landscape は viewport.ts が付ける（@media だとバーの裏まで数えた高さで決まってしまう） */
+.short-landscape .matome {
+	gap: 8px;
+	/* 右上の 🔇・☰（.top-btns。#ui より手前の .hud にある。上から 10px＋44px）に重ならない */
+	padding-top: calc(58px + var(--safe-t));
+	padding-bottom: calc(10px + var(--safe-b));
+}
+.short-landscape .matome-card {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr));
+	column-gap: 20px;
+	row-gap: 8px;
+	max-width: calc(44em + 52px);
+	font-size: 13px;
+	line-height: 1.55;
+}
+.short-landscape .matome-head {
+	grid-column: 1 / -1;
+	margin-bottom: 0;
+}
+.short-landscape .matome-sec + .matome-sec {
+	margin-top: 0;
+}
+.short-landscape .matome .the-end-tap {
+	margin-top: 0;
 }
 
 /* ───────── 横持ち・大きい画面 ───────── */
 
-@media (orientation: landscape) and (max-height: 520px) {
-	.msg {
-		left: 170px;
-		right: 180px;
-		min-height: 96px;
-		font-size: 15px;
-		padding: 10px 14px 18px;
-	}
-	.portrait-layer {
-		--layer-h: 66vh;
-		bottom: calc(96px + 12px - 30px);
-	}
-	/*
-	 * 戦闘：左に敵・文・コマンド、右になかま（2人ずつ並べる）。
-	 * なかまを縦に1列に積むと 3人でもコマンドが画面の下へ押し出されるので、右の列は高さいっぱいを使う
-	 */
-	.battle {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) min(36%, 360px);
-		grid-template-rows: minmax(0, 1fr) auto auto;
-		grid-template-areas:
-			"enemy party"
-			"log party"
-			"cmd party";
-		column-gap: 8px;
-	}
-	.enemy-row {
-		grid-area: enemy;
-		min-height: 0;
-		padding-top: 0;
-	}
-	/* 右上の 🔇・☰（.top-btns。上から 10px＋44px）の下から並べる */
-	.party-row {
-		grid-area: party;
-		align-content: center;
-		margin: 0;
-		padding-top: 50px;
-	}
-	.member {
-		flex-basis: 40%;
-	}
-	.battle-log {
-		grid-area: log;
-		min-height: 50px;
-	}
-	.battle-cmd {
-		grid-area: cmd;
-		grid-template-columns: repeat(3, 1fr);
-	}
-	.battle-cmd.list {
-		grid-template-columns: repeat(2, 1fr);
-		max-height: 48vh;
-	}
+.short-landscape .msg {
+	left: 170px;
+	right: 180px;
+	min-height: 96px;
+	font-size: 15px;
+	padding: 10px 14px 18px;
+}
+.short-landscape .portrait-layer {
+	--layer-h: calc(var(--app-h) * 0.66);
+	bottom: calc(96px + 12px - 30px);
+}
+/*
+ * 戦闘：左に敵・文・コマンド、右になかま（2人ずつ並べる）。
+ * なかまを縦に1列に積むと 3人でもコマンドが画面の下へ押し出されるので、右の列は高さいっぱいを使う
+ */
+.short-landscape .battle {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) min(36%, 360px);
+	grid-template-rows: minmax(0, 1fr) auto auto;
+	grid-template-areas:
+		"enemy party"
+		"log party"
+		"cmd party";
+	column-gap: 8px;
+}
+.short-landscape .enemy-row {
+	grid-area: enemy;
+	min-height: 0;
+	padding-top: 0;
+}
+/* 右上の 🔇・☰（.top-btns。上から 10px＋44px）の下から並べる */
+.short-landscape .party-row {
+	grid-area: party;
+	align-content: center;
+	margin: 0;
+	padding-top: 50px;
+}
+.short-landscape .member {
+	flex-basis: 40%;
+}
+.short-landscape .battle-log {
+	grid-area: log;
+	min-height: 50px;
+}
+.short-landscape .battle-cmd {
+	grid-area: cmd;
+	grid-template-columns: repeat(3, 1fr);
+}
+.short-landscape .battle-cmd.list {
+	grid-template-columns: repeat(2, 1fr);
+	max-height: calc(var(--app-h) * 0.48);
 }

@@ -1,10 +1,12 @@
 // 画面（canvas）の大きさと拡大率を管理する。
 //
 // ドット絵をにじませないため、1ソース画素 = 整数個のデバイス画素 で描く。
-// canvas は画面全体を覆い、画面の短辺に 11 マス前後が入る拡大率を選ぶ。
+// canvas は「見えている箱」（viewport.ts。ブラウザのバーの裏は除く）全体を覆い、
+// その短辺に 11 マス前後が入る拡大率を選ぶ。
 // 描画側はソース画素の座標系（setTransform 済み）でそのまま描けばよい。
 
 import { TILE } from "./types";
+import { onViewportChange, viewport } from "./viewport";
 
 /** 画面の短辺に入れたいマス数の目安。 */
 const TILES_ON_SHORT_SIDE = 11;
@@ -29,13 +31,12 @@ export class Screen {
 		if (!ctx) throw new Error("canvas 2D が使えません");
 		this.ctx = ctx;
 		this.resize();
-		window.addEventListener("resize", () => this.resize());
-		window.visualViewport?.addEventListener("resize", () => this.resize());
+		onViewportChange(() => this.resize());
 	}
 
 	resize(): void {
-		const cssW = window.innerWidth;
-		const cssH = window.innerHeight;
+		const cssW = viewport.w || window.innerWidth;
+		const cssH = viewport.h || window.innerHeight;
 		this.dpr = window.devicePixelRatio || 1;
 		const devW = Math.round(cssW * this.dpr);
 		const devH = Math.round(cssH * this.dpr);
@@ -59,7 +60,7 @@ export class Screen {
 		return ctx;
 	}
 
-	/** CSS 画素（clientX/Y）→ ソース画素。 */
+	/** canvas の左上から数えた CSS 画素 → ソース画素。 */
 	cssToSource(x: number, y: number): { x: number; y: number } {
 		const f = this.dpr / this.scale;
 		return { x: x * f, y: y * f };

@@ -29,6 +29,7 @@ import {
 import { settings } from "../engine/settings";
 import { isWalkRef } from "../engine/sprite";
 import { sleep, TILE } from "../engine/types";
+import { viewport } from "../engine/viewport";
 import { el, nextFrame } from "./dom";
 import { itemDesc } from "./itemText";
 import { keepInView, onTap } from "./menu";
@@ -276,10 +277,7 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	// 画面の短辺に合わせて拡大（スマホ縦で 4 倍前後、ボスは 1.5 倍）
 	const base = Math.max(
 		3,
-		Math.min(
-			9,
-			Math.round(Math.min(window.innerWidth, window.innerHeight) / 95),
-		),
+		Math.min(9, Math.round(Math.min(viewport.w, viewport.h) / 95)),
 	);
 	/** 敵を1体つくって列の後ろに並べる（はじめの顔ぶれと、召喚で使う）。 */
 	const spawn = (id: string, name: string): Fighter => {

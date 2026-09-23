@@ -4,6 +4,7 @@ import type { EndingSummary } from "../engine/defs";
 import { type Game, ResetToTitle } from "../engine/game";
 import { writeSave } from "../engine/save";
 import { sleep } from "../engine/types";
+import { viewport } from "../engine/viewport";
 import { el, nextFrame } from "./dom";
 
 export const chapterCard = async (
@@ -127,11 +128,11 @@ export const endingRoll = async (
 	roll.appendChild(inner);
 	game.ui.appendChild(roll);
 	await nextFrame();
-	const height = inner.scrollHeight + window.innerHeight;
+	const height = inner.scrollHeight + viewport.h;
 	const ms = Math.max(30000, height * 28);
 	inner.animate(
 		[
-			{ transform: `translateY(${window.innerHeight}px)` },
+			{ transform: `translateY(${viewport.h}px)` },
 			{ transform: `translateY(${-inner.scrollHeight}px)` },
 		],
 		{ duration: ms, easing: "linear", fill: "forwards" },

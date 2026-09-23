@@ -35,8 +35,8 @@ export class Input {
 	private held: { dir: Dir; source: string }[] = [];
 	private handlers: Handler[] = [];
 	private fieldQueue: Key[] = [];
-	/** フィールドでのタップ（ソース画素ではなく CSS 画素）。 */
-	onFieldTap: ((clientX: number, clientY: number) => void) | null = null;
+	/** フィールドでのタップ（ソース画素ではなく、canvas の左上から数えた CSS 画素）。 */
+	onFieldTap: ((x: number, y: number) => void) | null = null;
 	/** 何かしら入力があったとき（オーディオのアンロック用）。 */
 	onAnyInput: (() => void) | null = null;
 
@@ -186,7 +186,10 @@ export class Input {
 				this.press("a");
 				return;
 			}
-			this.onFieldTap?.(e.clientX, e.clientY);
+			// canvas は画面の左上とはかぎらない（ブラウザのバーのぶんだけ下にずれる）ので、
+			// canvas の枠を基準に数え直す
+			const r = el.getBoundingClientRect();
+			this.onFieldTap?.(e.clientX - r.left, e.clientY - r.top);
 		});
 	}
 }
