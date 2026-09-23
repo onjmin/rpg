@@ -8,8 +8,16 @@
 // - 向き: 絵の向き（facing。既定は右向き）と立つ側が合わないときは左右反転して、中央を向かせる。
 // - 大きさ: 透明な余白を切り詰めてから枠いっぱい（下端そろえ）に収める。キャンバスの大きさは自由。
 // - 立ち位置: いつもの側がほかの話し手でふさがっていたら、空いている側（無ければ長く話していない側）へ回す。
+//
+// 読み上げがあるときは、名前と立ち絵はすぐ出し、文字送りは声が鳴り始めるまで待たせる
+// （VOICE_WAIT_MAX_MS を過ぎたら待たずに出し始め、声は遅れて鳴るまま）。
+// 声と揃えるのは出だしだけ。そのあとは設定の文字送りの速さを守り、声が長ければ少し遅くするだけ
+// （設定の VOICE_PACE_MAX＝2倍まで）。声は1文字あたり設定よりずっと遅いので、短いセリフは声の
+// 終わりごろに出きるが、ふつうの長さのセリフは声の半分ほどで出きる（読む速さはプレイヤーの設定が先）。
+// 待たせるのは GameAudio.speak が started を返したときだけ（入っている dtm が対応しているとき）。
 
 import { publicUrl } from "../engine/assets";
+import type { SpeechStart } from "../engine/audio";
 import type { Input } from "../engine/input";
 import { el } from "./dom";
 
@@ -31,6 +39,15 @@ export type PortraitSpec = {
 
 /** 全身絵のうち、会話で見せる上半身の割合の既定値。 */
 const DEFAULT_CROP = 0.58;
+
+/** 声の鳴り始めを待って文字送りを止めておくいちばん長い時間（ms）。 */
+const VOICE_WAIT_MAX_MS = 1000;
+/** 声に合わせて文字送りを遅くするときの上限（設定の1文字あたりの ms の何倍まで）。 */
+const VOICE_PACE_MAX = 2;
+
+/** この文字を出したあとの間（1文字ぶんの何倍か。句読点で少し止める）。 */
+const pauseAfter = (c: string | undefined): number =>
+	c === "、" || c === "。" ? 4 : 1;
 
 /** 立ち絵を読み込み、透明な余白を切り詰めた canvas にする（src ごとに1回だけ）。 */
 const trimmed = new Map<string, Promise<HTMLCanvasElement | null>>();
@@ -113,8 +130,19 @@ export type MessageParams = {
 	color?: string;
 	text: string;
 	portrait?: PortraitSpec | null;
-	/** 表示と同時に呼ばれる（読み上げ開始）。戻り値は送ったときに呼ばれる（読み上げ停止）。 */
-	onShow?: () => (() => void) | undefined;
+	/** 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。 */
+	onShow?: () => ShowHook | undefined;
+};
+
+/** {@link MessageParams.onShow} の戻り値。 */
+export type ShowHook = {
+	/** 送ったときに呼ばれる（読み上げ停止）。 */
+	stop?: () => void;
+	/**
+	 * 声が鳴り始める時刻が決まったら解決する（鳴らないなら null）。あれば文字送りを
+	 * 声の頭まで待たせ（VOICE_WAIT_MAX_MS まで）、声の長さへ寄せる。無ければすぐ出し始める。
+	 */
+	started?: Promise<SpeechStart | null>;
 };
 
 class PortraitSlot {
@@ -272,8 +300,10 @@ export class MessageWindow {
 		const chars = [...p.text];
 		this.textEl.textContent = "";
 		this.nextEl.classList.remove("shown");
-		const stop = p.onShow?.();
+		const hook = p.onShow?.();
+		const stop = hook?.stop;
 		const token = ++this.showToken;
+		const shownAt = performance.now();
 		return new Promise((resolve) => {
 			let shown = 0;
 			let timer = 0;
@@ -281,6 +311,13 @@ export class MessageWindow {
 			let done = false;
 			/** 効果音の区切りまで鳴った（送れる）。 */
 			let ready = false;
+			/** 文字送りを始めた（声の頭を待ち終えた）。 */
+			let typing = false;
+			/**
+			 * 声が鳴り終わる時刻（performance.now の時計）を返す。分かれば文字送りをこれに寄せる。
+			 * 合成が遅れて声の後ろがずれると延びるので、毎回読む。
+			 */
+			let voiceEnd: (() => number) | null = null;
 			const finish = () => {
 				if (done) return;
 				done = true;
@@ -294,6 +331,23 @@ export class MessageWindow {
 					this.nextEl.classList.add("shown");
 				});
 			};
+			/**
+			 * 次の文字までの ms。声の長さが分かっていれば、残りの文字が声の終わりごろに
+			 * 出きる速さへ寄せる（設定より速くはせず、設定の VOICE_PACE_MAX 倍より遅くもしない。
+			 * 声は1文字あたり設定よりずっと遅いことが多く、ふつうは上限に当たって声より先に出きる）。
+			 */
+			const stepMs = (ms: number): number => {
+				let per = ms;
+				if (voiceEnd !== null) {
+					let rest = 0;
+					for (let i = shown - 1; i < chars.length - 1; i++)
+						rest += pauseAfter(chars[i]);
+					const left = voiceEnd() - performance.now();
+					if (rest > 0 && left > 0)
+						per = Math.min(ms * VOICE_PACE_MAX, Math.max(ms, left / rest));
+				}
+				return per * pauseAfter(chars[shown - 1]);
+			};
 			const tick = () => {
 				const ms = this.msPerChar();
 				if (ms <= 0) {
@@ -303,15 +357,37 @@ export class MessageWindow {
 				shown++;
 				this.textEl.textContent = chars.slice(0, shown).join("");
 				if (shown >= chars.length) finish();
-				else
-					timer = window.setTimeout(
-						tick,
-						chars[shown - 1] === "、" || chars[shown - 1] === "。"
-							? ms * 4
-							: ms,
-					);
+				else timer = window.setTimeout(tick, stepMs(ms));
 			};
-			tick();
+			const startTyping = () => {
+				if (typing || done || token !== this.showToken) return;
+				typing = true;
+				window.clearTimeout(timer);
+				tick();
+			};
+			const voice = hook?.started;
+			if (!voice) {
+				startTyping();
+			} else {
+				// 声の頭まで文字送りを待たせる（名前と立ち絵はもう出ている）。待たせすぎない
+				timer = window.setTimeout(startTyping, VOICE_WAIT_MAX_MS);
+				void voice.then((cue) => {
+					if (done || token !== this.showToken) return;
+					if (!cue) {
+						startTyping(); // 声は鳴らない
+						return;
+					}
+					voiceEnd = cue.endAt;
+					// 待ちきれずに出し始めていたら、残りの文字を声の長さに合わせるだけ
+					if (typing) return;
+					window.clearTimeout(timer);
+					const at = Math.min(cue.at, shownAt + VOICE_WAIT_MAX_MS);
+					timer = window.setTimeout(
+						startTyping,
+						Math.max(0, at - performance.now()),
+					);
+				});
+			}
 			const pop = this.input.push((key, repeat) => {
 				if (repeat || (key !== "a" && key !== "b")) return;
 				if (!done) {
