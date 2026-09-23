@@ -13,6 +13,8 @@
 // - 効果音が鳴り始めたら、その音の本体が鳴り終わる時刻（waitMs。data/loudness.ts）まで「区切り待ち」にする。
 //   文送り・選択肢の決定・戦闘の早送りはそれまで効かない（seSettled / seHeld）。
 //   連打で次の効果音が畳みかけて重ならないように。余韻までは待たせない。
+// - ジングル（勝利の曲）は途中で絞って止められる（fadeOutJingle。レベルアップの音と重ねない）。
+//   dtm の stop は先読みで予約済みの音符（約0.5秒ぶん）を鳴らし残すので、出口の音量ごと絞る。
 
 import type { DtmStudio, MmlPlayback, SpeechHandle } from "@onjmin/dtm";
 import {
@@ -56,6 +58,21 @@ const SE_LATE_MS = 600;
 const SE_HOLD_MAX_MS = SE_WAIT.jingleMaxMs;
 /** 効果音を鳴らしてから次へ進めるまでの ms（測っていない音は待たない）。 */
 const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
+
+/** dtm studio の出口の音量（createDtmStudio の masterVolume）。 */
+const STUDIO_MASTER_VOLUME = 100;
+/**
+ * ジングルを絞って止めたあと、studio の出口を戻すまでの秒数。止めても予約済みの音符
+ * （先読み0.5秒＋長い音符・残響）は鳴り続けるので、それが消えるまで絞ったままにする。
+ */
+const DUCK_TAIL_SEC = 2;
+
+/** AudioParam を今の値から sec 秒かけて v へ（先の予約は捨てる）。 */
+const rampTo = (p: AudioParam, now: number, v: number, sec: number): void => {
+	p.cancelScheduledValues(now);
+	p.setValueAtTime(p.value, now);
+	p.linearRampToValueAtTime(v, now + sec);
+};
 
 /** 前奏（`@0` が全休符で始まる4小節）がある曲は、2周目から前奏を飛ばす。 */
 const hasIntro = (mml: string): boolean =>
@@ -119,6 +136,12 @@ export class GameAudio {
 	private bgmLastStep = 0;
 	/** 今の曲を歌声つきで流すか（singBgm）。 */
 	private sing = false;
+	/** 鳴っているジングル。軽量の音は自前の出口（bus）を通して絞れるようにする。 */
+	private jingleNow: { pb: MmlPlayback; bus: GainNode | null } | null = null;
+	/** 読み込み中・再生中のジングルの bgmToken（鳴り始める前に止める用）。 */
+	private jingleToken = -1;
+	/** studio の出口を絞っている間、戻してよくなる時刻（AudioContext の時計）。 */
+	private duckUntil: number | null = null;
 	private seCache = new Map<string, Promise<AudioBuffer | null>>();
 	/** 長い効果音が鳴り終わる時刻（AudioContext の時計。重ね鳴らし防止）。 */
 	private seEnds = new Map<string, number>();
@@ -227,7 +250,7 @@ export class GameAudio {
 			this.studioPromise = loadDtm().then((dtm) =>
 				dtm.createDtmStudio({
 					audioContext: ctx,
-					masterVolume: 100,
+					masterVolume: STUDIO_MASTER_VOLUME,
 					features: { midi: false, chord: false, presetUI: false, help: false },
 				}),
 			);
@@ -287,15 +310,29 @@ export class GameAudio {
 		this.stopBgmPlayback();
 		this.bgmName = null;
 		const mml = this.bgmData[name];
-		if (!mml || !this.canPlayBgm()) return;
+		const ctx = this.ctx;
+		if (!mml || !ctx || !this.canPlayBgm()) return;
 		const token = ++this.bgmToken;
-		const pb = await this.startMml(mml, false, (fromBar - 1) * 192, token);
-		if (!pb) return;
-		if (token !== this.bgmToken) {
-			this.dispose(pb);
+		this.jingleToken = token;
+		// 軽量の音は自前の出口を通す（途中で絞れるように。高音質は studio の出口を絞る）
+		const bus = settings.bgm === "hq" ? null : ctx.createGain();
+		bus?.connect(ctx.destination);
+		const pb = await this.startMml(
+			mml,
+			false,
+			(fromBar - 1) * 192,
+			token,
+			bus ?? undefined,
+		);
+		if (!pb || token !== this.bgmToken) {
+			if (pb) this.dispose(pb);
+			bus?.disconnect();
+			if (this.jingleToken === token) this.jingleToken = -1;
 			return;
 		}
 		this.bgmPlayback = pb;
+		const entry = { pb, bus };
+		this.jingleNow = entry;
 		// 勝利のジングルも効果音と同じく区切り待ちにする（続けてレベルアップの音が重ならないように）。
 		// 曲の長さは測っていないので、ジングルの上限（1.5 秒）だけ待つ
 		this.hold(SE_HOLD_MAX_MS);
@@ -303,7 +340,60 @@ export class GameAudio {
 		while (pb.isPlaying() && performance.now() - start < maxMs) {
 			await new Promise((r) => setTimeout(r, 100));
 		}
+		if (this.jingleNow === entry) {
+			this.jingleNow = null;
+			// 余韻を切らないよう、少し置いてから出口を外す
+			if (bus) setTimeout(() => bus.disconnect(), DUCK_TAIL_SEC * 1000);
+		}
+		if (this.jingleToken === token) this.jingleToken = -1;
 		if (this.bgmPlayback === pb) this.stopBgmPlayback();
+	}
+
+	/**
+	 * 鳴っているジングルを ms かけて絞って止める（勝利の曲にレベルアップの音を重ねない）。
+	 * 読み込み中でまだ鳴っていなければ、鳴らさずに捨てる。ジングルでなければ何もしない。
+	 */
+	async fadeOutJingle(ms = 150): Promise<void> {
+		const j = this.jingleNow;
+		const ctx = this.ctx;
+		if (!j || j.pb !== this.bgmPlayback || !ctx) {
+			if (this.jingleToken === this.bgmToken) this.stopBgmPlayback();
+			return;
+		}
+		this.jingleNow = null;
+		const sec = ms / 1000;
+		if (j.bus) {
+			rampTo(j.bus.gain, ctx.currentTime, 0, sec);
+		} else {
+			// 高音質は studio の出口（声と共用）を絞る。次に studio で鳴らすときに戻す（unduck）
+			const studio = await this.studioPromise?.catch(() => null);
+			if (studio) {
+				rampTo(studio.masterGain.gain, ctx.currentTime, 0, sec);
+				this.duckUntil = ctx.currentTime + sec + DUCK_TAIL_SEC;
+			}
+		}
+		await new Promise((r) => setTimeout(r, ms));
+		// ほかの曲に替わっていたら、替えた側がもう止めている
+		if (this.bgmPlayback === j.pb) this.stopBgmPlayback();
+		const bus = j.bus;
+		if (bus) setTimeout(() => bus.disconnect(), DUCK_TAIL_SEC * 1000);
+	}
+
+	/**
+	 * fadeOutJingle で絞った studio の出口を戻す。曲は絞った音の残りが消えてから、
+	 * 声（now）は頭が欠けないようすぐに。
+	 */
+	private unduck(studio: DtmStudio, now = false): void {
+		const ctx = this.ctx;
+		if (this.duckUntil === null || !ctx) return;
+		const at = now
+			? ctx.currentTime
+			: Math.max(ctx.currentTime, this.duckUntil);
+		this.duckUntil = null;
+		const g = studio.masterGain.gain;
+		g.cancelScheduledValues(at);
+		g.setValueAtTime(0, at);
+		g.linearRampToValueAtTime(STUDIO_MASTER_VOLUME / 100, at + 0.05);
 	}
 
 	private canPlayBgm(): boolean {
@@ -347,11 +437,13 @@ export class GameAudio {
 		});
 	}
 
+	/** destination は軽量の音の出口（省略で ctx.destination）。 */
 	private async startMml(
 		mml: string,
 		loop: boolean,
 		startStep: number | undefined,
 		token: number,
+		destination?: AudioNode,
 	): Promise<MmlPlayback | null> {
 		const ctx = this.ctx;
 		if (!ctx) return null;
@@ -380,6 +472,7 @@ export class GameAudio {
 		try {
 			if (settings.bgm === "hq") {
 				const studio = await this.studio();
+				this.unduck(studio);
 				if (this.sing) {
 					try {
 						const pb = await studio.playSingingMML(mml, common);
@@ -400,7 +493,7 @@ export class GameAudio {
 			const pb = dtm.playMML(mml, {
 				...common,
 				audioContext: ctx,
-				destination: ctx.destination,
+				destination: destination ?? ctx.destination,
 			});
 			pb.setVolume(volume);
 			return pb;
@@ -557,6 +650,7 @@ export class GameAudio {
 				await this.prepareVoice();
 				const studio = await this.studio();
 				if (entry.abort.signal.aborted) return;
+				this.unduck(studio, true);
 				const handle = await studio.speak(body, {
 					model: voice.model,
 					pitchOffset: voice.pitchOffset ?? 0,

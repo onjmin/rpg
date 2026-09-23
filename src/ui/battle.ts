@@ -18,6 +18,8 @@ import { settings } from "../engine/settings";
 import { isWalkRef } from "../engine/sprite";
 import { sleep, TILE } from "../engine/types";
 import { el, nextFrame } from "./dom";
+import { itemDesc } from "./itemText";
+import { keepInView, onTap } from "./menu";
 
 type Side = "party" | "enemy";
 
@@ -370,13 +372,25 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	let result = null as BattleResult | null;
 
 	// ── コマンド選択 ──
+	/** desc（2行目の説明）がある一覧は、読めるように1行に1つずつ並べる（list）。 */
 	const menu = (
-		items: { label: string; sub?: string; disabled?: boolean; value: string }[],
+		items: {
+			label: string;
+			sub?: string;
+			desc?: string;
+			disabled?: boolean;
+			value: string;
+		}[],
 		back: boolean,
 	): Promise<string | null> =>
 		new Promise((resolve) => {
 			cmdEl.replaceChildren();
+			const list = items.some((i) => i.desc);
+			cmdEl.classList.toggle("list", list);
+			// 一覧を選んでいる間は、空の文の欄をたたんで場所をゆずる（style.css）
+			root.classList.toggle("picking", list);
 			cmdEl.classList.add("shown");
+			cmdEl.scrollTop = 0;
 			let cur = Math.max(
 				0,
 				items.findIndex((i) => !i.disabled),
@@ -384,33 +398,35 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const buttons = items.map((it) => {
 				const b = el("button", {
 					class: "cmd",
-					html: `${it.label}${it.sub ? `<small>${it.sub}</small>` : ""}`,
+					html: it.desc
+						? `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}<span class="desc">${it.desc}</span>`
+						: `${it.label}${it.sub ? `<small>${it.sub}</small>` : ""}`,
 				});
 				if (it.disabled) b.classList.add("disabled");
-				b.addEventListener("pointerdown", (ev) => {
-					ev.preventDefault();
-					ev.stopPropagation();
-					if (it.disabled) return;
-					done(it.value);
+				if (it.desc) b.classList.add("has-desc");
+				onTap(b, cmdEl, () => {
+					if (!it.disabled) done(it.value);
 				});
 				cmdEl.appendChild(b);
 				return b;
 			});
 			if (back) {
 				const b = el("button", { class: "cmd back", text: "もどる" });
-				b.addEventListener("pointerdown", (ev) => {
-					ev.preventDefault();
-					ev.stopPropagation();
-					done(null);
-				});
+				onTap(b, cmdEl, () => done(null));
 				cmdEl.appendChild(b);
 			}
 			const render = () =>
 				buttons.forEach((b, i) => {
 					b.classList.toggle("cur", i === cur);
+					// 画面に収まらず巻き取れるときも、カーソルの行は見えるように
+					if (i === cur) keepInView(cmdEl, b);
 				});
 			render();
-			const cols = 2;
+			// 上下で動く幅＝今の画面での列の数（縦持ち2列・横持ち3列・説明つきの一覧は1列）
+			const cols = Math.max(
+				1,
+				getComputedStyle(cmdEl).gridTemplateColumns.split(" ").length,
+			);
 			const pop = input.push((k) => {
 				const move = (d: number) => {
 					let n = cur;
@@ -432,6 +448,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const done = (v: string | null) => {
 				pop();
 				audio.se(v === null ? "cancel" : "decide");
+				root.classList.remove("picking");
 				cmdEl.classList.remove("shown");
 				cmdEl.replaceChildren();
 				resolve(v);
@@ -540,10 +557,12 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				const owned = Object.entries(state.items).filter(
 					([id, n]) => n > 0 && data.items[id]?.effect,
 				);
+				// 効果は2行目に出しておく（タップだとすぐ決まって、選ぶ前に説明を読めないので）
 				const it = await menu(
 					owned.map(([id, n]) => ({
 						label: data.items[id].name,
 						sub: `×${n}`,
+						desc: itemDesc(data.items[id]),
 						value: id,
 					})),
 					true,
@@ -844,7 +863,11 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (!f.member) continue;
 			const ups = gainExp(data, f.member, exp);
 			if (ups > 0) {
-				if (!leveled) audio.se("levelup");
+				// ドラクエのように、勝利の曲を絞って止めてからレベルアップの音を鳴らす（2つを重ねない）
+				if (!leveled) {
+					await audio.fadeOutJingle(150);
+					audio.se("levelup");
+				}
 				leveled = true;
 				renderParty();
 				await log(`${f.name}は　レベル${f.member.lv}に　あがった！`, 1000);

@@ -369,6 +369,52 @@ body.shake #app {
 	opacity: 0.35;
 }
 
+/*
+ * 2行目の説明（どうぐの効果）。タップは押した瞬間に決まるので、選ぶ前から行の中に見せておく。
+ * 2行まで（itemText.ts が長いときは札を省いて収める。それでも超える分は切る）
+ */
+.menu-item.has-desc {
+	flex-wrap: wrap;
+	row-gap: 3px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+/* カーソルは名前の行に合わせる */
+.menu-item.has-desc.cur::before {
+	top: 19px;
+}
+
+.menu-item .desc,
+.cmd .desc {
+	flex-basis: 100%;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--muted);
+	text-align: left;
+	/* 折り返すときは「　」や「、」の区切りで（「鳴ら／せる。」のように語の途中で割らない）。
+	 * 区切りのない長い語だけは途中で割る */
+	word-break: keep-all;
+	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
+
+/* だれに効くか・だいじなもの の札 */
+.desc .tag {
+	display: inline-block;
+	font-weight: normal;
+	font-size: 11px;
+	line-height: 1.25;
+	padding: 0 4px;
+	margin-right: 6px;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+}
+
 .menu {
 	position: absolute;
 	top: calc(64px + var(--safe-t));
@@ -1034,6 +1080,41 @@ body.shake #app {
 	padding: 8px;
 }
 
+/*
+ * 説明つきの一覧（戦闘の「どうぐ」）は1列。名前と数を1行目、効果を2行目に。
+ * 選んでいる間は空の文の欄をたたんで一覧に場所をゆずり、それでも入りきらなければ巻き取る
+ */
+.battle.picking .battle-log {
+	display: none;
+}
+
+.battle-cmd.list {
+	grid-template-columns: 1fr;
+	gap: 4px;
+	overflow-y: auto;
+	touch-action: pan-y;
+}
+
+.battle-cmd.list .cmd.back {
+	padding: 5px;
+}
+
+.cmd.has-desc {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 2px 12px;
+	padding: 5px 12px;
+	font-size: 16px;
+	line-height: 1.2;
+	text-align: left;
+}
+
+.cmd.has-desc small {
+	font-size: 13px;
+}
+
 /* ───────── タイトル ───────── */
 
 .title {
@@ -1306,25 +1387,45 @@ body.shake #app {
 		bottom: calc(96px + 12px - 30px);
 		height: 66vh;
 	}
+	/*
+	 * 戦闘：左に敵・文・コマンド、右になかま（2人ずつ並べる）。
+	 * なかまを縦に1列に積むと 3人でもコマンドが画面の下へ押し出されるので、右の列は高さいっぱいを使う
+	 */
 	.battle {
-		flex-direction: row;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) min(36%, 360px);
+		grid-template-rows: minmax(0, 1fr) auto auto;
+		grid-template-areas:
+			"enemy party"
+			"log party"
+			"cmd party";
+		column-gap: 8px;
 	}
 	.enemy-row {
-		flex: 1 1 60%;
-		padding-top: 30px;
+		grid-area: enemy;
+		min-height: 0;
+		padding-top: 0;
 	}
+	/* 右上の 🔇・☰（.top-btns。上から 10px＋44px）の下から並べる */
 	.party-row {
-		flex: 1 1 35%;
-		flex-direction: column;
-		justify-content: center;
+		grid-area: party;
+		align-content: center;
+		margin: 0;
+		padding-top: 50px;
+	}
+	.member {
+		flex-basis: 40%;
 	}
 	.battle-log {
-		flex: 1 1 100%;
+		grid-area: log;
 		min-height: 50px;
 	}
 	.battle-cmd {
-		flex: 1 1 100%;
+		grid-area: cmd;
 		grid-template-columns: repeat(3, 1fr);
+	}
+	.battle-cmd.list {
+		grid-template-columns: repeat(2, 1fr);
+		max-height: 48vh;
 	}
 }

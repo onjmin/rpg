@@ -6,9 +6,63 @@ import { statsOf } from "../engine/party";
 import { writeSave } from "../engine/save";
 import { saveSettings, settings } from "../engine/settings";
 import { el } from "./dom";
+import { itemDesc } from "./itemText";
 import { partyMenu, partyMenuHint } from "./party";
 
-type Item = { label: string; sub?: string; value: string; disabled?: boolean };
+type Item = {
+	label: string;
+	sub?: string;
+	/** 2行目の小さい説明（HTML）。どうぐの効果など、選ぶ前に見せたいもの。 */
+	desc?: string;
+	value: string;
+	disabled?: boolean;
+};
+
+/** 指でなぞって巻き取れるか（はみ出していて、しかも overflow で巻き取る箱か）。 */
+const canScroll = (s: HTMLElement): boolean => {
+	if (s.scrollHeight <= s.clientHeight + 1) return false;
+	const o = getComputedStyle(s).overflowY;
+	return o === "auto" || o === "scroll";
+};
+
+/**
+ * タップで決める。ふつうは押した瞬間に決まるが、はみ出して巻き取れる一覧では、
+ * 指でなぞって巻き取れるよう、ほとんど動かさずに離したときに決める。
+ */
+export const onTap = (
+	b: HTMLElement,
+	scroller: HTMLElement,
+	fn: () => void,
+): void => {
+	let from: { id: number; y: number } | null = null;
+	b.addEventListener("pointerdown", (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (canScroll(scroller)) from = { id: e.pointerId, y: e.clientY };
+		else fn();
+	});
+	b.addEventListener("pointerup", (e) => {
+		if (!from || from.id !== e.pointerId) return;
+		const moved = Math.abs(e.clientY - from.y);
+		from = null;
+		if (moved < 10) fn();
+	});
+	// 巻き取りが始まった（ブラウザに指を取られた）・外へ出たらやめる
+	b.addEventListener("pointercancel", () => {
+		from = null;
+	});
+	b.addEventListener("pointerleave", () => {
+		from = null;
+	});
+};
+
+/** 巻き取れる一覧で、カーソルの行が見えるところまで巻き取る（十字キー・キーボード用）。 */
+export const keepInView = (scroller: HTMLElement, b: HTMLElement): void => {
+	const r = b.getBoundingClientRect();
+	const s = scroller.getBoundingClientRect();
+	if (r.top < s.top) scroller.scrollTop -= s.top - r.top;
+	else if (r.bottom > s.bottom) scroller.scrollTop += r.bottom - s.bottom;
+};
 
 /** 縦に並ぶ選択ウィンドウ。B で null。 */
 export const listWindow = (
@@ -29,30 +83,30 @@ export const listWindow = (
 		const buttons = items.map((it) => {
 			const b = el("button", {
 				class: "menu-item",
-				html: `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}`,
+				html: `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}${it.desc ? `<span class="desc">${it.desc}</span>` : ""}`,
 			});
 			if (it.disabled) b.classList.add("disabled");
-			b.addEventListener("pointerdown", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
+			if (it.desc) b.classList.add("has-desc");
+			onTap(b, box, () => {
 				if (!it.disabled) done(it.value);
 			});
 			box.appendChild(b);
 			return b;
 		});
 		const close = el("button", { class: "menu-close", text: "とじる" });
-		close.addEventListener("pointerdown", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			done(null);
-		});
+		onTap(close, box, () => done(null));
 		box.appendChild(close);
 		const render = () =>
 			buttons.forEach((b, i) => {
 				b.classList.toggle("cur", i === cur);
+				// 先頭の行では見出しごと見せる
+				if (i === cur) {
+					if (i === 0) box.scrollTop = 0;
+					else keepInView(box, b);
+				}
 			});
-		render();
 		game.ui.appendChild(box);
+		render();
 		const pop = game.input.push((k) => {
 			if (k === "up" || k === "down") {
 				if (!items.length) return;
@@ -127,14 +181,20 @@ const itemMenu = async (game: Game): Promise<void> => {
 	const { data, state } = game;
 	for (;;) {
 		const owned = Object.entries(state.items).filter(([, n]) => n > 0);
+		// 効果は2行目に出しておく（タップだとすぐ決まって、選ぶ前に説明を読めないので）
 		const v = await listWindow(
 			game,
 			"どうぐ",
-			owned.map(([id, n]) => ({
-				label: data.items[id]?.name ?? id,
-				sub: data.items[id]?.key ? "だいじなもの" : `×${n}`,
-				value: id,
-			})),
+			owned.map(([id, n]) => {
+				const it = data.items[id];
+				return {
+					label: it?.name ?? id,
+					// だいじなものは2行目の札で示すので、数は出さない
+					sub: it?.key ? undefined : `×${n}`,
+					desc: it ? itemDesc(it) : undefined,
+					value: id,
+				};
+			}),
 		);
 		if (v === null) return;
 		const it = data.items[v];
