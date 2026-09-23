@@ -241,9 +241,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			}
 		}
 	};
-	const renderEnemies = () => {
+	/** dying はまだ消さない敵（撃破音と同時にフェードアウトさせるため、ダメージの文の間は残す）。 */
+	const renderEnemies = (dying?: Fighter) => {
 		for (const e of enemies) {
-			e.view.classList.toggle("dead", e.hp <= 0);
+			e.view.classList.toggle("dead", e.hp <= 0 && e !== dying);
 			const i = e.bar?.firstElementChild as HTMLElement | null;
 			if (i) i.style.width = `${Math.max(0, (e.hp / e.maxHp) * 100)}%`;
 		}
@@ -501,10 +502,12 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		if (t.side === "enemy") {
 			audio.se("attack");
 			await hitEnemy(t);
-			renderEnemies();
+			renderEnemies(t);
 			await log(`${t.name}に　${dmg}の　ダメージ！`);
 			if (t.hp <= 0) {
+				// 撃破音とフェードアウトを同時に始める
 				audio.se("enemyDown");
+				renderEnemies();
 				await log(`${t.name}を　たおした！`, 500);
 			}
 		} else {
