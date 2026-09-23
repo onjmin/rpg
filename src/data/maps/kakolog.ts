@@ -77,7 +77,7 @@ const kosanMeet = async (s: Story): Promise<void> => {
 	const r = await replyAnka(s, "reply_kako", [
 		{ reply: "uke", label: "昔の　おんJ、教えて" },
 		{ reply: "kaesu", label: "今の　おんJも　たのしい" },
-		{ reply: "neta", label: "吾輩も　いつか　昔に　なる" },
+		{ reply: "neta", label: "吾輩も　いつか　昔になる" },
 	]);
 	if (r === "uke") {
 		await ks(s, "昔の　おんJ、教えてほしいンゴ");
@@ -152,17 +152,18 @@ const botsuRun = async (s: Story): Promise<void> => {
 	await s.narrate(
 		"再安価で　流れた　レスの　ふきだまり。\n……ンゴ……と　聞こえた　気がする",
 	);
+	// whisper と同じく「えらばれた」（受け身）で言う。「吾輩が　えらんだ」は last の山場だけ
 	const kaku = !!s.flag("kakugari");
 	const ton = !!s.flag("anka_100t");
 	if (kaku && ton)
 		await ks(
 			s,
-			"吾輩が　えらんだ　角刈りも　100トンも、\nここに　流れついたンゴ？",
+			"あの夜　えらばれた　角刈りも　100トンも、\nここに　流れついたンゴ？",
 		);
 	else if (kaku)
-		await ks(s, "吾輩が　えらんだ　角刈りも、\nここに　流れついたンゴ？");
+		await ks(s, "あの夜　えらばれた　角刈りも、\nここに　流れついたンゴ？");
 	else if (ton)
-		await ks(s, "吾輩が　えらんだ　100トンも、\nここに　流れついたンゴ？");
+		await ks(s, "あの夜　えらばれた　100トンも、\nここに　流れついたンゴ？");
 	if (ton)
 		await s.say("roze", "……100トンのレスだけ、\nいちばん　底に　沈んでるアル");
 };
@@ -280,7 +281,7 @@ const meigen2 = async (s: Story): Promise<void> => {
 
 /**
  * 勝っても、3回負けて通してもらっても、ここから先は同じ
- * （バナー・加入・b2・2009年の話・600・名言その2）。
+ * （バナー・加入・b2・2009年の話・600・名言その2）。ちがうのはムッジェの「ホゲェ！」だけ。
  */
 const b2After = async (s: Story): Promise<void> => {
 	// 下の「バナー、ちゃんと　見る」の前ふり（mujje_after で回収）
@@ -299,7 +300,12 @@ const b2After = async (s: Story): Promise<void> => {
 	// （スタジアムの「今夜は　その　つづきだね〜」につながる）。
 	await s.say("feris", "ふふ。その　決着は、また　こんどね〜");
 	await ks(s, "ムッジェの　バナー、ちゃんと　見る。約束する");
-	await N(s, "ムッジェ", "ホゲェ！");
+	// 3回負けて通してもらったとき（b2_how=lose）は、ムッジェは　ねむったまま
+	await N(
+		s,
+		"ムッジェ",
+		s.flag("b2_how") === "lose" ? "……ホゲェ……（ねごと）" : "ホゲェ！",
+	);
 	await s.say(
 		"feris",
 		"「また　あそびに　きてな」だって〜。\n私も　いっしょに　行っていい？",
@@ -366,8 +372,9 @@ const bossfloor: EventDef = {
 		if (r === "pass") {
 			await s.narrate("ムッジェは　あそびつかれて\nねむってしまった。");
 			await s.say("feris", "……ねちゃった〜");
-			await s.gainExp(BOSS_EXP.b2);
 			await s.say("feris", "……ねがお、たのしそう〜");
+			// 経験値は　フェリスの2行のあと（静かな場面を　レベルアップで　切らない）
+			await s.gainExp(BOSS_EXP.b2);
 		} else {
 			await N(s, "ムッジェ", "ホゲェ……♪");
 			await s.say("feris", "……あれ？　ムッジェ、たのしそう");

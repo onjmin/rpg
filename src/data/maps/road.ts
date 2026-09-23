@@ -96,7 +96,12 @@ const loseB1 = async (s: Story, n: number): Promise<void> => {
 		await s.say("roze", "……宿題より　手ごわいアル");
 		return;
 	}
-	await s.narrate("「また　負けとる　草」\n「宿題、手伝ったら　ええやん」");
+	// 宿題をもう引き受けていれば（hw_help）、魚のほうを示す
+	await s.narrate(
+		s.flag("hw_help")
+			? "「また　負けとる　草」\n「魚、つってきたら　ええやん」"
+			: "「また　負けとる　草」\n「宿題、手伝ったら　ええやん」",
+	);
 	await s.say("nanj", "まだ　スレは　落ちとらんで");
 };
 
@@ -131,6 +136,7 @@ const startHomework = async (s: Story): Promise<void> => {
 	await J(s, BANCHO, "なんか　おもろいこと　あったら\n書けるんやけどな");
 	if (Number(s.flag("fish_n") ?? 0) >= 1) {
 		await ks(s, "魚なら、さっき　つったンゴ");
+		await J(s, BANCHO, "ほんまか！　……よっしゃ、書けた");
 		await finishHomework(s);
 		return;
 	}
@@ -163,6 +169,7 @@ const replyB1 = async (s: Story): Promise<void> => {
 		await ks(s, "……まだ、だれも　吾輩を\n知らないンゴ。ほんとに");
 		await J(s, BANCHO, "……なんや、調子　くるうわ");
 		await J(s, BANCHO, "……ほな、宿題　手伝って\nくれへん？");
+		await ks(s, "……いいンゴ");
 		await startHomework(s);
 		return;
 	}
@@ -186,8 +193,9 @@ const replyB1 = async (s: Story): Promise<void> => {
 /**
  * §8-3 ロゼの加入（屋台の客）。rival-joins §2。
  * 名前安価で「束音ロゼ」を名乗りかけた新人を腕だめし → 勝つと和解して加入。
- * 負けたら（canLose。エンジンが全回復。lose_n に数える）「もう一度」か「ひと休み」を選ぶ。
- * ひと休みなら何も立てずに終わり、もう一度話すと最初から。
+ * 負けたら（canLose。エンジンが全回復。lose_n に数える）「もういちど」か「ひとやすみ」を選ぶ
+ * （ボス戦の bossFight と同じ文言。B はひとやすみ）。
+ * ひとやすみなら何も立てずに終わり、もう一度話すと最初から。
  */
 const roze: EventDef = {
 	id: "roze",
@@ -222,7 +230,10 @@ const roze: EventDef = {
 				"roze",
 				"……まだ　声が　かたいアル。\nもう一度、聞かせるアル？",
 			);
-			if ((await s.choose(["もう一度！", "ひと休みする"])) === 1) {
+			const c = await s.choose(["もういちど！", "ひとやすみする"], {
+				cancel: 1,
+			});
+			if (c === 1) {
 				await s.say(
 					"roze",
 					"屋台で　待ってるアル。\n麻婆豆腐でも　食べてくるアル",
@@ -291,14 +302,20 @@ const bancho: EventDef = {
 		} else {
 			await J(s, BANCHO, "また　来たんか！\n通りたかったら　勝負せえ！");
 		}
-		const c = await s.choose([
-			">>1 勝負する",
-			">>2 宿題を　手伝う",
-			">>3 レスで　かえす",
-		]);
+		// 「やめておく」（B も同じ）なら何も立てずに下がれる（先に回復してから来てもよい）
+		const c = await s.choose(
+			[
+				">>1 勝負する",
+				">>2 宿題を　手伝う",
+				">>3 レスで　かえす",
+				"やめておく",
+			],
+			{ cancel: 3 },
+		);
 		if (c === 0) await fightB1(s);
 		else if (c === 1) await startHomework(s);
-		else await replyB1(s);
+		else if (c === 2) await replyB1(s);
+		else await J(s, BANCHO, "いつでも　来いや！");
 	},
 };
 

@@ -15,6 +15,7 @@ import type {
 	TileDef,
 } from "../../engine/defs";
 import {
+	addLose,
 	ankaChoose,
 	BOSS_EXP,
 	bossFight,
@@ -175,7 +176,8 @@ const kantoku: Script = async (s) => {
 	await cheer(s);
 	const r = await bossFight(s, "b3", "g_b3", loseB3);
 	if (r === "rest") {
-		await j(s, "テノヒラ監督", "……ベンチで　待っとるで！");
+		// 監督はマウンドに立ったまま（すぐ話しかけ直せる）
+		await j(s, "テノヒラ監督", "……打席は　あけといたるで！");
 		return;
 	}
 	s.set("b3_how", r === "win" ? "win" : "lose");
@@ -183,7 +185,6 @@ const kantoku: Script = async (s) => {
 		// 3回負けた：雨天コールドで通してもらう（「勝った」とは書かない）
 		await s.narrate("ぽつ、ぽつ……\n雨が　ふってきた。");
 		await j(s, "テノヒラ監督", "……雨天コールドや。\nひきわけで　ええな");
-		await s.gainExp(BOSS_EXP.b3);
 		await j(s, "テノヒラ監督", "……フェリス、ずぶぬれでも\n神やわ");
 	} else await j(s, "テノヒラ監督", "……やっぱ　フェリスは　神やわ");
 	await s.say("roze", "手のひら、くるっくるアル");
@@ -205,6 +206,8 @@ const kantoku: Script = async (s) => {
 	s.set("b3");
 	s.se("item");
 	await s.narrate("蓄音機に　レスが　たまった！（850/1000）");
+	// 雨天コールドで通してもらったときの経験値は、場面のあと（監督のセリフを切らない）
+	if (r === "pass") await s.gainExp(BOSS_EXP.b3);
 	// F1 名言チャレンジ その3（フェリスが その2 を引用）
 	await ks(s, "名言チャレンジ、その3。");
 	const q = meigenQuote(s.state, 1);
@@ -222,7 +225,8 @@ const kantoku: Script = async (s) => {
 
 /**
  * F3-3 見えるシンボル J民（story.ts の symbol() の代わり）。
- * たたかう＝今までどおり（勝つと消える）／レスする＝1往復して スタンドに回る（消える）／スルー＝何も起きない。
+ * たたかう＝勝つと消える（負けても全滅にしない。lose_n に数えて、J民は残る）／
+ * レスする＝1往復して スタンドに回る（消える）／スルー＝何も起きない。
  * どちらで越えたかを sym_<id> に "fight" / "res" で入れる。
  */
 const symbolReply = (
@@ -247,7 +251,13 @@ const symbolReply = (
 			cancel: 2,
 		});
 		if (c === 0) {
-			if ((await s.battle(group)) !== "win") return;
+			const r = await s.battle(group, { canLose: true });
+			if (r === "lose") {
+				// 負けても　もういちど話せば、レスする・スルーも選べる
+				addLose(s);
+				await j(s, name, "……ワイの　勝ちや。草");
+			}
+			if (r !== "win") return;
 			s.set(`sym_${id}`, "fight");
 			s.hide(id);
 		} else if (c === 1) {

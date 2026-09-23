@@ -309,7 +309,8 @@ body.shake #app {
 	right: calc(14px + var(--safe-r));
 	bottom: calc(142px + var(--safe-b));
 	min-width: 180px;
-	max-width: 80vw;
+	/* 選択肢は全角14字まで（validate の MAX_CHOICE）。360px 幅の端末でも1行に収まるよう、左の余白まで使ってよい */
+	max-width: calc(100vw - 28px - var(--safe-l) - var(--safe-r));
 	padding: 8px;
 	display: flex;
 	flex-direction: column;
@@ -333,6 +334,11 @@ body.shake #app {
 	border-radius: 6px;
 	position: relative;
 	cursor: pointer;
+}
+
+/* 320px 幅でも全角14字が1行に収まるよう、狭い画面では少し小さくする */
+.choice-item {
+	font-size: clamp(14px, calc((100vw - 90px) / 15), 17px);
 }
 
 .choice-item.cur,
@@ -1190,7 +1196,8 @@ body.shake #app {
 @media (orientation: landscape) and (max-height: 520px) {
 	.matome {
 		gap: 8px;
-		padding-top: calc(10px + var(--safe-t));
+		/* 右上の 🔇・☰（.top-btns。#ui より手前の .hud にある。上から 10px＋44px）に重ならない */
+		padding-top: calc(58px + var(--safe-t));
 		padding-bottom: calc(10px + var(--safe-b));
 	}
 	.matome-card {

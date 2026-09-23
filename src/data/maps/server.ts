@@ -111,7 +111,7 @@ const resubaRun = async (s: Story): Promise<void> => {
 	} else {
 		await s.say(
 			"kiriko",
-			"そのレスも、蓄音しておく。\n吾輩の　スレの　一部ンゴ",
+			"そのレスも、蓄音しておく。\n1000レスの　うちの　1レスンゴ",
 		);
 		await J(s, "……ワイのレスまで　ためるんか。\n変な　ボカロやな");
 	}

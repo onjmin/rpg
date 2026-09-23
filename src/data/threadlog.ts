@@ -18,6 +18,8 @@ export const FLAG_DOMAIN: Record<
 	kakugari: [undefined, true],
 	anka_100t: [undefined, true],
 	b1_how: [undefined, "fight", "shukudai", "neta", "lose"],
+	hw_help: [undefined, true],
+	lose_b1: [undefined, 1, 2],
 	reply_kako: [undefined, "uke", "kaesu", "neta"],
 	reply_srv: [undefined, "uke", "kaesu", "neta", "chikuon"],
 	daida: [undefined, 0, 1, 2],
@@ -151,8 +153,9 @@ const kosan = (st: GameState): string | null =>
 /** レイ（balse_n：!バルス でスレを崩壊させた回数）。 */
 const rei = (st: GameState): string => {
 	const n = num(st.flags, "balse_n");
+	// 回数は出さない（通知・統計にしない）。うれしい、は残す
 	return n > 0
-		? `本日のログ、保守完了。\n崩壊　${n}回ぶんも、記録済みです`
+		? "本日のログ、保守完了。\n……崩壊も　ふくめて、うれしい、です"
 		: "本日のログ、保守完了。\n……当機も、うれしい、です";
 };
 
@@ -185,23 +188,25 @@ export const VARIANTS = {
 
 // ───────────────── まとめカード（スタッフロールのあと） ─────────────────
 
-/** 見出し（上から最初に当てはまるもの）。 */
+/**
+ * 見出し（上から最初に当てはまるもの）。
+ * 返し方（reply_srv）は見出しにしない（1つだけ見出しにすると、それが正解に見える）。
+ * 負けて通してもらったときも「負け」を見出しにしない。100トン・角刈りは再安価で流れたので「生まれる」と書かない。
+ */
 const headline = (f: Flags): string =>
 	byFlag(
 		{
 			shukudai: "番長の絵日記を手伝う",
 			neta: "番長をファンにする",
-			lose: "番長に通してもらう",
+			lose: "番長に3回いどむ",
 		},
 		f.b1_how,
 	) ??
-	(f.reply_srv === "chikuon"
-		? "ソースごと蓄音する"
-		: f.anka_100t
-			? "100トンで生まれる"
-			: f.kakugari
-				? "角刈りで生まれる"
-				: "1000レス目で歌う");
+	(f.anka_100t
+		? "100トンからはじまる"
+		: f.kakugari
+			? "角刈りからはじまる"
+			: "1000レス目で歌う");
 
 /** おでかけの相手（上から順に並べる）。 */
 const DATES: [id: string, name: string][] = [
@@ -222,9 +227,9 @@ const myThread = (st: GameState): string[] => {
 		">>101",
 		hairWeight(
 			f,
-			"角刈り・100トンで　誕生（再安価）",
-			"角刈りで　誕生（再安価）",
-			"100トンで　誕生（再安価）",
+			"角刈り・100トン→再安価で　誕生",
+			"角刈り→再安価で　誕生",
+			"100トン→再安価で　誕生",
 			"ポニテ・34キロで　誕生",
 		),
 	);
@@ -293,22 +298,50 @@ const myThread = (st: GameState): string[] => {
 	return lines;
 };
 
+/** 番長の越え方（>>2）。宿題 → ファン → 勝負 の順に回し、自分の越え方の「つぎ」から見る。 */
+const B1_OTHER: [route: string, line: string][] = [
+	["shukudai", ">>2 ワイは　番長の　宿題　手伝ったで"],
+	["neta", ">>2 ワイは　番長を　ファンに　したで"],
+	["fight", ">>2 ワイは　番長と　ガチ勝負したで"],
+];
+/**
+ * >>2：この周で　通っていない越え方。負けてから宿題に切りかえた（lose_b1）なら勝負は通った、
+ * 宿題を引き受けてから勝負した（hw_help）なら宿題は通った、として飛ばす。
+ */
+const b1Other = (f: Flags): string => {
+	// 記録なし（旧セーブ）は勝負で越えたとみなす（>>350 と同じ）
+	const v = typeof f.b1_how === "string" ? f.b1_how : "fight";
+	const how = v === "lose" ? "fight" : v;
+	const taken = new Set([how]);
+	if (num(f, "lose_b1") > 0) taken.add("fight");
+	if (f.hw_help) taken.add("shukudai");
+	const k = B1_OTHER.findIndex(([r]) => r === how);
+	for (let i = 1; i <= B1_OTHER.length; i++) {
+		const [r, line] = B1_OTHER[(k + i) % B1_OTHER.length];
+		if (!taken.has(r)) return line;
+	}
+	return B1_OTHER[0][1];
+};
+
+/** >>4：返し方（reply_srv）の「つぎ」の返し方（どれか1つを正解のように指さない）。 */
+const S4: Record<string, string> = {
+	uke: ">>4 ソースは　吾輩って　返したやつ　おる？",
+	kaesu: ">>4 ソースは　マーボーやったやつ　おる？",
+	neta: ">>4 ソースごと　蓄音したやつ　おる？",
+	chikuon: ">>4 ソースは　まだ　ない派　おる？",
+};
+
 /** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ。 */
 const nextThread = (f: Flags): string[] => [
 	">>1 たておつ",
-	f.b1_how !== "shukudai"
-		? ">>2 ワイは　番長の　宿題　手伝ったで"
-		: ">>2 ワイは　番長と　ガチ勝負したで",
+	b1Other(f),
+	// 安価は絶対（どちらも再安価で流れた）ので、「ワイのキリコは　100トン」とは書かない
 	!f.anka_100t
-		? ">>3 ワイのキリコは　100トンやったで"
+		? ">>3 ワイは　100トン　えらんだで"
 		: !f.kakugari
-			? ">>3 ワイのキリコは　角刈りやったで"
+			? ">>3 ワイは　角刈り　えらんだで"
 			: ">>3 ワイは　ポニテ派や",
-	f.reply_srv !== "chikuon"
-		? ">>4 ソースごと　蓄音したやつ　おる？"
-		: f.reply_kako !== "uke"
-			? ">>4 古参ニキに　昔の話　聞いたやつ　おる？"
-			: ">>4 ソースは　マーボーやったやつ　おる？",
+	byFlag(S4, f.reply_srv) ?? S4.neta,
 ];
 
 /** スタッフロールのあとの「このスレの　まとめ」（1行22字まで・1セクション10行まで）。 */

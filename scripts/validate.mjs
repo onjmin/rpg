@@ -26,7 +26,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const MAX_COLS = 22; // 1行あたりの全角文字数の目安
 const MAX_LINES = 2;
-const MAX_CHOICE = 16; // 選択肢の全角文字数
+// 選択肢の全角文字数。375px 幅のスマホ縦で1行に収まる幅（.choice の max-width 80vw・
+// .choice-item の 17px と余白から、文字の入る幅は 約240px＝全角14字）
+const MAX_CHOICE = 14;
 const MAX_SUMMARY_LINES = 10; // まとめカードの1セクションの行数
 const PICKS = [0, 1, 2, 3, 4]; // choose が返す番号（選択肢が少なければ最後のもの）
 const LOSE_FIRST = 3; // 負けイベント（canLose）で最初に負ける回数

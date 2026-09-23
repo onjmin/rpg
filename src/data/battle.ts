@@ -675,9 +675,22 @@ export const groups: Record<string, EnemyGroup> = {
 		intro: "ムッジェと　フェリスが　立ちはだかった！",
 		victory: "ムッジェと　フェリスが　おちついた！",
 	}),
-	g_std1: g({ id: "g_std1", enemies: ["yaji", "ouen"] }),
-	g_std2: g({ id: "g_std2", enemies: ["makemood", "pitcher"] }),
-	g_std3: g({ id: "g_std3", enemies: ["ouen", "makemood", "yaji"] }),
+	// スタジアムのシンボル J民（人間のヤジ。荒らしではないので「あらしを　しずめた」にしない）
+	g_std1: g({
+		id: "g_std1",
+		enemies: ["yaji", "ouen"],
+		victory: "ヤジが　しずまった！",
+	}),
+	g_std2: g({
+		id: "g_std2",
+		enemies: ["makemood", "pitcher"],
+		victory: "ヤジが　しずまった！",
+	}),
+	g_std3: g({
+		id: "g_std3",
+		enemies: ["ouen", "makemood", "yaji"],
+		victory: "ヤジが　しずまった！",
+	}),
 	g_b3: g({
 		id: "g_b3",
 		enemies: ["kantoku", "pitcher"],

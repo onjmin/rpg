@@ -8,9 +8,25 @@ import type {
 	GameState,
 	ProfileDef,
 	SkitDef,
+	Story,
 } from "../../engine/defs";
 
 const ch = (st: GameState) => Number(st.flags.ch ?? 0);
+
+/**
+ * おでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に知らせる（F5 の予告③）。
+ * 別のチャットにすると N1・N2 が見られなくなるので、その最後に1行だけ足す。
+ */
+const nighterNotice = async (s: Story): Promise<void> => {
+	const st = s.state;
+	if (
+		st.flags.b2 &&
+		!st.flags.b3 &&
+		!st.flags.date_nanj &&
+		bondOf(st, "nanj") >= 3
+	)
+		await s.say("nanj", "外野席、今夜が　最後の\nチャンスやで");
+};
 
 export const skits: SkitDef[] = [];
 
@@ -73,20 +89,6 @@ export const chats: ChatDef[] = [
 
 	// ───────── なんJ民 ─────────
 	{
-		// N0 おでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に知らせる（F5 の予告③）
-		who: "nanj",
-		when: (st) =>
-			!!st.flags.b2 &&
-			!st.flags.b3 &&
-			!st.flags.date_nanj &&
-			bondOf(st, "nanj") >= 3,
-		run: async (s) => {
-			await s.say("nanj", "外野席、今夜が　最後の\nチャンスやで");
-			await s.say("kiriko", "……行きたいンゴ");
-			await s.say("nanj", "「なかま」から　声かけてや");
-		},
-	},
-	{
 		// N1 第三章・スタジアム
 		who: "nanj",
 		when: (st) => ch(st) === 3,
@@ -97,6 +99,7 @@ export const chats: ChatDef[] = [
 				"フェリスとの　2009年の　つづき、\nしっかり　見届けたるで",
 			);
 			await s.say("kiriko", "吾輩も　見届けるンゴ");
+			await nighterNotice(s);
 		},
 	},
 	{
@@ -108,6 +111,7 @@ export const chats: ChatDef[] = [
 			await s.say("nanj", "実況スレは　名前欄に\n試合の　スコアが　出るんやで");
 			await s.say("kiriko", "名無しの　となりに\nスコアが　出る……？");
 			await s.say("nanj", "せや。みんなで　同じ　試合を\n見とる　しるしや");
+			await nighterNotice(s);
 		},
 	},
 	{
