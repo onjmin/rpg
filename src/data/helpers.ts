@@ -72,6 +72,8 @@ export const chest = (
 			s.se("item");
 			s.give(item, n);
 			s.set(`chest_${id}`);
+			// 「あけた！」の文と同時に開いた宝箱の絵へ（show で出現状態を反映し、閉じた箱と入れ替える）
+			s.show(`${id}_open`);
 			await s.say(
 				null,
 				`たからばこを　あけた！\n${itemName(item)}${n > 1 ? `を　${n}こ` : "を"}　てにいれた！`,
