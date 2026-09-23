@@ -8,8 +8,20 @@
 // - 読み上げは既定 OFF（初回に約35MBの TTS データを取得するため）。設定で ON にする。
 //   初めての行は合成が追いつかず頭が欠けるので、合成を待ってから頭から鳴らす（awaitRender）。
 // - dtm は重いので、最初の音が要るまで動的 import で遅らせる。
+// - 大きさは測ったラウドネスでそろえる（data/loudness.ts）。既定の音量設定のとき、
+//   BGM は曲ごとの #volume で、効果音は1音ずつの倍率で、声は声ごとの倍率で目標の大きさになる。
+// - 効果音が鳴り始めたら、その音の本体が鳴り終わる時刻（waitMs。data/loudness.ts）まで「区切り待ち」にする。
+//   文送り・選択肢の決定・戦闘の早送りはそれまで効かない（seSettled / seHeld）。
+//   連打で次の効果音が畳みかけて重ならないように。余韻までは待たせない。
 
 import type { DtmStudio, MmlPlayback, SpeechHandle } from "@onjmin/dtm";
+import {
+	REF_VOLUME,
+	SE_LOUDNESS,
+	SE_UNMEASURED_GAIN,
+	SE_WAIT,
+	voiceGain,
+} from "../data/loudness";
 import { soundUrl } from "./assets";
 import type { VoiceDef } from "./defs";
 import { onSettingsChange, settings } from "./settings";
@@ -22,16 +34,28 @@ const loadDtm = (): Promise<Dtm> => {
 	return dtmPromise;
 };
 
-/** MML ヘッダの `#volume=` （曲ごとのミックス音量）。 */
+/** MML ヘッダの `#volume=` （曲ごとの音量。ラウドネスをそろえてある。data/bgm.ts）。 */
 const songVolume = (mml: string): number => {
 	const m = /#volume=(\d+)/.exec(mml);
 	return m ? Number(m[1]) : 50;
 };
 
-/** 効果音の音量（RPGEN の mp3 は音が大きいものが多いので半分に絞る）。 */
-const seGainOf = (v: number): number => (v / 100) * 0.5;
+/**
+ * 効果音の全体の音量。既定（60）で 1 倍＝素材ごとの倍率（seLevel）だけで目標の大きさになる。
+ * 最大（100）で +4.4 dB（直す前と同じ幅）。
+ */
+const seGainOf = (v: number): number => v / REF_VOLUME.se;
+/** 効果音ごとの倍率（data/loudness.ts）。測っていない音は直す前と同じ大きさ。 */
+const seLevel = (name: string): number =>
+	SE_LOUDNESS[name]?.[4] ?? SE_UNMEASURED_GAIN;
 /** これより長い効果音（ジングル）は、同じ音が鳴っている間は重ねない。 */
 const LONG_SE_SEC = 1;
+/** 読み込みにこれより長くかかった効果音は鳴らさない（ずれた音は邪魔）。 */
+const SE_LATE_MS = 600;
+/** 区切り待ちのいちばん長い時間（1回の待ちはこれを超えない）。 */
+const SE_HOLD_MAX_MS = SE_WAIT.jingleMaxMs;
+/** 効果音を鳴らしてから次へ進めるまでの ms（測っていない音は待たない）。 */
+const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
 
 /** 前奏（`@0` が全休符で始まる4小節）がある曲は、2周目から前奏を飛ばす。 */
 const hasIntro = (mml: string): boolean =>
@@ -98,6 +122,13 @@ export class GameAudio {
 	private seCache = new Map<string, Promise<AudioBuffer | null>>();
 	/** 長い効果音が鳴り終わる時刻（AudioContext の時計。重ね鳴らし防止）。 */
 	private seEnds = new Map<string, number>();
+	/** 区切り待ちが終わる時刻（performance.now の時計）。 */
+	private holdUntil = 0;
+	/**
+	 * 読み込み中の効果音と、鳴るか捨てるか決まる時刻（初めての音はまだ鳴っていないが、
+	 * すぐ鳴って待ちが始まるので、その間も進めない）。
+	 */
+	private sePending = new Set<{ until: number }>();
 	private voiceReady: Promise<void> | null = null;
 	private speaking: {
 		abort: AbortController;
@@ -137,6 +168,11 @@ export class GameAudio {
 			if (cur.voice && !prev.voice) void this.prepareVoice();
 			if (!cur.voice) this.stopSpeech();
 			if (this.seGain) this.seGain.gain.value = seGainOf(settings.seVolume);
+			// 音を消したら、鳴っていた音の区切りも待たない
+			if (!this.seAudible()) {
+				this.holdUntil = 0;
+				this.sePending.clear();
+			}
 			prev = cur;
 		});
 		document.addEventListener("visibilitychange", () => this.onVisibility());
@@ -219,8 +255,8 @@ export class GameAudio {
 	// ───────────────── BGM ─────────────────
 
 	private volumeFor(mml: string): number {
-		// 曲ごとの #volume（作者のミックス）を基準に、設定の音量で全体を下げる。
-		// 効果音・声より前に出ないよう、設定 100 でも元の半分にとどめる（既定 40 で元の 2 割）。
+		// 曲ごとの #volume に設定の音量を掛ける（既定 40 で #volume の 2 割、100 で半分）。
+		// #volume は既定の 40 で -23 LUFS（sad・ending は -24）になるよう、測って直してある。
 		return Math.min(100, songVolume(mml) * (settings.bgmVolume / 100) * 0.5);
 	}
 
@@ -260,6 +296,9 @@ export class GameAudio {
 			return;
 		}
 		this.bgmPlayback = pb;
+		// 勝利のジングルも効果音と同じく区切り待ちにする（続けてレベルアップの音が重ならないように）。
+		// 曲の長さは測っていないので、ジングルの上限（1.5 秒）だけ待つ
+		this.hold(SE_HOLD_MAX_MS);
 		const start = performance.now();
 		while (pb.isPlaying() && performance.now() - start < maxMs) {
 			await new Promise((r) => setTimeout(r, 100));
@@ -399,16 +438,25 @@ export class GameAudio {
 		for (const n of names) void this.buffer(n);
 	}
 
+	/** 効果音が聞こえる設定か（ミュート・音量 0 のときは鳴らさず、区切りも待たない）。 */
+	private seAudible(): boolean {
+		return !settings.mute && settings.seVolume > 0;
+	}
+
 	se(name: string): void {
-		if (settings.mute || !this.ctx || !this.seGain) return;
+		if (!this.seAudible() || !this.ctx || !this.seGain) return;
 		const ctx = this.ctx;
 		const gain = this.seGain;
 		const p = this.buffer(name);
 		if (!p) return;
 		const t0 = performance.now();
+		const pending = { until: t0 + SE_LATE_MS };
+		this.sePending.add(pending);
 		void p.then((buf) => {
+			this.sePending.delete(pending);
 			// 読み込みに時間がかかりすぎたら鳴らさない（ずれた音は邪魔）
-			if (!buf || performance.now() - t0 > 600) return;
+			if (!buf || performance.now() - t0 > SE_LATE_MS) return;
+			if (!this.seAudible()) return; // 読み込み中に消された
 			// ジングルのような長い音は、同じ音が鳴り終わるまで重ねない（カーソル音などの短い音は重ねてよい）
 			if (buf.duration > LONG_SE_SEC) {
 				if ((this.seEnds.get(name) ?? 0) > ctx.currentTime) return;
@@ -416,9 +464,56 @@ export class GameAudio {
 			}
 			const src = ctx.createBufferSource();
 			src.buffer = buf;
-			src.connect(gain);
+			// 素材ごとの大きさの補正 → 全体の音量
+			const level = ctx.createGain();
+			level.gain.value = seLevel(name);
+			src.connect(level).connect(gain);
+			src.onended = () => level.disconnect();
 			src.start();
+			// 実際に鳴り始めた音だけ、本体が鳴り終わるまで次へ進めない
+			this.hold(seWaitMs(name));
 		});
+	}
+
+	/** 今から ms の間を区切り待ちにする（前の待ちが長ければそちら）。 */
+	private hold(ms: number): void {
+		if (ms <= 0) return;
+		this.holdUntil = Math.max(
+			this.holdUntil,
+			performance.now() + Math.min(ms, SE_HOLD_MAX_MS),
+		);
+	}
+
+	/** 効果音の区切り待ちの最中か（鳴らしたばかりの音の本体がまだ鳴っている・読み込み中）。 */
+	get seHeld(): boolean {
+		const now = performance.now();
+		if (now < this.holdUntil) return true;
+		for (const p of this.sePending) {
+			if (p.until > now) return true;
+			this.sePending.delete(p); // 読み込みが止まったままの音は待たない
+		}
+		return false;
+	}
+
+	/**
+	 * 効果音の区切りまで待つ。待ちの間に次の音が鳴れば延びるが、呼んでから
+	 * SE_HOLD_MAX_MS を超えては待たない（時計で決めるので、タブが隠れていても抜ける）。
+	 */
+	async seSettled(): Promise<void> {
+		const limit = performance.now() + SE_HOLD_MAX_MS;
+		// 読み込み済みの音は次のマイクロタスクで鳴り始めて待ちが決まるので、先にそれを済ませる
+		await Promise.resolve();
+		while (this.seHeld) {
+			const rest = limit - performance.now();
+			if (rest <= 0) return;
+			await new Promise((r) => setTimeout(r, Math.min(rest, 30)));
+		}
+	}
+
+	/** 効果音の鳴り始めと鳴り終わり（ms。頭の無音を含むファイルの中の位置）。測っていなければ null。 */
+	seSpan(name: string): { startMs: number; endMs: number } | null {
+		const m = SE_LOUDNESS[name];
+		return m ? { startMs: m[5], endMs: m[6] } : null;
 	}
 
 	// ───────────────── 読み上げ ─────────────────
@@ -467,7 +562,9 @@ export class GameAudio {
 					pitchOffset: voice.pitchOffset ?? 0,
 					emotion: voice.emotion ?? "neutral",
 					style: voice.style ?? "neutral",
-					volume: (settings.voiceVolume / 100) * 0.85,
+					// 既定（80）で声ごとの倍率＝目標の大きさ（data/loudness.ts）
+					volume:
+						voiceGain(voice.model) * (settings.voiceVolume / REF_VOLUME.voice),
 					awaitRender: true,
 					signal: entry.abort.signal,
 				});

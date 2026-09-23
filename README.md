@@ -38,6 +38,7 @@ pnpm dev
 - `pnpm build` … 型チェックして `build/` に出力（`GITHUB_PAGES=true` で `/rpg/` 配下向け）
 - `pnpm lint` … Biome
 - `pnpm validate` … ゲームデータの検証（マップの形・ワープ先・話し手・戦闘グループ・セリフの長さなど。イベントを空の Story で走らせて調べる）
+- `pnpm loudness` … 効果音の大きさを測り直す（下の「効果音の音量（ラウドネス）」）
 - `node scripts/make-sprites.mjs` … 素材が無かったドット絵（ムッジェ・ボツキリコ・蓄音機）を作り直す
 - 開発中は URL でタイトルを飛ばして好きな場所から始められます（`pnpm dev` のときだけ）:
   `http://localhost:5173/?map=town&x=11&y=16&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
@@ -51,6 +52,17 @@ pnpm dev
   - マップとイベントは `src/data/maps/*.ts`。シナリオは `async (s) => { await s.say("kiriko", "……") }` の形で書きます（使える命令は `src/engine/defs.ts` の `Story`）。
   - マップチップは unj-reze と同じ同梱シート（`public/assets/rpg-reze/Base.png`・`field.png`、`public/assets/rpgen/map.png`）から切り出しています。
   - キャラ・敵の歩行グラと効果音は、unj-reze の GameMaker と同じく RPGEN（rpgen-search）の素材を id で直リンクしています。
+
+### 効果音の音量（ラウドネス）
+
+効果音はいろいろな素材の寄せ集めで、そのままでは大きさがバラバラ（20 dB 近くちがう）なので、測った大きさ（LUFS）から1音ずつ音量を補正しています。目標と測り方は `src/data/loudness.ts` の先頭にまとめてあります。
+
+- 効果音は区分（`ui` / `field` / `battle` / `impact` / `jingle`）ごとに目標の大きさがあります。既定の音量設定で、BGM（-23 LUFS）を基準に UI の音は小さめ、戦闘の音は少し大きめです。
+- 効果音を足したり差し替えたりしたら、`src/data/sfx.ts` の合う区分に書いて `pnpm loudness` を実行してください。RPGEN から mp3 を取ってきて（`node_modules/.cache/loudness/` に保存）ffmpeg で測り、`src/data/loudness.ts` の `SE_LOUDNESS` を書き換えます。ffmpeg と ffprobe が要ります。測るまでの音は、前と同じ大きさ（既定で 0.3 倍）で鳴ります。
+  - `--dry-run` で表を出すだけ、`--fresh` で mp3 を取り直します。
+- BGM は曲ごとの MML の `#volume=` でそろえてあります（測った値と直し方は `src/data/bgm.ts`）。読み上げの声は、声ごとの大きさ（`VOICE_LUFS`）から音量を補正しています。
+
+効果音が鳴ったあとは、その音の本体（エネルギーの 85 %）が鳴り終わるまで、文送り・選択肢の決定・戦闘の早送りとコマンドを止めます（連打で効果音が畳みかけないように。余韻までは待たず、長くても 1.2 秒・ジングルは 1.5 秒。メニューの音は待ちません）。この長さも `pnpm loudness` が測って `SE_LOUDNESS` に書きます。エンカウントは効果音が鳴り終わるまでフィールドを崩す演出でつなぎ、それから戦闘の画面と曲に移ります。
 
 ## クレジット
 

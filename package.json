@@ -12,7 +12,8 @@
 		"check": "tsc --noEmit",
 		"lint": "biome check src",
 		"format": "biome check src --write",
-		"validate": "node scripts/validate.mjs"
+		"validate": "node scripts/validate.mjs",
+		"loudness": "node scripts/measure-loudness.mjs"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [

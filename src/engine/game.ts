@@ -91,8 +91,14 @@ export class Game {
 		this.input = input;
 		this.audio = audio;
 		this.ui = ui;
-		this.msg = new MessageWindow(ui, input, () => settings.textMs);
-		this.choice = new ChoiceWindow(ui, input);
+		// 文送りと選択肢の決定は、鳴らしたばかりの効果音の区切りまで待つ（audio.ts）
+		this.msg = new MessageWindow(
+			ui,
+			input,
+			() => settings.textMs,
+			() => audio.seSettled(),
+		);
+		this.choice = new ChoiceWindow(ui, input, () => audio.seHeld);
 		this.fadeEl = el("div", { class: "fade" });
 		this.toastEl = el("div", { class: "toast" });
 		ui.append(this.fadeEl, this.toastEl);

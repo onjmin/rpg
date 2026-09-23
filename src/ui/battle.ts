@@ -2,6 +2,8 @@
 //
 // 操作するのは先頭のキリコだけで、仲間は「おまかせ」（設定で全員操作にもできる）。
 // 「オート」を押すと全員おまかせで進む。負けたら「もういちど」ですぐ再戦できる。
+// エンカウントの音が鳴り終わるまではフィールドを崩す演出でつなぎ、それから戦闘の画面と曲を出す。
+// 文の早送りとコマンドを出すのは、鳴らしたばかりの効果音の区切りまで待つ（engine/audio.ts）。
 
 import { cropOf, getImage, loadImage } from "../engine/assets";
 import type {
@@ -14,8 +16,8 @@ import { type Game, ResetToTitle } from "../engine/game";
 import { gainExp, healAll, statsOf } from "../engine/party";
 import { settings } from "../engine/settings";
 import { isWalkRef } from "../engine/sprite";
-import { sleep } from "../engine/types";
-import { el } from "./dom";
+import { sleep, TILE } from "../engine/types";
+import { el, nextFrame } from "./dom";
 
 type Side = "party" | "enemy";
 
@@ -100,6 +102,86 @@ const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
 	return c;
 };
 
+/** エンカウント演出の長さの上限（効果音を長い音に差し替えても待たせすぎない）。 */
+const ENCOUNTER_MAX_MS = 2500;
+/** エンカウントの音を測っていないときの長さ。 */
+const ENCOUNTER_DEFAULT_MS = 1500;
+/** 白く2回光る長さ（style.css の .encounter::after と同じ）。 */
+const FLASH_MS = 400;
+
+/**
+ * エンカウント演出。エンカウントの効果音が鳴り終わるまで（測った長さ。data/loudness.ts）、
+ * その瞬間のフィールドを止めて白く2回光らせ、モザイクで崩しながら暗転する。
+ * 光るのは音の頭（素材の先頭の無音の後）に合わせる。長さは音ではなく測った値で決めるので、
+ * ミュート中も同じテンポ。動きを減らす設定（prefers-reduced-motion）では、ただ暗転する。
+ * 終わったら真っ暗なまま残す（戻り値を呼ぶと片付く）。
+ */
+const encounterFx = async (game: Game): Promise<() => void> => {
+	const span = game.audio.seSpan("encounter");
+	const end = Math.min(ENCOUNTER_MAX_MS, span?.endMs ?? ENCOUNTER_DEFAULT_MS);
+	const start = Math.min(span?.startMs ?? 0, end / 2);
+	const box = el("div", { class: "encounter" });
+	box.style.setProperty("--at", `${start}ms`);
+	game.ui.appendChild(box);
+	const t0 = performance.now();
+	let raf = 0;
+	const src = game.screen.canvas;
+	const w = src.width;
+	const h = src.height;
+	if (
+		window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
+		!w ||
+		!h
+	) {
+		box.classList.add("calm");
+		box.style.setProperty("--fade", `${end - start}ms`);
+		await nextFrame();
+		box.classList.add("dark");
+	} else {
+		// フィールドはその瞬間の1枚にする（人や水が動き続けないように）
+		const still = document.createElement("canvas");
+		still.width = w;
+		still.height = h;
+		still.getContext("2d")?.drawImage(src, 0, 0);
+		const view = el("canvas", { class: "encounter-view" });
+		view.width = w;
+		view.height = h;
+		box.appendChild(view);
+		const small = document.createElement("canvas");
+		const vctx = view.getContext("2d");
+		const sctx = small.getContext("2d");
+		// 2回目に光るのと同時に崩し始め、音が消える少し前に真っ暗にする
+		const from = start + FLASH_MS / 2;
+		const draw = (now: number) => {
+			if (!vctx || !sctx) return;
+			const p = Math.min(1, Math.max(0, (now - t0 - from) / (end - from)));
+			// モザイクの1粒は 1 ドット → 1 マス（だんだん速く）
+			const block = Math.max(
+				1,
+				Math.round((1 + (TILE - 1) * p * p) * game.screen.scale),
+			);
+			const sw = Math.ceil(w / block);
+			const sh = Math.ceil(h / block);
+			if (small.width !== sw || small.height !== sh) {
+				small.width = sw;
+				small.height = sh;
+			}
+			sctx.imageSmoothingEnabled = true;
+			sctx.drawImage(still, 0, 0, sw, sh);
+			vctx.imageSmoothingEnabled = false;
+			vctx.drawImage(small, 0, 0, sw, sh, 0, 0, sw * block, sh * block);
+			vctx.fillStyle = `rgba(0, 0, 0, ${Math.min(1, p / 0.9)})`;
+			vctx.fillRect(0, 0, w, h);
+			if (p < 1) raf = requestAnimationFrame(draw);
+		};
+		draw(t0);
+	}
+	await sleep(Math.max(0, end - (performance.now() - t0)));
+	cancelAnimationFrame(raf);
+	box.classList.add("dark"); // コマ落ちしていても最後は真っ暗
+	return () => box.remove();
+};
+
 export const runBattle = async (
 	game: Game,
 	groupId: string,
@@ -144,7 +226,13 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	const { data, audio, input, state } = game;
 	const group = data.groups[groupId];
 	const isBoss = !!group.boss;
+	// ── エンカウント ──
+	// フィールドの曲を止めて効果音を鳴らし、鳴り終わるまで演出でつなぐ（入力は捨てる）。
+	// 戦闘の画面と曲は音が終わってから（エンカウントの音と戦闘の曲・最初の文が重ならないように）
+	audio.bgm(null);
 	audio.se("encounter");
+	const popSkip = input.push(() => {});
+	const clearFx = await encounterFx(game);
 	audio.bgm(group.bgm ?? (isBoss ? data.bossBgm : data.battleBgm));
 
 	// ── 画面 ──
@@ -163,6 +251,8 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	game.ui.appendChild(root);
 	await sleep(20);
 	root.classList.add("shown");
+	// 戦闘の画面が出きったら（.battle の opacity 0.25s）演出の暗転を片付ける
+	void sleep(300).then(clearFx);
 
 	// ── 戦う人 ──
 	const enemies: Fighter[] = group.enemies.map((id, i) => {
@@ -259,11 +349,18 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (k === "a" || k === "b") fast = true;
 		});
 	let popFast = pushFast();
+	popSkip(); // ここからの入力は早送り
 	const log = async (text: string, wait = 650) => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
-		while (performance.now() - t0 < wait && !fast) await sleep(30);
+		while (performance.now() - t0 < wait && !fast) {
+			await sleep(30);
+			// 効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
+			if (audio.seHeld) fast = false;
+		}
+		// 時間で進むときも、効果音の区切りまでは次の文（とその音）を出さない
+		await audio.seSettled();
 	};
 
 	const names = [...new Set(group.enemies.map((id) => data.enemies[id].name))];
@@ -652,6 +749,8 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (auto || (!leader && settings.autoAllies)) {
 				action = aiAction(f);
 			} else {
+				// コマンドは効果音の区切りまで鳴ってから出す（すぐ決めて次の音が重ならないように）
+				await audio.seSettled();
 				popFast();
 				logEl.textContent = `${f.name}は　どうする？`;
 				const chosen = await chooseAction(f);

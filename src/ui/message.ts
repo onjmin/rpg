@@ -200,10 +200,20 @@ export class MessageWindow {
 	private input: Input;
 	/** 1文字あたりの ms（0 で一瞬）。 */
 	msPerChar: () => number;
+	/** 効果音の区切りまで待つ（GameAudio.seSettled）。 */
+	private settled: () => Promise<void>;
+	/** show のたびに増える（前の文の区切り待ちが、次の文の ▼ を出さないように）。 */
+	private showToken = 0;
 
-	constructor(root: HTMLElement, input: Input, msPerChar: () => number) {
+	constructor(
+		root: HTMLElement,
+		input: Input,
+		msPerChar: () => number,
+		settled: () => Promise<void> = () => Promise.resolve(),
+	) {
 		this.input = input;
 		this.msPerChar = msPerChar;
+		this.settled = settled;
 		const layer = el("div", { class: "portrait-layer" });
 		root.appendChild(layer);
 		this.left = new PortraitSlot(layer, "left");
@@ -263,15 +273,26 @@ export class MessageWindow {
 		this.textEl.textContent = "";
 		this.nextEl.classList.remove("shown");
 		const stop = p.onShow?.();
+		const token = ++this.showToken;
 		return new Promise((resolve) => {
 			let shown = 0;
 			let timer = 0;
+			/** 文が出きった。 */
 			let done = false;
+			/** 効果音の区切りまで鳴った（送れる）。 */
+			let ready = false;
 			const finish = () => {
+				if (done) return;
 				done = true;
 				window.clearTimeout(timer);
 				this.textEl.textContent = p.text;
-				this.nextEl.classList.add("shown");
+				// 鳴らしたばかりの効果音の本体が鳴り終わってから ▼ を出して送れるようにする
+				// （すぐ送ると次の効果音が畳みかけて重なる）
+				void this.settled().then(() => {
+					if (token !== this.showToken) return;
+					ready = true;
+					this.nextEl.classList.add("shown");
+				});
 			};
 			const tick = () => {
 				const ms = this.msPerChar();
@@ -294,9 +315,10 @@ export class MessageWindow {
 			const pop = this.input.push((key, repeat) => {
 				if (repeat || (key !== "a" && key !== "b")) return;
 				if (!done) {
-					finish();
+					finish(); // 文字送りの飛ばしはいつでも効く
 					return;
 				}
+				if (!ready) return; // 区切りまでは押しても送らない
 				pop();
 				stop?.();
 				resolve();
@@ -321,10 +343,17 @@ export class MessageWindow {
 export class ChoiceWindow {
 	private root: HTMLElement;
 	private input: Input;
+	/** 効果音の区切り待ちの最中か（GameAudio.seHeld）。 */
+	private held: () => boolean;
 
-	constructor(root: HTMLElement, input: Input) {
+	constructor(
+		root: HTMLElement,
+		input: Input,
+		held: () => boolean = () => false,
+	) {
 		this.root = root;
 		this.input = input;
+		this.held = held;
 	}
 
 	choose(
@@ -339,6 +368,15 @@ export class ChoiceWindow {
 			b.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
+				// 区切り待ちの間は、押した項目にカーソルを合わせるだけ（もう一度押すと決まる）
+				if (this.held()) {
+					if (cur !== i) {
+						cur = i;
+						se?.("cursor");
+						render();
+					}
+					return;
+				}
 				pick(i);
 			});
 			box.appendChild(b);
@@ -353,6 +391,8 @@ export class ChoiceWindow {
 		let pop: () => void = () => {};
 		let resolveFn: (n: number) => void = () => {};
 		const pick = (i: number) => {
+			// 前の効果音の本体が鳴り終わるまでは決めない（カーソルは動かせる）
+			if (this.held()) return;
 			se?.("decide");
 			pop();
 			box.remove();
