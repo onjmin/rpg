@@ -1,4 +1,4 @@
-// BGM（MML）。出典: うんｊレゼ「AI作曲スレ」https://unj-reze.onjmin.workers.dev/post/1318 （名無し2rt さん）
+// BGM（MML）。
 // 歌入りの曲も playMML / studio.play では歌詞行（@@n）が除かれ、インストとして鳴る。
 
 import battle from "./bgm/battle.mml?raw"; // b5ed6f97d24d49a4「ゲームっぽい」
