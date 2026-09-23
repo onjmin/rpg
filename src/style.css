@@ -1,0 +1,1151 @@
+/* 蓄音キリコの大冒険 — 画面のスタイル（スマホ縦持ち優先、横持ち・PC も可） */
+
+:root {
+	--bg: #1b1026;
+	--win-bg: rgba(12, 10, 28, 0.9);
+	--win-border: #f4f1ff;
+	--text: #fbf8ff;
+	--muted: #b9b0d6;
+	--accent: #ffcf4a;
+	--hp: #62e07a;
+	--mp: #6fb7ff;
+	--danger: #ff5d6c;
+	--safe-b: env(safe-area-inset-bottom, 0px);
+	--safe-t: env(safe-area-inset-top, 0px);
+	--safe-l: env(safe-area-inset-left, 0px);
+	--safe-r: env(safe-area-inset-right, 0px);
+	--font:
+		"DotGothic16", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic",
+		sans-serif;
+}
+
+* {
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	overflow: hidden;
+	overscroll-behavior: none;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+button {
+	font-family: inherit;
+	color: inherit;
+	touch-action: manipulation;
+}
+
+#app {
+	position: fixed;
+	inset: 0;
+	overflow: hidden;
+}
+
+#screen {
+	position: absolute;
+	left: 0;
+	top: 0;
+	image-rendering: pixelated;
+}
+
+#ui {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 20;
+}
+
+#ui > * {
+	pointer-events: auto;
+}
+
+/* 見た目だけの層はタップを下へ通す */
+#ui > .portrait-layer,
+#ui > .fade,
+#ui > .flash,
+#ui > .toast {
+	pointer-events: none;
+}
+
+body.shake #app {
+	animation: shake 0.1s linear infinite;
+}
+
+@keyframes shake {
+	0% {
+		transform: translate(0, 0);
+	}
+	25% {
+		transform: translate(-3px, 1px);
+	}
+	50% {
+		transform: translate(2px, -2px);
+	}
+	75% {
+		transform: translate(-1px, 2px);
+	}
+}
+
+/* ───────── 共通ウィンドウ ───────── */
+
+.window {
+	background: var(--win-bg);
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+	box-shadow:
+		0 0 0 2px #000,
+		0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+/* ───────── メッセージ窓 ───────── */
+
+/* スマホ幅でも 1 行に全角 22 字が入るように、文字の大きさを画面の幅から決める
+   （セリフは 1 行 22 字までという決まりで書いている） */
+.msg {
+	position: absolute;
+	left: calc(6px + var(--safe-l));
+	right: calc(6px + var(--safe-r));
+	bottom: calc(10px + var(--safe-b));
+	min-height: 108px;
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 14px 10px 22px;
+	font-size: clamp(13px, calc((100vw - 34px) / 22.4), 17px);
+	line-height: 1.65;
+	display: none;
+	z-index: 22;
+	cursor: pointer;
+}
+
+.msg.shown {
+	display: block;
+	animation: pop-in 0.12s ease-out;
+}
+
+@keyframes pop-in {
+	from {
+		transform: translateY(6px);
+		opacity: 0.4;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+.msg-name {
+	position: absolute;
+	top: -15px;
+	left: 12px;
+	padding: 1px 12px;
+	font-size: 14px;
+	background: #000;
+	border: 2px solid var(--char, #fff);
+	border-radius: 6px;
+	color: var(--char, #fff);
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.msg-text {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.msg.narration .msg-text {
+	color: #e8e2ff;
+}
+
+.msg-next {
+	position: absolute;
+	right: 14px;
+	bottom: 4px;
+	font-size: 12px;
+	opacity: 0;
+}
+
+.msg-next.shown {
+	opacity: 1;
+	animation: blink 0.9s steps(2) infinite;
+}
+
+@keyframes blink {
+	50% {
+		opacity: 0.2;
+	}
+}
+
+/* ───────── 立ち絵 ───────── */
+
+/* 立ち絵の枠。下の 40px はメッセージ窓の裏に潜らせて、上半身の切り口を隠す */
+.portrait-layer {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: calc(118px + 12px - 40px + var(--safe-b));
+	height: min(50vh, 440px);
+	pointer-events: none;
+	z-index: 21;
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+.portrait {
+	position: absolute;
+	bottom: -6px;
+	width: min(46vw, 340px);
+	height: 100%;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	opacity: 0;
+	transform: translateY(12px);
+	transition:
+		opacity 0.2s,
+		transform 0.2s,
+		filter 0.2s;
+}
+
+.portrait.left {
+	left: 2%;
+}
+.portrait.right {
+	right: 2%;
+}
+
+.portrait.shown {
+	opacity: 1;
+	transform: none;
+}
+
+.portrait.dim {
+	filter: brightness(0.55) saturate(0.7);
+}
+
+/* 余白を切り詰めた立ち絵（canvas）を、枠いっぱいに下端そろえで収める */
+.portrait-img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: bottom;
+	filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+
+/* 上半身だけ切り出したときは、下端をぼかして切り口を目立たせない */
+.portrait-img.cropped {
+	-webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+
+/* 絵の向きと立つ側が合わないときは左右反転して中央を向かせる */
+.portrait-img.flip {
+	transform: scaleX(-1);
+}
+
+/* 立ち絵が届くまでのダミー（マップを隠しすぎないように小さめ・半透明） */
+.portrait-dummy {
+	position: relative;
+	width: 62%;
+	height: 72%;
+	opacity: 0.8;
+	border: 3px dashed var(--char);
+	border-radius: 14px 14px 0 0;
+	background: linear-gradient(
+		to top,
+		color-mix(in srgb, var(--char) 35%, transparent),
+		rgba(0, 0, 0, 0.15)
+	);
+	overflow: hidden;
+}
+
+.portrait-dummy .silhouette {
+	position: absolute;
+	left: 50%;
+	bottom: 0;
+	width: 64%;
+	height: 78%;
+	transform: translateX(-50%);
+	background:
+		radial-gradient(
+			circle at 50% 22%,
+			color-mix(in srgb, var(--char) 70%, #000) 0 19%,
+			transparent 19.5%
+		),
+		radial-gradient(
+			ellipse at 50% 100%,
+			color-mix(in srgb, var(--char) 55%, #000) 0 58%,
+			transparent 58.5%
+		);
+	opacity: 0.85;
+}
+
+.portrait-dummy .label {
+	position: absolute;
+	top: 8px;
+	left: 0;
+	right: 0;
+	text-align: center;
+	white-space: pre-line;
+	font-size: 13px;
+	color: #fff;
+	text-shadow:
+		0 0 4px #000,
+		0 0 2px #000;
+}
+
+/* ───────── 選択肢・メニュー ───────── */
+
+.choice {
+	position: absolute;
+	right: calc(14px + var(--safe-r));
+	bottom: calc(142px + var(--safe-b));
+	min-width: 180px;
+	max-width: 80vw;
+	padding: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	z-index: 30;
+}
+
+.choice-item,
+.menu-item,
+.menu-close {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+	width: 100%;
+	text-align: left;
+	padding: 10px 12px 10px 26px;
+	font-size: 17px;
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+	position: relative;
+	cursor: pointer;
+}
+
+.choice-item.cur,
+.menu-item.cur {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.choice-item.cur::before,
+.menu-item.cur::before {
+	content: "▶";
+	position: absolute;
+	left: 8px;
+	font-size: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	animation: blink 0.9s steps(2) infinite;
+}
+
+.menu-item small {
+	color: var(--accent);
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.menu-item.disabled,
+.cmd.disabled,
+.title-btn.disabled {
+	opacity: 0.35;
+}
+
+.menu {
+	position: absolute;
+	top: calc(64px + var(--safe-t));
+	right: calc(12px + var(--safe-r));
+	width: min(360px, calc(100vw - 24px));
+	max-height: calc(100% - 90px - var(--safe-t) - var(--safe-b));
+	overflow-y: auto;
+	padding: 10px;
+	z-index: 30;
+	touch-action: pan-y;
+}
+
+.menu.main-menu {
+	width: 200px;
+}
+
+.menu-title {
+	padding: 4px 8px 8px;
+	color: var(--muted);
+	font-size: 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	margin-bottom: 6px;
+}
+
+.menu-close {
+	justify-content: center;
+	padding: 8px;
+	margin-top: 6px;
+	color: var(--muted);
+	font-size: 14px;
+	border-top: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 0;
+}
+
+/* プロフィール（なかよし度で開くページ） */
+.profile .menu-title {
+	color: var(--char);
+}
+
+.profile-page {
+	border-left: 3px solid var(--char);
+	padding: 4px 10px 6px;
+	margin: 8px 0;
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.profile-page.locked {
+	border-left-color: #555;
+	color: var(--muted);
+}
+
+.profile-head {
+	font-size: 14px;
+	color: var(--accent);
+	margin-bottom: 2px;
+}
+
+.profile-page.locked .profile-head {
+	color: var(--muted);
+}
+
+.profile-page p {
+	margin: 2px 0;
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+.status-card {
+	border-left: 4px solid var(--char);
+	padding: 6px 10px;
+	margin: 6px 0;
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.s-name {
+	color: var(--char);
+	font-size: 17px;
+	display: flex;
+	justify-content: space-between;
+}
+
+.s-row {
+	font-size: 14px;
+	margin-top: 2px;
+}
+
+.s-row.small {
+	font-size: 12px;
+	color: var(--muted);
+	padding: 4px 2px 0;
+}
+
+/* ───────── HUD ───────── */
+
+.hud {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 21;
+	transition: opacity 0.15s;
+}
+
+/* タイトル画面ではミュートボタンだけ出す */
+.hud.hidden .pad,
+.hud.hidden .ab,
+.hud.hidden .menu-btn {
+	display: none;
+}
+
+.hud.modal .pad,
+.hud.modal .ab {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.hud > * {
+	pointer-events: auto;
+}
+
+.pad {
+	position: absolute;
+	left: calc(16px + var(--safe-l));
+	bottom: calc(20px + var(--safe-b));
+	width: 136px;
+	height: 136px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.28);
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	touch-action: none;
+}
+
+.hud.no-pad .pad {
+	display: none;
+}
+
+.pad i {
+	position: absolute;
+	width: 42px;
+	height: 42px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.22);
+	pointer-events: none;
+}
+
+.pad i::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	width: 0;
+	height: 0;
+	border: 8px solid transparent;
+}
+
+.pad .up {
+	left: 47px;
+	top: 6px;
+}
+.pad .down {
+	left: 47px;
+	bottom: 6px;
+}
+.pad .left {
+	left: 6px;
+	top: 47px;
+}
+.pad .right {
+	right: 6px;
+	top: 47px;
+}
+.pad .up::after {
+	border-bottom-color: #fff;
+	margin-top: 6px;
+}
+.pad .down::after {
+	border-top-color: #fff;
+	margin-bottom: 6px;
+}
+.pad .left::after {
+	border-right-color: #fff;
+	margin-left: 6px;
+}
+.pad .right::after {
+	border-left-color: #fff;
+	margin-right: 6px;
+}
+.pad[data-dir="up"] .up,
+.pad[data-dir="down"] .down,
+.pad[data-dir="left"] .left,
+.pad[data-dir="right"] .right {
+	background: rgba(255, 207, 74, 0.7);
+}
+
+.ab {
+	position: absolute;
+	right: calc(16px + var(--safe-r));
+	bottom: calc(24px + var(--safe-b));
+	width: 150px;
+	height: 120px;
+}
+
+.btn {
+	position: absolute;
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	border: 2px solid rgba(255, 255, 255, 0.5);
+	background: rgba(0, 0, 0, 0.35);
+	font-size: 22px;
+	cursor: pointer;
+}
+
+.btn.down {
+	background: rgba(255, 207, 74, 0.6);
+}
+
+.btn-a {
+	right: 0;
+	top: 0;
+}
+.btn-b {
+	left: 0;
+	bottom: 0;
+}
+
+.top-btns {
+	position: absolute;
+	top: calc(10px + var(--safe-t));
+	right: calc(10px + var(--safe-r));
+	display: flex;
+	gap: 8px;
+}
+
+.icon-btn {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	background: rgba(0, 0, 0, 0.45);
+	font-size: 20px;
+	cursor: pointer;
+}
+
+.icon-btn.off {
+	border-color: var(--danger);
+}
+
+/* ───────── フェード・トースト ───────── */
+
+.fade {
+	position: absolute;
+	inset: 0;
+	background: #000;
+	opacity: 0;
+	pointer-events: none;
+	z-index: 50;
+}
+
+.flash {
+	position: absolute;
+	inset: 0;
+	opacity: 0.8;
+	pointer-events: none;
+	z-index: 51;
+}
+
+.toast {
+	position: absolute;
+	top: calc(14px + var(--safe-t));
+	left: calc(14px + var(--safe-l));
+	padding: 6px 14px;
+	background: rgba(0, 0, 0, 0.6);
+	border-left: 4px solid var(--accent);
+	font-size: 15px;
+	opacity: 0;
+	pointer-events: none;
+	z-index: 24;
+}
+
+.toast.shown {
+	animation: toast 2.6s ease forwards;
+}
+
+@keyframes toast {
+	0% {
+		opacity: 0;
+		transform: translateX(-10px);
+	}
+	12% {
+		opacity: 1;
+		transform: none;
+	}
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+/* ───────── 章タイトル ───────── */
+
+.chapter {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.88);
+	opacity: 0;
+	transition: opacity 0.5s;
+	z-index: 60;
+	gap: 14px;
+	text-align: center;
+	padding: 20px;
+}
+
+.chapter.shown {
+	opacity: 1;
+}
+
+.chapter-label {
+	color: var(--accent);
+	letter-spacing: 0.3em;
+	font-size: 16px;
+}
+
+.chapter-title {
+	font-size: clamp(18px, 6.2vw, 38px);
+	word-break: keep-all;
+	text-shadow: 0 0 12px rgba(160, 120, 255, 0.8);
+}
+
+/* ───────── 戦闘 ───────── */
+
+.battle {
+	position: absolute;
+	inset: 0;
+	z-index: 25;
+	display: flex;
+	flex-direction: column;
+	opacity: 0;
+	transition: opacity 0.25s;
+	padding: calc(8px + var(--safe-t)) calc(8px + var(--safe-r))
+		calc(8px + var(--safe-b)) calc(8px + var(--safe-l));
+}
+
+.battle.shown {
+	opacity: 1;
+}
+
+.battle-bg {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background:
+		repeating-linear-gradient(
+			0deg,
+			rgba(255, 255, 255, 0.035) 0 2px,
+			transparent 2px 6px
+		),
+		radial-gradient(ellipse at 50% 40%, #3a2a6a 0%, #150d2c 70%, #07040f 100%);
+}
+
+.battle.quake {
+	animation: shake 0.1s linear 3;
+}
+
+.battle.sing .battle-bg {
+	animation: sing 0.7s ease-out;
+}
+
+@keyframes sing {
+	0% {
+		filter: hue-rotate(0) brightness(1);
+	}
+	30% {
+		filter: hue-rotate(90deg) brightness(1.8);
+	}
+	100% {
+		filter: hue-rotate(0) brightness(1);
+	}
+}
+
+.enemy-row {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	min-height: 150px;
+	padding-top: 40px;
+}
+
+.enemy {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	transition:
+		opacity 0.4s,
+		transform 0.4s;
+}
+
+.enemy-sprite {
+	image-rendering: pixelated;
+	filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35));
+}
+
+.enemy.hit .enemy-sprite {
+	animation: hit 0.35s steps(2);
+}
+
+@keyframes hit {
+	0%,
+	100% {
+		opacity: 1;
+		transform: none;
+	}
+	25% {
+		opacity: 0;
+		transform: translateX(-4px);
+	}
+	50% {
+		opacity: 1;
+		transform: translateX(4px);
+	}
+	75% {
+		opacity: 0;
+	}
+}
+
+.enemy.dead {
+	opacity: 0;
+	transform: scale(0.6);
+	pointer-events: none;
+}
+
+.hpbar {
+	width: 60px;
+	height: 5px;
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.hpbar i {
+	display: block;
+	height: 100%;
+	background: var(--danger);
+	transition: width 0.3s;
+}
+
+.party-row {
+	display: flex;
+	gap: 6px;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin: 6px 0;
+}
+
+.member {
+	flex: 1 1 0;
+	min-width: 92px;
+	max-width: 180px;
+	padding: 6px 8px;
+	background: var(--win-bg);
+	border: 2px solid var(--char, #fff);
+	border-radius: 6px;
+	font-size: 12px;
+}
+
+.member.down {
+	opacity: 0.45;
+	border-color: #666;
+}
+
+.member.pinch {
+	animation: pinch 1s ease-in-out infinite;
+}
+
+@keyframes pinch {
+	50% {
+		box-shadow: 0 0 10px var(--danger);
+	}
+}
+
+.member.hit {
+	animation: member-hit 0.3s;
+}
+
+@keyframes member-hit {
+	0%,
+	100% {
+		background: var(--win-bg);
+	}
+	40% {
+		background: #7a1020;
+	}
+}
+
+.m-name {
+	color: var(--char, #fff);
+	font-size: 14px;
+	display: flex;
+	justify-content: space-between;
+	gap: 4px;
+	white-space: nowrap;
+}
+
+.m-name span {
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.m-bar {
+	height: 5px;
+	background: rgba(255, 255, 255, 0.12);
+	margin-top: 4px;
+}
+
+.m-bar i {
+	display: block;
+	height: 100%;
+	transition: width 0.3s;
+}
+
+.m-bar.hp i {
+	background: var(--hp);
+}
+.m-bar.mp i {
+	background: var(--mp);
+}
+
+.m-num {
+	font-size: 11px;
+	color: #ddd;
+}
+
+.m-num.novoice {
+	margin-top: 4px;
+	color: var(--muted);
+}
+
+.battle-log {
+	min-height: 64px;
+	padding: 10px 14px;
+	font-size: 16px;
+	line-height: 1.5;
+	margin: 4px 0;
+}
+
+.battle-cmd {
+	display: none;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+	min-height: 0;
+}
+
+.battle-cmd.shown {
+	display: grid;
+}
+
+.cmd {
+	padding: 12px 8px;
+	font-size: 17px;
+	background: var(--win-bg);
+	border: 2px solid rgba(255, 255, 255, 0.55);
+	border-radius: 8px;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.cmd small {
+	font-size: 11px;
+	color: var(--accent);
+}
+
+.cmd.cur {
+	border-color: var(--accent);
+	background: rgba(60, 40, 110, 0.95);
+}
+
+.cmd.back {
+	grid-column: 1 / -1;
+	color: var(--muted);
+	font-size: 14px;
+	padding: 8px;
+}
+
+/* ───────── タイトル ───────── */
+
+.title {
+	position: absolute;
+	inset: 0;
+	z-index: 19;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	padding: 20px;
+	text-align: center;
+	background:
+		radial-gradient(
+			circle at 50% 35%,
+			rgba(255, 207, 74, 0.18),
+			transparent 45%
+		),
+		repeating-radial-gradient(
+			circle at 50% 35%,
+			rgba(255, 255, 255, 0.05) 0 2px,
+			transparent 2px 14px
+		),
+		linear-gradient(#2a1450, #120a24 70%);
+	transition: opacity 0.5s;
+}
+
+.title.leaving {
+	opacity: 0;
+}
+
+.title-sub {
+	color: var(--muted);
+	font-size: 14px;
+	letter-spacing: 0.2em;
+}
+
+.title-logo {
+	margin: 0;
+	font-weight: normal;
+	font-size: clamp(30px, 10.5vw, 58px);
+	word-break: keep-all;
+	line-height: 1.2;
+	color: #fff4c9;
+	text-shadow:
+		0 3px 0 #b04a8a,
+		0 6px 0 #3b1a64,
+		0 0 24px rgba(255, 180, 90, 0.6);
+}
+
+.title-logo .title-logo-sub {
+	display: block;
+	font-size: 0.56em;
+	margin-top: 0.3em;
+	letter-spacing: 0.02em;
+}
+
+.title-walkers {
+	width: calc(80px * 4);
+	max-width: 80vw;
+	image-rendering: pixelated;
+	aspect-ratio: 4 / 1;
+	height: auto;
+}
+
+.title-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: min(280px, 80vw);
+}
+
+.title-btn {
+	padding: 12px;
+	font-size: 19px;
+	background: var(--win-bg);
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.title-btn.cur {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.title-foot {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+/* ───────── エンディング ───────── */
+
+.credits {
+	position: absolute;
+	inset: 0;
+	z-index: 55;
+	background: #000;
+	overflow: hidden;
+	text-align: center;
+}
+
+.credits-inner {
+	padding: 0 20px;
+}
+
+.credits h2 {
+	color: var(--accent);
+	font-weight: normal;
+	font-size: 16px;
+	margin: 28px 0 10px;
+	letter-spacing: 0.15em;
+}
+
+.credits p {
+	margin: 6px 0;
+	font-size: 15px;
+	line-height: 1.6;
+	word-break: break-all;
+}
+
+.credits .gap {
+	height: 60px;
+}
+
+.the-end {
+	position: absolute;
+	inset: 0;
+	z-index: 56;
+	background: #000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	opacity: 0;
+	transition: opacity 1.2s;
+}
+
+.the-end.shown {
+	opacity: 1;
+}
+
+.the-end-title {
+	font-size: 42px;
+	color: #fff4c9;
+}
+
+.the-end-tap {
+	margin-top: 30px;
+	font-size: 13px;
+	color: var(--muted);
+	animation: blink 1.4s steps(2) infinite;
+}
+
+/* ───────── 横持ち・大きい画面 ───────── */
+
+@media (orientation: landscape) and (max-height: 520px) {
+	.msg {
+		left: 170px;
+		right: 180px;
+		min-height: 96px;
+		font-size: 15px;
+		padding: 10px 14px 18px;
+	}
+	.portrait-layer {
+		bottom: calc(96px + 12px - 30px);
+		height: 66vh;
+	}
+	.battle {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+	.enemy-row {
+		flex: 1 1 60%;
+		padding-top: 30px;
+	}
+	.party-row {
+		flex: 1 1 35%;
+		flex-direction: column;
+		justify-content: center;
+	}
+	.battle-log {
+		flex: 1 1 100%;
+		min-height: 50px;
+	}
+	.battle-cmd {
+		flex: 1 1 100%;
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
