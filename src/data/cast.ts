@@ -26,7 +26,7 @@ export const cast: Record<string, CharDef> = {
 	}),
 	nanj: c({
 		id: "nanj",
-		name: "なんJ民",
+		name: "おんJ民",
 		walk: "sa:29aYeF", // 彡(●)(●)
 		color: "#f5d142",
 		// UTAU の声が無いので こえ は 0 固定（うたえない）。持ち技は通常攻撃の演出で出す

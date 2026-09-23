@@ -169,7 +169,7 @@ const botsuVoice = (st: GameState): string =>
 		"……こんど、角刈りも\nためしてほしいンゴ",
 	);
 
-/** なんJ民（「次スレ　立てといたで」のあと）：外野席デートを見逃したときだけ。 */
+/** おんJ民（「次スレ　立てといたで」のあと）：外野席デートを見逃したときだけ。 */
 const nanjDate = (st: GameState): string | null =>
 	st.flags.date_nanj ? null : "……ナイターは、次スレで\nいっしょに　行こな";
 
@@ -213,7 +213,7 @@ const DATES: [id: string, name: string][] = [
 	["roze", "ロゼ"],
 	["feris", "フェリス"],
 	["teto", "テト"],
-	["nanj", "なんJ民"],
+	["nanj", "おんJ民"],
 ];
 
 /** 自分の道（>>101〜1000）。当てはまらない行は出さない。 */

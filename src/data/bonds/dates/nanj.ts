@@ -1,9 +1,9 @@
 // おでかけ（nanj）：おんJスタジアムの外野席でナイター観戦。
 // フライのかんちがい → 手のひら返し → ホームランボールを釣りのタモ網でキャッチ（memo_nanj）。
-// 試合のあと「名付け親はワイ（自称）」をしんみり回収し、UTAU の声が無いなんJ民の
+// 試合のあと「名付け親はワイ（自称）」をしんみり回収し、UTAU の声が無いおんJ民の
 // 応援の声を、キリコが蓄音機に録る。
-// 舞台は odekake マップの ④ なんJ民の区画（scratchpad/design/odekake-spots.md）。
-// なんJ民は アク禁（akukin）で離れたあとは戻らないので、それまでの間だけ行ける。
+// 舞台は odekake マップの ④ おんJ民の区画（scratchpad/design/odekake-spots.md）。
+// おんJ民は アク禁（akukin）で離れたあとは戻らないので、それまでの間だけ行ける。
 import type { DateDef, GameState } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";

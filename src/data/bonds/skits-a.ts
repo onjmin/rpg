@@ -1,7 +1,7 @@
 // 仲間との親睦：ひとやすみ会話（第一章〜第三章＝B3 まで。a_mabo だけ終章まで）。
 // 配列の順番＝優先度（蓄音機・メニューでは、まだ見ていない先頭の1つが流れる）。
 // 早い時期 → 遅い時期 の順に並べる。設計は bonds-plan.md §1-2。
-// ただし n_nighter（なんJ民のおでかけの予告）だけは先頭に置く（蓄音機では先頭の1つしか流れないため）。
+// ただし n_nighter（おんJ民のおでかけの予告）だけは先頭に置く（蓄音機では先頭の1つしか流れないため）。
 import { bondOf } from "../../engine/bonds";
 import type {
 	ChatDef,
@@ -14,7 +14,7 @@ import { silent } from "../story";
 const ch = (st: GameState) => Number(st.flags.ch ?? 0);
 
 export const skits: SkitDef[] = [
-	// 0. なんJ民のおでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に、
+	// 0. おんJ民のおでかけ（外野席でナイター）の予告。アク禁で行けなくなる前に、
 	//    シーズンの終わりという理由で知らせる（F5 の予告②）。B2〜B3
 	{
 		id: "n_nighter",
@@ -77,7 +77,7 @@ export const skits: SkitDef[] = [
 			await s.say("nanj", "草");
 		},
 	},
-	// 3. なんJ民は UTAU の声がナイ（うたえない）→ 応援を蓄音機にためる。B〜D
+	// 3. おんJ民は UTAU の声がナイ（うたえない）→ 応援を蓄音機にためる。B〜D
 	{
 		id: "a_koe_aru_nai",
 		title: "声は　アル？ナイ！",
@@ -96,7 +96,7 @@ export const skits: SkitDef[] = [
 			await s.narrate("蓄音機に「がんばれ」が　きざまれた。");
 			await s.say(
 				"kiriko",
-				"ちくおんリプレイの「がんばれ」は\nなんJ民の　声に　なったンゴ！",
+				"ちくおんリプレイの「がんばれ」は\nおんJ民の　声に　なったンゴ！",
 			);
 		},
 	},

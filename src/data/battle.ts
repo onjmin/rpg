@@ -38,7 +38,7 @@ export const skills: Record<string, SkillDef> = {
 		text: "{user}は　蓄音機を　まわした！　ためた「がんばれ」が　ひびく！",
 		se: "heal",
 	}),
-	// なんJ民・フェリスは UTAU の声が無いので「うたう」を持たない（cast.ts の attackTexts で演出）
+	// おんJ民・フェリスは UTAU の声が無いので「うたう」を持たない（cast.ts の attackTexts で演出）
 	// ロゼ
 	floral: sk({
 		id: "floral",
@@ -421,7 +421,7 @@ export const enemies: Record<string, EnemyDef> = {
 	// 序章: キリコ Lv1 ひとりで。オートで 4 ターン前後（シチョウ×2 → こうげき）
 	rival_nanj: en({
 		id: "rival_nanj",
-		name: "なんJ民",
+		name: "おんJ民",
 		sprite: cast.nanj.walk,
 		hp: 24,
 		atk: 8,
@@ -449,7 +449,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「ほーん、で？」"),
 		],
 	}),
-	// 第一章: キリコ＋なんJ民 Lv2〜3。4 ターン前後
+	// 第一章: キリコ＋おんJ民 Lv2〜3。4 ターン前後
 	rival_roze: en({
 		id: "rival_roze",
 		name: "ロゼ",
@@ -475,7 +475,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「本物の　声か、聞かせるアル」"),
 		],
 	}),
-	// 第二章 B2: ムッジェといっしょに。キリコ／なんJ民／ロゼ Lv5〜6。フェリスのはねは フェリスが落とす
+	// 第二章 B2: ムッジェといっしょに。キリコ／おんJ民／ロゼ Lv5〜6。フェリスのはねは フェリスが落とす
 	rival_feris: en({
 		id: "rival_feris",
 		name: "フェリス",
@@ -806,7 +806,7 @@ export const items: Record<string, ItemDef> = {
 	memo_nanj: it({
 		id: "memo_nanj",
 		name: "ホームランボール",
-		desc: "なんJ民と　みた　試合の　おもいで。",
+		desc: "おんJ民と　みた　試合の　おもいで。",
 		key: true,
 	}),
 	rec_botsu: it({

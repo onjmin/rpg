@@ -20,7 +20,7 @@ export const SPR = {
 	/** ボツキリコ（再安価で流された最初のキリコ。灰色の角刈り） */
 	botsu: "pub:sprites/kiriko_botsu.png",
 
-	// ── なんJ民・マッマ ──
+	// ── おんJ民・マッマ ──
 	j_yakiu: "sa:4rSOzo", // 野球民
 	j_gakuran: "sa:XvdbmA", // 野球民（学生服）
 	j_tights: "sa:8DXRgk", // 黒タイツJ民

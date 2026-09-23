@@ -58,7 +58,7 @@ pnpm dev
 - 束音ロゼ（音声: 面倒ミル / キャラクター: wQ8G） https://tabaneroze.ninja-web.net/
 - 重音テト © 線・小山乃舞世／TWINDRILL https://kasaneteto.jp/
 - 足立レイ © Mechanical Girl https://mechanicalgirl.jp/
-- フェリス・なんJ民（やきう民）: なんJ・おんJ のみんな
+- フェリス・おんJ民（やきう民）: なんJ・おんJ のみんな
 - BGM: うんｊレゼ「AI作曲スレ」 名無し2rt さん https://unj-reze.onjmin.workers.dev/post/1318
 - 歩行グラ・マップチップ・効果音: RPGEN の素材（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
 - 音楽・音声合成: [@onjmin/dtm](https://github.com/onjmin/dtm)・koe UtauTTS

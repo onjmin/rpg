@@ -14,7 +14,7 @@ import { ks, silent } from "../story";
 const ch = (st: GameState) => Number(st.flags.ch ?? 0);
 
 export const skits: SkitDef[] = [
-	// ── D：B2〜B3（なんJ民・ロゼ・フェリス） ──
+	// ── D：B2〜B3（おんJ民・ロゼ・フェリス） ──
 	{
 		id: "b_nai_gumi",
 		title: "うたえない　ふたり",
@@ -163,7 +163,7 @@ export const skits: SkitDef[] = [
 		when: (st) => !!st.flags.onsha_req && !st.flags.onsha,
 		run: async (s) => {
 			await s.say("feris", "やきうくん、元気かな〜");
-			await s.say("teto", "その　なんJ民って、どんな　やつさ");
+			await s.say("teto", "その　おんJ民って、どんな　やつさ");
 			await s.say("kiriko", "吾輩の　名付け親。\n……自称ンゴ");
 			await s.say("teto", "自称かよ");
 			await s.say("roze", "勢い欄の前で、ずっと\n見張ってくれてるアル");

@@ -73,7 +73,7 @@ const finishB1 = async (s: Story, how: B1How): Promise<void> => {
 	s.se("flee");
 	s.show("bancho");
 	await s.narrate(
-		`見物の　なんJ民が　つぎつぎに　かきこんだ。\n${GALLERY[how]}`,
+		`見物の　おんJ民が　つぎつぎに　かきこんだ。\n${GALLERY[how]}`,
 	);
 	s.set("res", 350);
 	s.se("item");

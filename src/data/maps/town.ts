@@ -1,6 +1,6 @@
 // なんでも実況J町（拠点）。設計書 §11-2・§8-2・§8-7・§8-8・§9。
 // 第一章: ch1_intro・勢い欄（古参ニキ）・ボイスニキ。
-// 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → なんJ民アク禁）、
+// 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → おんJ民アク禁）、
 //         沈黙期間（住民が消える）→ マッマ → テト登場 → スタジオへ。
 // 古参ニキは倉庫での返し方（reply_kako。kakolog の kosan_k）をナイター前と前夜祭で拾う。
 
@@ -162,10 +162,10 @@ const nightEv = async (s: Story): Promise<void> => {
 	);
 	await s.say("roze", "わたしと……おなじ……！　キリコ！");
 	await s.say("nanj", "――――！　――――！");
-	await s.narrate("なんJ民の　口もとに、【アク禁】の　ふだが\nはられている。");
+	await s.narrate("おんJ民の　口もとに、【アク禁】の　ふだが\nはられている。");
 	await s.say("feris", "書きこめないんだ……");
 	await s.narrate(
-		"なんJ民は　勢い欄を　ゆびさし、\nキリコの　せなかを　おした。",
+		"おんJ民は　勢い欄を　ゆびさし、\nキリコの　せなかを　おした。",
 	);
 	await s.narrate(
 		"「ここは　ワイが　見張っとく」――\nそう　言っている　ようだった。",
@@ -291,11 +291,11 @@ const igo = async (s: Story): Promise<void> => {
 const nanjAku = async (s: Story): Promise<void> => {
 	await s.say("nanj", "――――！");
 	if (silent(s.state)) {
-		await s.narrate("なんJ民は　勢い欄を　ゆびさして\n親指を　立てた。");
+		await s.narrate("おんJ民は　勢い欄を　ゆびさして\n親指を　立てた。");
 		return;
 	}
 	await s.narrate(
-		"なんJ民は　キリコの　声を　聞いて\nうれしそうに　親指を　立てた。",
+		"おんJ民は　キリコの　声を　聞いて\nうれしそうに　親指を　立てた。",
 	);
 	await s.say("kiriko", "待ってて。……かならず　完走するンゴ");
 };
@@ -344,7 +344,7 @@ const events: EventDef[] = [
 		run: nightEv,
 	},
 
-	// 北口 → スレ街道（勢い欄を見るまでは なんJ民が止める）
+	// 北口 → スレ街道（勢い欄を見るまでは おんJ民が止める）
 	...[0, 1].map(
 		(i): EventDef => ({
 			id: `to_road_${i}`,
@@ -465,7 +465,7 @@ const events: EventDef[] = [
 		},
 	},
 
-	// 第四章：サイレントバルス・アク禁のなんJ民・文字化けの住民・テト
+	// 第四章：サイレントバルス・アク禁のおんJ民・文字化けの住民・テト
 	npc(
 		"balus",
 		12,
