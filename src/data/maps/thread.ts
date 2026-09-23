@@ -180,6 +180,7 @@ const ending = async (s: Story): Promise<void> => {
 		"end_rei",
 		"end_raid",
 		"end_kosan",
+		"end_puyu",
 	])
 		s.face(id, "player");
 	await s.narrate("【安価】安価でボカロ作ろうぜ　1000/1000");
@@ -192,6 +193,8 @@ const ending = async (s: Story): Promise<void> => {
 	await s.say("feris", "34キロなのに、中身　ぎっしりだね〜");
 	await N(s, "……おめでとう。\n避難Jを研究している　ヒナリーです", "ヒナリー");
 	await N(s, "ホゲェ！", "ムッジェ");
+	// ぷゆゆ（町の小花のそばでの こたえ方。記録なしは既定の一言）
+	await J(s, VARIANTS.puyu(st), "ぷゆゆ");
 	// 番長の越え方・代打・古参ニキへの返し・!バルス で変わる
 	await J(s, VARIANTS.bancho(st), "夏休みキッズ番長");
 	await J(s, VARIANTS.kantoku(st), "テノヒラ監督");
@@ -387,6 +390,19 @@ const events: EventDef[] = [
 			J(s, VARIANTS.kosan(s.state) ?? "……ええもん、見れたわ", "古参ニキ"),
 		{
 			dir: "right",
+			when: clear,
+		},
+	),
+	// ぷゆゆ（町の小花のそばの子。エンディングの輪のなか）。キリコ (6,6) より上に置いて、
+	// キリコのほうを向くと 顔（下向き）が見えるようにする。下のマス (7,5) は空ける
+	npc(
+		"end_puyu",
+		7,
+		4,
+		SPR.puyu,
+		async (s) => J(s, VARIANTS.puyu(s.state), "ぷゆゆ"),
+		{
+			dir: "down",
 			when: clear,
 		},
 	),

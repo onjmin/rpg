@@ -37,6 +37,7 @@ export const SPR = {
 	j_cyclo: "sa:DUfPo9", // サイクロJ民
 	j_yosuko: "sa:C2hS8U", // 陽すこ民
 	mamma: "sa:rzXCtC", // J( ´ー`)し マッマ
+	puyu: "sa:DszPWT", // ぷゆゆ🥺（rpgen「PIEN」の歩行シート。sp:4IFEOzI は由来の都合で使わない）
 
 	// ── 住民（同梱の RPGEN DQ 風キャラ） ──
 	townsfolk: "pub:assets/rpgen/char/14-man-a.png", // 先住民・原住民の代わり

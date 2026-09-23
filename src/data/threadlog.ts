@@ -33,6 +33,8 @@ export const FLAG_DOMAIN: Record<
 	date_feris: [undefined, true],
 	date_teto: [undefined, true],
 	date_nanj: [undefined, true],
+	puyu: [undefined, "ame", "uta", "suwaru"],
+	puyu_met: [undefined, true],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -173,6 +175,17 @@ const botsuVoice = (st: GameState): string =>
 const nanjDate = (st: GameState): string | null =>
 	st.flags.date_nanj ? null : "……ナイターは、次スレで\nいっしょに　行こな";
 
+/** ぷゆゆ（puyu：町の小花のそばでの こたえ方）。記録なし（会っていない・またこんど）は既定の一言。 */
+const puyu = (st: GameState): string =>
+	byFlag(
+		{
+			ame: "おめでとぷゆ🥺\nおいわいの　おかち、もってきたゆ",
+			uta: "うた、たのちみぷゆ🥺\nいちばん　まえで　きくゆ",
+			suwaru: "みんな　あつまったゆ🥺\nきょうは、となりが　いっぱいゆ",
+		},
+		st.flags.puyu,
+	) ?? "うゆおー！　かわいいぼくちんも\nおいわいに　きたぷゆ🥺";
+
 /** エンディングと last の差分（null は「その行を出さない」）。 */
 export const VARIANTS = {
 	botsuPick,
@@ -184,6 +197,7 @@ export const VARIANTS = {
 	rei,
 	botsuVoice,
 	nanjDate,
+	puyu,
 } satisfies Record<string, Variant>;
 
 // ───────────────── まとめカード（スタッフロールのあと） ─────────────────
@@ -331,7 +345,17 @@ const S4: Record<string, string> = {
 	chikuon: ">>4 ソースは　まだ　ない派　おる？",
 };
 
-/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ。 */
+/**
+ * >>5：ぷゆゆ（puyu）。会っていない人の次スレには「はじめまして」、
+ * 会って「またこんど」だけの人には「またきてゆ」が書きこまれる。
+ */
+const S5: Record<string, string> = {
+	ame: ">>5 おかち　もってくゆ🥺",
+	uta: ">>5 サビの　入り、まってゆ🥺",
+	suwaru: ">>5 となり、あいてゆ？🥺",
+};
+
+/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ（>>5 は ぷゆゆ）。 */
 const nextThread = (f: Flags): string[] => [
 	">>1 たておつ",
 	b1Other(f),
@@ -342,6 +366,8 @@ const nextThread = (f: Flags): string[] => [
 			? ">>3 ワイは　角刈り　えらんだで"
 			: ">>3 ワイは　ポニテ派や",
 	byFlag(S4, f.reply_srv) ?? S4.neta,
+	byFlag(S5, f.puyu) ??
+		(f.puyu_met ? ">>5 またきてゆ🥺" : ">>5 きみ、はじめて　みるかおぷゆ？🥺"),
 ];
 
 /** スタッフロールのあとの「このスレの　まとめ」（1行22字まで・1セクション10行まで）。 */

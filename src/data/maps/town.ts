@@ -3,6 +3,7 @@
 // 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → おんJ民アク禁）、
 //         沈黙期間（住民が消える）→ マッマ → テト登場 → スタジオへ。
 // 古参ニキは倉庫での返し方（reply_kako。kakolog の kosan_k）をナイター前と前夜祭で拾う。
+// ぷゆゆ🥺: 小花のそば (9,11) の任意の寄り道（scratchpad/puyuyu/spec.md）。第一章の到着で声だけ聞かせる。
 
 import type {
 	EventDef,
@@ -59,6 +60,15 @@ const holdSilent = async (
 const ch1Intro = async (s: Story): Promise<void> => {
 	await s.chapter("第一章", "宣伝の旅と先輩アル");
 	s.set("ch", 1);
+	// ぷゆゆ（小花のそば (9,11)）の前ふり。寄り道しない人も、ここで一度だけ見る
+	faceToward(s, 9, 11);
+	s.face("puyu", "player");
+	await s.narrate("「ぷゆうゆ……」\n小花の　そばで、ちいさな　声が　した。");
+	await s.say("kiriko", "……いまの、だれンゴ？");
+	await s.say(
+		"nanj",
+		"ぷゆゆや。レスの　文末に　ついとる\n🥺が、歩きだしたようなもんや",
+	);
 	await s.say(
 		"nanj",
 		"ここが　なんでも実況J町や。\nまずは　広場の　勢い欄、見に行こか",
@@ -300,6 +310,199 @@ const nanjAku = async (s: Story): Promise<void> => {
 	await s.say("kiriko", "待ってて。……かならず　完走するンゴ");
 };
 
+// ───────────────── ぷゆゆ🥺（任意の寄り道。scratchpad/puyuyu/spec.md） ─────────────────
+// 小花のそば (9,11) に ずっと おる、おんJ生まれの 絵文字の住民。こたえ方（puyu）を
+// 沈黙期間・録音のあと・エンディング・次スレの >>5 で拾う（通知は出さない）。
+// 「黄色い」とは書かない。キリコを「ぷゆゆ」とは呼ばない（lore の AVOID）。
+
+type Puyu = "ame" | "uta" | "suwaru";
+/** ぷゆゆのセリフ（J民と同じ 黄色の名前欄・読み上げなし）。 */
+const P = (s: Story, text: string) => J(s, text, "ぷゆゆ");
+/** 沈黙期間のぷゆゆ（書きこめるのは絵文字だけ。名前欄も 🥺）。 */
+const P0 = (s: Story, text: string) => J(s, text, "🥺");
+const puyuOf = (st: GameState): Puyu | undefined => {
+	const v = st.flags.puyu;
+	return v === "ame" || v === "uta" || v === "suwaru" ? v : undefined;
+};
+/** おんJ民が隊列にいる（アク禁の前）。 */
+const nanjHere = (st: GameState) => !!st.flags.nanj_in && !st.flags.akukin;
+
+/** こたえたあとの昼（曜日の話の次から）。 */
+const PUYU_AGAIN: Record<Puyu, string> = {
+	ame: "ハッカの　のどあめ、\nちょっと　すきに　なったゆ🥺",
+	uta: "サビの　入り、\nれんしゅう　ちた？🥺",
+	suwaru: "となり、あいてゆ🥺",
+};
+
+const puyuAme = async (s: Story): Promise<void> => {
+	s.take("candy");
+	await s.narrate("のどあめを　ひとつ　わたした。");
+	await P(s, "おかち、わけてくれゆの？\nきみ、いいひとぷゆ🥺");
+	await s.narrate("ぷゆゆは　のどあめを\nころころ　なめた。");
+	await P(s, "……ぷゆ……🤪");
+	await P(s, "……これ、ハッカ。からい。");
+	await P(s, "……でも、なめゆ🥺");
+	await ks(s, "からくても、げんき　でるンゴ");
+};
+
+const puyuUta = async (s: Story): Promise<void> => {
+	await s.narrate("キリコは　ちいさな　声で\nはなうたを　うたった。");
+	await ks(s, "ふん、ふふん、ふふ……ふーん");
+	await P(s, "うゆ……いいうた🥺");
+	await P(s, "……サビの　入りが、半拍　はやい。");
+	await ks(s, "は、半拍……！");
+	if (nanjHere(s.state))
+		await s.say("nanj", "ぷゆゆ、たまに　ふつうに\nしゃべるんよな");
+	else if (s.flag("roze_in")) await s.say("roze", "……耳が　いいアル");
+	await P(s, "……うゆ？🥺");
+	await ks(s, "……つぎは、ちゃんと　入るンゴ");
+	await P(s, "うゆ。まってゆ🥺");
+};
+
+const puyuSuwaru = async (s: Story): Promise<void> => {
+	await s.narrate("キリコは　ぷゆゆの　となりに\nこしを　おろした。");
+	await s.narrate("小花が、かぜに　ゆれている。");
+	// 名無しの住民みんな（lore の元の意味）。名前のある キリコは ふくめない
+	await P(s, "スレの　名無しは\nみんな　ぷゆゆなんだよ🥺");
+	if (nanjHere(s.state)) {
+		await s.say("nanj", "……ワイもか？");
+		await P(s, "きみも🥺");
+		await s.say("nanj", "……ほな、ちょっとだけ\nぷゆっとくわ");
+	} else {
+		await ks(s, "……名無しは、みんな？");
+		await P(s, "うゆ。みーんなゆ🥺");
+	}
+	s.heal();
+	s.se("inn");
+	await s.narrate(
+		"しばらく　ひとやすみした。\nHPと　こえが　ぜんかいふくした！",
+	);
+};
+
+type PuyuOpt = { id: Puyu; label: string; run: (s: Story) => Promise<void> };
+
+/** こたえ方（記録する安価）。のどあめが無ければ その選択肢は出さない。「またこんど」は記録しない。 */
+const puyuAsk = async (s: Story): Promise<void> => {
+	await P(s, "うゆ……おかち、たべたいゆ。\nひとりは　さみちいゆ🥺");
+	const opts: PuyuOpt[] = [];
+	if (s.has("candy") > 0)
+		opts.push({ id: "ame", label: "のどあめを　あげる", run: puyuAme });
+	opts.push(
+		{ id: "uta", label: "はなうたを　きかせる", run: puyuUta },
+		{ id: "suwaru", label: "となりに　すわる", run: puyuSuwaru },
+	);
+	const i = await s.choose(
+		[...opts.map((o, k) => `>>${k + 1} ${o.label}`), "またこんど"],
+		{ cancel: opts.length },
+	);
+	if (i >= opts.length) {
+		await P(s, "うゆ……またきてゆ🥺");
+		return;
+	}
+	await opts[i].run(s);
+	s.set("puyu", opts[i].id);
+	// 録音のあとに 初めて こたえた人は、次に話しかけたとき 蓄音の場面（puyuRec）から。
+	// すわった人に「となり、あけといたゆ」は重ねない。のどあめの人には おかえしを わたす
+	if (s.flag("balus_lost") && opts[i].id !== "ame") s.set("puyu_back");
+};
+
+/** 沈黙期間（こたえた人の前にだけ残る。ことばは使わない）。 */
+const puyuSilent = async (s: Story, how: Puyu): Promise<void> => {
+	await P0(s, "🥺");
+	if (s.flag("puyu_back")) return;
+	s.set("puyu_back");
+	if (how === "ame") {
+		await s.narrate("ぷゆゆは　のどあめを　ふたつ、\nキリコの　手に　のせた。");
+		s.give("candy", 2);
+		s.se("item");
+		await s.narrate("のどあめを　2こ　てにいれた！");
+		await ks(s, "……声が　もどったら、\nいっしょに　なめよう");
+		await P0(s, "✋🥺");
+	} else if (how === "uta") {
+		await s.narrate("ぷゆゆが　ちいさく\nからだを　ゆらしはじめた。");
+		await s.narrate(
+			"……キリコの　はなうたの　リズムだ。\nサビの　入りまで、そのままだった。",
+		);
+		await ks(s, "……半拍、はやい");
+		await P0(s, "🥺");
+	} else {
+		await s.narrate(
+			"ぷゆゆは　なにも　言わずに、\nキリコの　となりに　すわった。",
+		);
+		await P0(s, "✋🥺");
+		await s.narrate("うすれかけた　足もとが、\nすこしだけ　あたたかい。");
+	}
+};
+
+/** 録音のあと（声がもどった）。初めての1回だけ、ぷゆゆの声を蓄音する。 */
+const puyuRec = async (s: Story, how: Puyu): Promise<void> => {
+	if (s.flag("puyu_rec")) {
+		await P(s, "生きてこそだ✋🥺");
+		return;
+	}
+	await P(s, "こえ、もどったゆ🥺\n……生きてこそだ✋🥺");
+	if (how === "uta") {
+		// 半拍はやかった 入りの、その後（ふつうの言葉で）
+		await P(s, "スタジオの　うた、きこえた。\n……入り、ぴったりだった。");
+		if (s.flag("teto_in")) await s.say("teto", "……いい耳だ");
+	} else if (!s.flag("puyu_back")) {
+		// 沈黙期間に 会いそびれた人の拾い
+		if (how === "ame") {
+			await P(s, "これ、おかえちゆ🥺\nハッカじゃ　ないやつ");
+			s.give("candy", 2);
+			s.se("item");
+			await s.narrate("のどあめを　2こ　てにいれた！");
+		} else await P(s, "おかえりぷゆ🥺\nとなり、あけといたゆ");
+	}
+	s.set("puyu_back");
+	await ks(s, "……ぷゆゆの　声も、\n蓄音させて　ほしい");
+	await P(s, "ぼくちんの　こえ？\n……ぷゆうゆ🥺");
+	// おんJ民のおでかけと同じ形（wait で窓を閉じると、場面のとちゅうで 十字キーが見える）
+	s.se("save");
+	await s.narrate("蓄音機が　くるくる　まわって、\nちいさな　声を　ためた。");
+	s.set("puyu_rec");
+};
+
+/** 話しかけたとき。 */
+const puyuTalk = async (s: Story): Promise<void> => {
+	const st = s.state;
+	const how = puyuOf(st);
+	if (silent(st)) {
+		if (how) await puyuSilent(s, how); // when で、こたえた人の前にだけ いる
+		return;
+	}
+	if (how && st.flags.rec) {
+		await puyuRec(s, how);
+		return;
+	}
+	if (how) {
+		if (st.flags.puyu_day) {
+			await P(s, PUYU_AGAIN[how]);
+			return;
+		}
+		// 2026-08-18 は火曜日（先住民の「土曜日ど！」→ おんJ民「火曜日やぞ」と同じ日）
+		await P(s, "きょうは　火曜日だから\nぷゆってる🥺");
+		await ks(s, "……曜日、関係あるンゴ？");
+		await P(s, "ないゆ🥺");
+		if (nanjHere(st)) await s.say("nanj", "……曜日だけは、ちゃんと\n合っとるな");
+		s.set("puyu_day");
+		return;
+	}
+	if (!st.flags.puyu_met) {
+		await P(s, "ぷゆゆ🥺　きみ、はじめて\nみる　かおぷゆ？");
+		await ks(s, "吾輩、蓄音キリコ。\n安価で　生まれた　ボカロンゴ");
+		await P(
+			s,
+			"ぼくちん、ずっと　この町に　いゆの。\n……2019ねん　くらいから？🥺",
+		);
+		// 「先輩」は ボカロの系譜（ロゼ・フェリス・テト）に とっておく
+		await ks(s, "……吾輩より　ずっと　前ンゴ！\nおんJの　大御所……");
+		await P(s, "おおごしょ？　うゆ……てれゆ🥺");
+		s.set("puyu_met");
+	}
+	await puyuAsk(s);
+};
+
 // ───────────────── タイル ─────────────────
 
 const TURF = base(0, 4);
@@ -422,6 +625,10 @@ const events: EventDef[] = [
 
 	// 囲碁J民（詰碁）
 	npc("igo", 19, 13, SPR.j_shinkan, igo, { dir: "left", when: day }),
+	// ぷゆゆ🥺（任意の寄り道。小花のそば）。昼はいつも いる。沈黙期間は こたえた人の前にだけ 残る
+	npc("puyu", 9, 11, SPR.puyu, puyuTalk, {
+		when: (st) => day(st) || !!puyuOf(st),
+	}),
 
 	// 東門 → おんJスタジアム（B2 のあと開く）
 	npc(
