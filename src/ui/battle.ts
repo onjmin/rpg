@@ -260,11 +260,13 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	const partyRow = el("div", { class: "party-row" });
 	const logEl = el("div", { class: "battle-log window" });
 	const cmdEl = el("div", { class: "battle-cmd" });
+	// 上から 敵 → 文 → なかまの HP → コマンド。
+	// 文は敵のすぐ下（目が行き来しない）、HP はコマンドのすぐ上（選ぶときに見る）
 	root.append(
 		el("div", { class: "battle-bg" }),
 		enemyRow,
-		partyRow,
 		logEl,
+		partyRow,
 		cmdEl,
 	);
 	game.ui.appendChild(root);
