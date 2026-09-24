@@ -131,4 +131,13 @@ export const cast: Record<string, CharDef> = {
 		voice: { model: "rei" },
 		portrait: { src: "portraits/rei.png", side: "right" },
 	}),
+	// 終章のボス。声と立ち絵はキリコのまま。右に立つので立ち絵は反転し、左のキリコと鏡合わせになる
+	botsu: c({
+		id: "botsu",
+		name: "ボツキリコ",
+		walk: "pub:sprites/kiriko_botsu.png",
+		color: "#a0a0a0",
+		voice: { model: "uc" },
+		portrait: { src: "portraits/kiriko.png", side: "right" },
+	}),
 };

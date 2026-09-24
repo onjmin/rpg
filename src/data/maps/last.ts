@@ -2,7 +2,7 @@
 // F1 サイレントバルス → ボツキリコの正体 → 恩赦とレスの洪水 → F2 ボツキリコ → 蓄音 → >>1000 → thread へ。
 // 洪水とボツキリコの一部は、それまでの安価・返し方で変わる（data/threadlog.ts）。
 
-import type { MapDef, SayOptions, Story, TileDef } from "../../engine/defs";
+import type { MapDef, Story, TileDef } from "../../engine/defs";
 import { warp } from "../helpers";
 import { SPR } from "../sprites";
 import { floodWaves, VARIANTS } from "../threadlog";
@@ -15,9 +15,8 @@ const tiles: Record<string, TileDef> = {
 	".": { ...CYBER.X, passable: true },
 };
 
-/** ボツキリコのセリフ（声はキリコと同じ音源。名前欄だけ変える）。 */
-const B: SayOptions = { name: "ボツキリコ", noPortrait: true };
-const botsuSay = (s: Story, text: string) => s.say("kiriko", text, B);
+/** ボツキリコのセリフ（data/cast.ts の botsu。キリコの立ち絵を反転して右に立つ）。 */
+const botsuSay = (s: Story, text: string) => s.say("botsu", text);
 const balusSay = (s: Story, text: string) =>
 	s.say(null, text, { name: "サイレントバルス" });
 
