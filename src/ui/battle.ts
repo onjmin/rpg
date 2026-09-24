@@ -557,24 +557,27 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				1,
 				getComputedStyle(cmdEl).gridTemplateColumns.split(" ").length,
 			);
-			const pop = input.push((k) => {
-				const move = (d: number) => {
-					let n = cur;
-					for (let tries = 0; tries < items.length; tries++) {
-						n = (n + d + items.length) % items.length;
-						if (!items[n].disabled) break;
-					}
-					cur = n;
-					audio.se("cursor");
-					render();
-				};
-				if (k === "left") move(-1);
-				else if (k === "right") move(1);
-				else if (k === "up") move(-cols);
-				else if (k === "down") move(cols);
-				else if (k === "a" && !items[cur].disabled) done(items[cur].value);
-				else if (k === "b" && back) done(null);
-			});
+			const pop = input.push(
+				(k) => {
+					const move = (d: number) => {
+						let n = cur;
+						for (let tries = 0; tries < items.length; tries++) {
+							n = (n + d + items.length) % items.length;
+							if (!items[n].disabled) break;
+						}
+						cur = n;
+						audio.se("cursor");
+						render();
+					};
+					if (k === "left") move(-1);
+					else if (k === "right") move(1);
+					else if (k === "up") move(-cols);
+					else if (k === "down") move(cols);
+					else if (k === "a" && !items[cur].disabled) done(items[cur].value);
+					else if (k === "b" && back) done(null);
+				},
+				{ tap: back ? "b" : null },
+			);
 			const done = (v: string | null) => {
 				pop();
 				audio.se(v === null ? "cancel" : "decide");

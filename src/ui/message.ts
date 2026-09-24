@@ -616,21 +616,24 @@ export class ChoiceWindow {
 		};
 		return new Promise((resolve) => {
 			resolveFn = resolve;
-			pop = this.input.push((key) => {
-				if (key === "up" || key === "left") {
-					cur = (cur + options.length - 1) % options.length;
-					se?.("cursor");
-					render();
-				} else if (key === "down" || key === "right") {
-					cur = (cur + 1) % options.length;
-					se?.("cursor");
-					render();
-				} else if (key === "a") {
-					pick(cur);
-				} else if (key === "b" && cancel !== undefined) {
-					pick(cancel);
-				}
-			});
+			pop = this.input.push(
+				(key) => {
+					if (key === "up" || key === "left") {
+						cur = (cur + options.length - 1) % options.length;
+						se?.("cursor");
+						render();
+					} else if (key === "down" || key === "right") {
+						cur = (cur + 1) % options.length;
+						se?.("cursor");
+						render();
+					} else if (key === "a") {
+						pick(cur);
+					} else if (key === "b" && cancel !== undefined) {
+						pick(cancel);
+					}
+				},
+				{ tap: cancel === undefined ? null : "b" },
+			);
 		});
 	}
 }

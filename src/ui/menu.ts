@@ -107,18 +107,21 @@ export const listWindow = (
 			});
 		game.ui.appendChild(box);
 		render();
-		const pop = game.input.push((k) => {
-			if (k === "up" || k === "down") {
-				if (!items.length) return;
-				cur = (cur + (k === "up" ? -1 : 1) + items.length) % items.length;
-				game.audio.se("cursor");
-				render();
-			} else if (k === "a" && items[cur] && !items[cur].disabled) {
-				done(items[cur].value);
-			} else if (k === "b") {
-				done(null);
-			}
-		});
+		const pop = game.input.push(
+			(k) => {
+				if (k === "up" || k === "down") {
+					if (!items.length) return;
+					cur = (cur + (k === "up" ? -1 : 1) + items.length) % items.length;
+					game.audio.se("cursor");
+					render();
+				} else if (k === "a" && items[cur] && !items[cur].disabled) {
+					done(items[cur].value);
+				} else if (k === "b") {
+					done(null);
+				}
+			},
+			{ tap: "b" },
+		);
 		const done = (v: string | null) => {
 			pop();
 			game.audio.se(v === null ? "cancel" : "decide");
@@ -180,9 +183,12 @@ const statusView = (game: Game): Promise<void> =>
 			e.stopPropagation();
 			done();
 		});
-		const pop = game.input.push((k) => {
-			if (k === "a" || k === "b") done();
-		});
+		const pop = game.input.push(
+			(k) => {
+				if (k === "a" || k === "b") done();
+			},
+			{ tap: "b" },
+		);
 	});
 
 const itemMenu = async (game: Game): Promise<void> => {

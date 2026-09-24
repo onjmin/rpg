@@ -9,6 +9,12 @@ import type { Dir } from "./types";
 
 export type Key = Dir | "a" | "b";
 type Handler = (key: Key, repeat: boolean) => void;
+/**
+ * ハンドラを積むときの設定。
+ * - tap: 窓の外（フィールド）をタップしたときに押したことにするキー（既定 "a"＝メッセージ送り）。
+ *   メニュー・選択肢は "b"（とじる）。null なら何もしない
+ */
+export type PushOptions = { tap?: Key | null };
 
 const KEYMAP: Record<string, Key> = {
 	ArrowUp: "up",
@@ -33,7 +39,7 @@ const isDir = (k: Key): k is Dir =>
 export class Input {
 	/** 押されている方向（後に押したものほど後ろ）。source は "key:ArrowUp" / "pad" など。 */
 	private held: { dir: Dir; source: string }[] = [];
-	private handlers: Handler[] = [];
+	private handlers: { fn: Handler; tap: Key | null }[] = [];
 	private fieldQueue: Key[] = [];
 	/** フィールドでのタップ（ソース画素ではなく、canvas の左上から数えた CSS 画素）。 */
 	onFieldTap: ((x: number, y: number) => void) | null = null;
@@ -65,7 +71,7 @@ export class Input {
 		this.onAnyInput?.();
 		const top = this.handlers[this.handlers.length - 1];
 		if (top) {
-			top(key, repeat);
+			top.fn(key, repeat);
 			return;
 		}
 		if (!repeat && !isDir(key)) this.fieldQueue.push(key);
@@ -86,11 +92,12 @@ export class Input {
 	}
 
 	/** ハンドラを積む。戻り値を呼ぶと外れる。 */
-	push(handler: Handler): () => void {
-		this.handlers.push(handler);
+	push(handler: Handler, opt: PushOptions = {}): () => void {
+		const h = { fn: handler, tap: opt.tap === undefined ? "a" : opt.tap };
+		this.handlers.push(h);
 		this.fieldQueue = [];
 		return () => {
-			const i = this.handlers.lastIndexOf(handler);
+			const i = this.handlers.lastIndexOf(h);
 			if (i >= 0) this.handlers.splice(i, 1);
 		};
 	}
@@ -175,15 +182,16 @@ export class Input {
 	}
 
 	/**
-	 * フィールド（canvas）のタップ。ハンドラが積まれているときは A 扱い
-	 * （メッセージ送り）、空ならタップ移動としてフィールドへ渡す。
+	 * フィールド（canvas）のタップ。ハンドラが積まれているときは そのハンドラの tap のキー扱い
+	 * （メッセージ送りは A、メニューは B）、空ならタップ移動としてフィールドへ渡す。
 	 */
 	bindField(el: HTMLElement): void {
 		el.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
 			this.onAnyInput?.();
-			if (this.handlers.length) {
-				this.press("a");
+			const top = this.handlers[this.handlers.length - 1];
+			if (top) {
+				if (top.tap) this.press(top.tap);
 				return;
 			}
 			// canvas は画面の左上とはかぎらない（ブラウザのバーのぶんだけ下にずれる）ので、

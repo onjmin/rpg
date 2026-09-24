@@ -127,9 +127,12 @@ const profileView = (game: Game, who: string): Promise<void> =>
 			e.stopPropagation();
 			done();
 		});
-		const pop = game.input.push((k) => {
-			if (k === "a" || k === "b") done();
-		});
+		const pop = game.input.push(
+			(k) => {
+				if (k === "a" || k === "b") done();
+			},
+			{ tap: "b" },
+		);
 	});
 
 /** 仲間ひとりと話す。章ごとに最初の1回だけ なかよし度が上がる。 */
