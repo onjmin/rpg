@@ -101,9 +101,9 @@ pnpm dev
 - 足立レイ © Mechanical Girl https://mechanicalgirl.jp/
 - フェリス・おんJ民（やきう民）: なんJ・おんJ のみんな
 - 矢野さとる（おんJ管理人）・ひろゆき（元2ch管理人）: クリア後の管理人室に出てくる、実在の人物をもとにした非公式のファン描写です。ご本人や各サイトとは関係ありません。セリフはすべて創作です。
-- 原案・ディレクション・立ち絵・BGM: このゲームの作者
-- シナリオ・ゲームデザイン・マップ・プログラム・デバッグ・サウンド調整（ラウドネス）: Claude Code（Claude Opus 5.5）
-- 歩行グラ・マップチップ・効果音: RPGEN の素材（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
+- 原案・ディレクター・キャラクターイラスト・音楽: このゲームの作者
+- シナリオ・ゲームデザイン・マップデザイン・プログラム・デバッグ・サウンドエンジニア: Claude Code（Claude Opus 5.5）
+- 素材提供（歩行グラ・マップチップ・効果音）: RPGEN（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
 - 音楽・音声合成: [@onjmin/dtm](https://github.com/onjmin/dtm)・koe UtauTTS
 - HTS voice tohoku-f01 © 2015 Intelligent Communication Network (Ito-Nose) Laboratory, Tohoku University（CC BY 4.0）
 - フォント: DotGothic16（SIL Open Font License）
