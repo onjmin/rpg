@@ -384,10 +384,46 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	renderParty();
 	renderEnemies();
 
+	// ── オート（全員おまかせ） ──
+	//
+	// やめ方は2つ。どちらも、オートが続いているあいだ ずっと効く。
+	// - B（キーボードの X・Esc）… 早送りの手より先に受ける
+	// - コマンド欄いっぱいに出す「オートを　やめる」… スマホには B のボタンが無いので必要
+	//   （画面の十字キー・A/B は戦闘の画面の下に隠れる）
+	let auto = false;
+	const autoBtn = el("button", {
+		class: "cmd auto-stop",
+		text: "オートを　やめる",
+	});
+	onTap(autoBtn, cmdEl, () => stopAuto());
+	const setAuto = (on: boolean): void => {
+		if (auto === on) return;
+		auto = on;
+		if (on) {
+			cmdEl.classList.remove("list");
+			cmdEl.replaceChildren(autoBtn);
+			cmdEl.classList.add("shown");
+		} else if (autoBtn.parentElement === cmdEl) {
+			cmdEl.classList.remove("shown");
+			cmdEl.replaceChildren();
+		}
+	};
+	/** プレイヤーがやめたとき（音を鳴らす）。 */
+	const stopAuto = (): void => {
+		if (!auto) return;
+		audio.se("cancel");
+		setAuto(false);
+	};
+
 	// ── メッセージ（タップで早送り） ──
 	let fast = false;
 	const pushFast = () =>
 		input.push((k) => {
+			// オート中の B は「やめる」。早送りにはしない
+			if (k === "b" && auto) {
+				stopAuto();
+				return;
+			}
 			if (k === "a" || k === "b") fast = true;
 		});
 	let popFast = pushFast();
@@ -408,7 +444,6 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	const names = [...new Set(group.enemies.map((id) => data.enemies[id].name))];
 	await log(group.intro ?? `${names.join("と　")}が　あらわれた！`, 900);
 
-	let auto = false;
 	let result = null as BattleResult | null;
 
 	// ── コマンド選択 ──
@@ -950,7 +985,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				const chosen = await chooseAction(f);
 				popFast = pushFast();
 				if (chosen === "auto") {
-					auto = true;
+					setAuto(true);
 					action = aiAction(f);
 				} else if (chosen === null) {
 					action = aiAction(f);
@@ -1018,17 +1053,11 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (f.buff > 0) f.buff--;
 		}
 		if (auto && !result) {
-			// オート中でも B で止められる
 			logEl.textContent = "オート中……（Bで　とめる）";
-			let stop = false;
-			const pop = input.push((k) => {
-				if (k === "b") stop = true;
-			});
 			await sleep(250);
-			pop();
-			if (stop) auto = false;
 		}
 	}
+	setAuto(false);
 
 	// ── 決着 ──
 	/** 経験値を なかまに入れ、上がったレベルと覚えたうたを出す。 */
