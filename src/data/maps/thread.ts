@@ -210,6 +210,29 @@ const ending = async (s: Story): Promise<void> => {
 	const kosan = VARIANTS.kosan(st);
 	if (kosan) await J(s, kosan, "古参ニキ");
 	await s.say("rei", VARIANTS.rei(st));
+	// 縛り（仕様では できるが ふつうは しない 遊び方）。当てはまるものだけ
+	const noItem = VARIANTS.shibariItem(st);
+	if (noItem) {
+		await s.say("teto", noItem);
+		await s.say("kiriko", "……ポケット、ずっと\nパンパンだったンゴ");
+	}
+	const noSong = VARIANTS.shibariSong(st);
+	if (noSong) {
+		await s.say("roze", noSong);
+		await s.say("kiriko", "うたは、1000レス目まで\nとっておいたンゴ");
+	}
+	const lowLv = VARIANTS.shibariLv(st);
+	if (lowLv) {
+		await s.say("nanj", lowLv);
+		await s.say("feris", "ずっと　ぎりぎり　だったね〜");
+	}
+	const solo = VARIANTS.shibariSolo(st);
+	if (solo) {
+		await s.say("feris", solo);
+		await s.say("teto", "……べ、別に　出番が　なくて\nすねてなんか　ない");
+	}
+	const many = VARIANTS.shibariJ(st);
+	if (many) await J(s, many, "J民C");
 	// 序章の冷やかしJ民（「また、来てほしい」の回収）
 	await J(
 		s,

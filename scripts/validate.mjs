@@ -60,8 +60,8 @@ const BANNED = [
 // 「一週間で　落ちる」のモチーフは3回だけ（spec §2-5）
 const MOTIF = { text: "一週間で", max: 3 };
 // エンジンが立てるフラグ（フラグの約束の検査から外す）。
-// p2・p2_n・p2_lv_* は次スレ（engine/newgame.ts）が立てる
-const ENGINE_FLAG = /^(date_|bond_|done:|skit_|seen_|p2$|p2_)/;
+// p2・p2_n・p2_lv_* は次スレ（engine/newgame.ts）が立てる。play_* は戦闘・メニュー（ui/battle.ts の countPlay）
+const ENGINE_FLAG = /^(date_|bond_|done:|skit_|seen_|p2$|p2_|play_)/;
 
 const server = await createServer({
 	server: { middlewareMode: true, hmr: false, ws: false },

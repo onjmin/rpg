@@ -2,7 +2,7 @@
 
 import { bondOf, hearts } from "../engine/bonds";
 import type { Game } from "../engine/game";
-import { nextSongLv, songsAt, statsOf } from "../engine/party";
+import { countPlay, nextSongLv, songsAt, statsOf } from "../engine/party";
 import { writeSave } from "../engine/save";
 import { saveSettings, settings } from "../engine/settings";
 import { el } from "./dom";
@@ -254,6 +254,7 @@ const itemMenu = async (game: Game): Promise<void> => {
 		}
 		if (used) {
 			game.story.take(v);
+			countPlay(game.state, "play_item");
 			game.audio.se("heal");
 			await game.say(null, `${it.name}を　つかった！`);
 		} else {

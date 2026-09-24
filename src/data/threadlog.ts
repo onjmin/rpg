@@ -65,6 +65,12 @@ export const FLAG_DOMAIN: Record<
 		"yayapoji",
 	],
 	p2_n: [undefined, 2, 5],
+	// 縛り（shibari）
+	play_track: [undefined, true],
+	play_item: [undefined, 1],
+	play_song: [undefined, 1],
+	f2_lv: [undefined, 8, 12], // 8 は LOW_LV（低レベルの さかい目）
+	f2_solo: [undefined, true],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -418,6 +424,75 @@ const puyu = (st: GameState): string =>
 		st.flags.puyu,
 	) ?? "うゆおー！　かわいいぼくちんも\nおいわいに　きたぷゆ🥺";
 
+// ───────────────── 縛り（仕様では できるが、ふつうは しない 遊び方） ─────────────────
+// play_track は このしくみを入れたあとに はじめた記録にだけ立つ（古いセーブを「縛り」と まちがえない）。
+// play_item・play_song は仲間が どうぐ・うたを 使った回数（engine/party.ts の countPlay）。
+// f2_lv・f2_solo は ボツキリコ（F2）に勝ったときの キリコのレベルと、ひとりで たたかったか（last.ts）。
+
+/** これ以下のレベルで F2 に勝ったら「低レベル」（目安は Lv10〜11。勝ったあとの けいけんちも ふくむ）。 */
+export const LOW_LV = 8;
+
+type Shibari = "item" | "song" | "lv" | "solo";
+
+/** 当てはまる縛り（見出しの順）。 */
+export const shibari = (f: Flags): Shibari[] => {
+	const out: Shibari[] = [];
+	if (f.play_track && !num(f, "play_item")) out.push("item");
+	if (f.play_track && !num(f, "play_song")) out.push("song");
+	const lv = num(f, "f2_lv");
+	if (lv > 0 && lv <= LOW_LV) out.push("lv");
+	if (f.f2_solo) out.push("solo");
+	return out;
+};
+
+/** まとめカードの呼び名。 */
+const SHIBARI_NAME: Record<Shibari, string> = {
+	item: "どうぐ縛り",
+	song: "うた縛り",
+	lv: "低レベル",
+	solo: "キリコひとり",
+};
+
+/** まとめカード（>>998）。2つまでは 並べ、3つ以上は まとめる。 */
+const shibariLine = (f: Flags): string | null => {
+	const list = shibari(f);
+	if (!list.length) return null;
+	if (list.length > 2) return "縛りまみれで　1000ゲット";
+	return `${list.map((k) => SHIBARI_NAME[k]).join("・")}で　1000ゲット`;
+};
+
+/** どうぐを1つも使わずに完走（テトが気づく）。 */
+const shibariItem = (st: GameState): string | null =>
+	shibari(st.flags).includes("item")
+		? "……君、ここまで　のどあめ\nひとつも　なめてないだろ"
+		: null;
+
+/** うたを1度も歌わずに完走（ロゼが気づく）。 */
+const shibariSong = (st: GameState): string | null =>
+	shibari(st.flags).includes("song")
+		? "……キリコ、ここまで　ずっと\nなぐってた　だけアル？"
+		: null;
+
+/** 低レベルで ボツキリコに勝つ（おんJ民が気づく）。 */
+const shibariLv = (st: GameState): string | null =>
+	shibari(st.flags).includes("lv")
+		? "……いま　気づいたけど、\nワイら　めっちゃ　弱ない？"
+		: null;
+
+/** キリコひとりで ボツキリコに勝つ（フェリスが気づく）。 */
+const shibariSolo = (st: GameState): string | null =>
+	shibari(st.flags).includes("solo")
+		? "ボツキリコの　とき、わたしたち\nうしろで　見てた　だけ〜"
+		: null;
+
+/** 縛りが2つ以上（スレの住民が気づく）。 */
+const shibariJ = (st: GameState): string | null => {
+	const n = shibari(st.flags).length;
+	if (n >= 4) return "……おい、このスレ、\nぜんぶ　縛って　完走しとるで";
+	if (n >= 2) return "縛りプレイで　1000とか、\nこのスレ　どうなっとんねん";
+	return null;
+};
+
 /** エンディングと last の差分（null は「その行を出さない」）。 */
 export const VARIANTS = {
 	botsuPick,
@@ -430,6 +505,11 @@ export const VARIANTS = {
 	botsuVoice,
 	nanjDate,
 	puyu,
+	shibariItem,
+	shibariSong,
+	shibariLv,
+	shibariSolo,
+	shibariJ,
 } satisfies Record<string, Variant>;
 
 // ───────────────── まとめカード（スタッフロールのあと） ─────────────────
@@ -540,6 +620,7 @@ const myThread = (st: GameState): string[] => {
 			f.reply_srv,
 		),
 	);
+	res(">>998", shibariLine(f));
 	res("1000", "名前：蓄音キリコ");
 	return lines;
 };

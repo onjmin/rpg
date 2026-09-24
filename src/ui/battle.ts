@@ -21,6 +21,7 @@ import type {
 import { type Game, ResetToTitle } from "../engine/game";
 import {
 	activeOf,
+	countPlay,
 	gainExp,
 	healAll,
 	learnTexts,
@@ -990,6 +991,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		} else if (action.kind === "item") {
 			const it = data.items[action.item];
 			if (!game.story.take(action.item)) return;
+			countPlay(state, "play_item");
 			await log(`${a.name}は　${it.name}を　つかった！`, 450);
 			const targets = it.effect?.all ? alive(party) : [action.target];
 			for (const t of targets) {
@@ -1016,6 +1018,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				}
 				a.mp -= s.mp;
 				renderParty();
+				countPlay(state, "play_song");
 			}
 			audio.se(s.se ?? "spell");
 			root.classList.remove("sing");

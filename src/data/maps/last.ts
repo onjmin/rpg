@@ -89,6 +89,10 @@ const lastRun = async (s: Story): Promise<void> => {
 
 	// ── F2 ボツキリコ ──
 	await s.battle("g_f2");
+	// 縛りの記録（threadlog.ts の shibari）：勝ったときの キリコのレベルと、ひとりで たたかったか
+	const fighters = s.state.party.filter((m) => !m.bench);
+	s.set("f2_lv", fighters[0]?.lv ?? 1);
+	if (fighters.length === 1) s.set("f2_solo");
 	await s.narrate("ボツキリコは　ひざを　ついた。");
 	await botsuSay(s, "……吾輩の声も、どうせ　消えるンゴ");
 	await s.say("kiriko", "消えさせない");

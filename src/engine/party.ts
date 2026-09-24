@@ -1,6 +1,6 @@
 // 仲間の能力値とレベルアップ。
 
-import type { CharDef, GameData, MemberState } from "./defs";
+import type { CharDef, GameData, GameState, MemberState } from "./defs";
 
 export const MAX_LV = 30;
 
@@ -202,3 +202,14 @@ export const benchText = (name: string): string =>
 	`${name}は　控えに　まわった。`;
 export const backText = (name: string): string =>
 	`${name}が　たたかう　なかまに　もどった。`;
+
+/**
+ * 遊び方の記録（仲間が どうぐ・うたを 使った回数）。ふつうは すぐ 1 になるので、
+ * 0 のまま完走した「縛り」を エンディングで拾う（threadlog.ts の shibari）。
+ */
+export const countPlay = (
+	state: GameState,
+	key: "play_item" | "play_song",
+): void => {
+	state.flags[key] = Number(state.flags[key] ?? 0) + 1;
+};

@@ -57,7 +57,8 @@ export const data: GameData = {
 		dir: "up",
 		party: ["kiriko"],
 		items: { candy: 3 },
-		flags: { ch: 0, res: 0 },
+		// play_track：どうぐ・うたの回数を数えはじめた記録（threadlog.ts の shibari）
+		flags: { ch: 0, res: 0, play_track: true },
 	},
 	// 古いセーブ（たたかう仲間が4人）で先に控えへ回す順＝本編で控えに回る順
 	// （第二章でおんJ民、スタジオでテト）
