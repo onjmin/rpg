@@ -955,19 +955,285 @@ body.shake #app {
 	animation: shake 0.1s linear 3;
 }
 
+/* とくぎを使った合図。主役は .fx なので、背景は ひとつ息をのむぐらいに光らせるだけ */
 .battle.sing .battle-bg {
-	animation: sing 0.7s ease-out;
+	animation: sing 0.45s steps(3);
 }
 
 @keyframes sing {
 	0% {
-		filter: hue-rotate(0) brightness(1);
+		filter: brightness(1);
 	}
-	30% {
-		filter: hue-rotate(90deg) brightness(1.8);
+	35% {
+		filter: brightness(1.55) saturate(1.25);
 	}
 	100% {
-		filter: hue-rotate(0) brightness(1);
+		filter: brightness(1);
+	}
+}
+
+/*
+ * ───────── とくぎの演出（ui/battle.ts の playFx・fxNode） ─────────
+ *
+ * 当たる相手（敵1体・なかまの札）の上、または相手の並んだ列の上に置く箱。
+ * 絵は足さず CSS だけで作り、ドット絵に合わせて steps でカクッと動かす。
+ * 色は --fx（技ごと。data/battle.ts の SkillDef.fx）。
+ */
+.fx {
+	position: absolute;
+	pointer-events: none;
+	overflow: hidden;
+	z-index: 5;
+	--fx: #fff;
+}
+
+.fx i,
+.fx b {
+	position: absolute;
+	display: block;
+}
+
+/* slash: ななめの筋が 3本、ずれて はしる（斬る・つりあげる） */
+.fx-slash {
+	overflow: visible;
+}
+.fx-slash i {
+	left: -25%;
+	top: 50%;
+	width: 150%;
+	height: 5px;
+	background: var(--fx);
+	box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.75);
+	transform-origin: 0 50%;
+	animation: fx-slash 0.34s steps(4) both;
+}
+.fx-slash i:nth-child(2) {
+	top: 32%;
+	animation-delay: 0.08s;
+}
+.fx-slash i:nth-child(3) {
+	top: 68%;
+	animation-delay: 0.16s;
+}
+
+@keyframes fx-slash {
+	0% {
+		transform: rotate(-34deg) scaleX(0);
+		opacity: 1;
+	}
+	55% {
+		transform: rotate(-34deg) scaleX(1);
+		opacity: 1;
+	}
+	100% {
+		transform: rotate(-34deg) scaleX(1);
+		opacity: 0;
+	}
+}
+
+/* burst: 芯が光って、輪が2つ ひろがる（はじける） */
+.fx-burst {
+	overflow: visible;
+}
+.fx-burst i {
+	inset: 0;
+	border: 4px solid var(--fx);
+	border-radius: 50%;
+	animation: fx-burst-ring 0.42s steps(5) both;
+}
+.fx-burst i:nth-child(2) {
+	animation-delay: 0.12s;
+}
+.fx-burst b {
+	inset: 26%;
+	background: var(--fx);
+	border-radius: 50%;
+	animation: fx-burst-core 0.3s steps(3) both;
+}
+
+@keyframes fx-burst-ring {
+	0% {
+		transform: scale(0.25);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1.5);
+		opacity: 0;
+	}
+}
+
+@keyframes fx-burst-core {
+	0% {
+		transform: scale(0.2);
+		opacity: 0.95;
+	}
+	100% {
+		transform: scale(1.7);
+		opacity: 0;
+	}
+}
+
+/*
+ * ring: 札のかたちの輪が ひろがって、＋ が 立ちのぼる（回復）。
+ * なかまの札は小さいので、丸い波紋より 札のふちを なぞる輪のほうが よく見える
+ */
+.fx-ring {
+	overflow: visible;
+}
+.fx-ring i {
+	inset: 0;
+	border: 3px solid var(--fx);
+	border-radius: 7px;
+	animation: fx-pulse 0.5s steps(5) both;
+}
+.fx-ring i:nth-child(2) {
+	animation-delay: 0.14s;
+}
+.fx-ring b {
+	bottom: 8%;
+	font-size: 19px;
+	line-height: 1;
+	color: var(--fx);
+	text-shadow:
+		0 0 4px #000,
+		0 2px 0 rgba(0, 0, 0, 0.6);
+	animation: fx-plus 0.7s steps(7) both;
+}
+
+@keyframes fx-pulse {
+	0% {
+		transform: scale(0.96);
+		opacity: 0.95;
+	}
+	100% {
+		transform: scale(1.5);
+		opacity: 0;
+	}
+}
+
+@keyframes fx-plus {
+	0% {
+		transform: translateY(0);
+		opacity: 0;
+	}
+	25% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(-260%);
+		opacity: 0;
+	}
+}
+
+/* aura: 札の下から 光の筋が 立ちのぼる（強化）。札の外まで のびる */
+.fx-aura {
+	overflow: visible;
+}
+.fx-aura i {
+	bottom: 0;
+	width: 5%;
+	height: 42%;
+	background: linear-gradient(to top, var(--fx), transparent);
+	box-shadow: 0 0 6px var(--fx);
+	animation: fx-rise 0.6s steps(7) both;
+}
+
+@keyframes fx-rise {
+	0% {
+		transform: translateY(30%) scaleY(0.5);
+		opacity: 0;
+	}
+	25% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(-230%) scaleY(1);
+		opacity: 0;
+	}
+}
+
+/* 回復・強化を受けた なかまの札を ひと呼吸 ひからせる（--fx は battle.ts が入れる） */
+.member.fx-lit {
+	animation: fx-lit 0.5s steps(3);
+}
+
+@keyframes fx-lit {
+	0% {
+		box-shadow: none;
+	}
+	40% {
+		box-shadow:
+			0 0 0 3px var(--fx),
+			0 0 14px var(--fx);
+	}
+	100% {
+		box-shadow: none;
+	}
+}
+
+/* rain: 字が 降りそそぐ（碁石・素粒子）。--fall は列の高さ（battle.ts が入れる） */
+.fx-rain i {
+	top: -26px;
+	font-size: 19px;
+	line-height: 1;
+	color: var(--fx);
+	text-shadow:
+		0 0 4px #000,
+		0 2px 0 rgba(0, 0, 0, 0.6);
+	animation: fx-fall 0.5s steps(7) both;
+}
+
+@keyframes fx-fall {
+	0% {
+		transform: translateY(0);
+		opacity: 0;
+	}
+	15% {
+		opacity: 1;
+	}
+	85% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(var(--fall, 300px));
+		opacity: 0;
+	}
+}
+
+/* spin: まわる輪が 2つ、ひろがりながら 回る（ドリル） */
+.fx-spin i {
+	left: 50%;
+	top: 50%;
+	width: 62%;
+	height: 62%;
+	margin: -31% 0 0 -31%;
+	border: 7px dashed var(--fx);
+	border-radius: 50%;
+	animation: fx-spin 0.6s steps(9) both;
+}
+.fx-spin i:nth-child(2) {
+	width: 34%;
+	height: 34%;
+	margin: -17% 0 0 -17%;
+	border-width: 5px;
+	animation-delay: 0.1s;
+	animation-direction: reverse;
+}
+
+@keyframes fx-spin {
+	0% {
+		transform: rotate(0) scale(0.3);
+		opacity: 0;
+	}
+	20% {
+		opacity: 1;
+	}
+	75% {
+		opacity: 1;
+	}
+	100% {
+		transform: rotate(540deg) scale(1.25);
+		opacity: 0;
 	}
 }
 

@@ -18,6 +18,8 @@ export const skills: Record<string, SkillDef> = {
 		mp: 3,
 		text: "{user}の　ワカサギつり！　{target}を　つりあげた！",
 		se: "attack",
+		// 糸がのびて つりあげる
+		fx: { kind: "slash", color: "#8fd8ff" },
 	}),
 	shicho: sk({
 		id: "shicho",
@@ -27,6 +29,8 @@ export const skills: Record<string, SkillDef> = {
 		power: 1.0,
 		mp: 5,
 		text: "{user}は　碁石を　ならべた！　シチョウで　にげみちを　ふさぐ！",
+		// 碁石が降ってきて にげみちを ふさぐ
+		fx: { kind: "rain", color: "#f4f1ff", mark: "●" },
 	}),
 	replay: sk({
 		id: "replay",
@@ -37,6 +41,8 @@ export const skills: Record<string, SkillDef> = {
 		mp: 8,
 		text: "{user}は　蓄音機を　まわした！　ためた「がんばれ」が　ひびく！",
 		se: "heal",
+		// 蓄音機の 音の波が ひろがる
+		fx: { kind: "ring", color: "#ffcf4a" },
 	}),
 	// おんJ民・フェリスは UTAU の声が無いので「うたう」を持たない（cast.ts の attackTexts で演出）
 	// ロゼ
@@ -49,6 +55,7 @@ export const skills: Record<string, SkillDef> = {
 		mp: 4,
 		text: "{user}は　フローラルな　かおりで　{target}を　いやしたアル",
 		se: "heal",
+		fx: { kind: "ring", color: "#ff9ecb" },
 	}),
 	mabo: sk({
 		id: "mabo",
@@ -59,6 +66,7 @@ export const skills: Record<string, SkillDef> = {
 		mp: 4,
 		text: "{user}は　あつあつの　マーボーを　{target}に　ふるまったアル！",
 		se: "fire",
+		fx: { kind: "burst", color: "#ff6a3d" },
 	}),
 	neutrino: sk({
 		id: "neutrino",
@@ -68,6 +76,7 @@ export const skills: Record<string, SkillDef> = {
 		power: 0.9, // すりぬけるので こうげきより少し弱い全体攻撃
 		mp: 5,
 		text: "{user}「素粒子は　すりぬけるアル！」……たまに　あたった！",
+		fx: { kind: "rain", color: "#9ad8ff", mark: "・" },
 	}),
 	aruanai: sk({
 		id: "aruanai",
@@ -77,6 +86,7 @@ export const skills: Record<string, SkillDef> = {
 		power: 0,
 		mp: 5,
 		text: "{user}「やる気は　アル？」　みんな「アル！」",
+		fx: { kind: "aura", color: "#ffcf4a" },
 	}),
 	// テト（最後に加入する いちばん強い仲間。うたも ロゼより強い）
 	baguette: sk({
@@ -88,6 +98,7 @@ export const skills: Record<string, SkillDef> = {
 		mp: 4,
 		text: "{user}の　フランスパンが　{target}を　とらえた！",
 		se: "attack",
+		fx: { kind: "slash", color: "#ffd591" },
 	}),
 	drill: sk({
 		id: "drill",
@@ -97,6 +108,7 @@ export const skills: Record<string, SkillDef> = {
 		power: 1.3,
 		mp: 7,
 		text: "{user}の　ツインテールが　回転を　はじめた！",
+		fx: { kind: "spin", color: "#ff5d6c" },
 	}),
 	bakadana: sk({
 		id: "bakadana",
@@ -106,6 +118,7 @@ export const skills: Record<string, SkillDef> = {
 		power: 0,
 		mp: 5,
 		text: "{user}「君は　じつに　馬鹿だな。……ほら、いくよ」",
+		fx: { kind: "aura", color: "#6fb7ff" },
 	}),
 };
 

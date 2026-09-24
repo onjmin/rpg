@@ -140,6 +140,23 @@ export type MemberStats = {
 
 // ───────────────── 戦闘 ─────────────────
 
+/**
+ * とくぎの見た目（ui/battle.ts の playFx が出す）。絵は足さず CSS だけで作る。
+ * - slash … ななめの筋で斬る・つりあげる（1体ずつ、相手の上）
+ * - burst … はじける（1体ずつ）
+ * - ring  … ひろがる波紋。回復（1人ずつ、札の上）
+ * - aura  … 立ちのぼる気合。強化（1人ずつ）
+ * - rain  … mark の字が降りそそぐ（列ぜんたい）
+ * - spin  … まわる（列ぜんたい）
+ */
+export type FxSpec = {
+	kind: "slash" | "burst" | "ring" | "aura" | "rain" | "spin";
+	/** 演出の色（CSS の色。省略は白）。 */
+	color?: string;
+	/** rain で降らせる字（省略は ●）。 */
+	mark?: string;
+};
+
 export type SkillDef = {
 	id: string;
 	name: string;
@@ -152,6 +169,8 @@ export type SkillDef = {
 	/** 使ったときの文。{user} {target} を置き換える。 */
 	text: string;
 	se?: string;
+	/** 見た目。省略すると画面がひかるだけ。 */
+	fx?: FxSpec;
 };
 
 export type EnemyDef = {

@@ -13,6 +13,7 @@ import { cropOf, getImage, loadImage } from "../engine/assets";
 import type {
 	BattleResult,
 	EnemyDef,
+	FxSpec,
 	MemberState,
 	SkillDef,
 	SummonDef,
@@ -239,6 +240,50 @@ export const runBattle = async (
 		state.party = snapshot.map((m) => ({ ...m }));
 		healAll(data, state.party);
 	}
+};
+
+/** とくぎの演出が消えるまで（いちばん長い型＋ずらしの合計）。 */
+const FX_MS = 900;
+
+/**
+ * とくぎの飾りを組み立てる（形は style.css の .fx-*）。
+ * h は出す場所の高さ（降らせる距離を決めるのに使う）。
+ */
+const fxNode = (spec: FxSpec, h: number): HTMLElement => {
+	const box = el("div", { class: `fx fx-${spec.kind}` });
+	box.style.setProperty("--fx", spec.color ?? "#fff");
+	const bits = (n: number, tag: "i" | "b" = "i") =>
+		Array.from({ length: n }, () => el(tag));
+	if (spec.kind === "slash") box.append(...bits(3));
+	else if (spec.kind === "burst") box.append(...bits(2), ...bits(1, "b"));
+	else if (spec.kind === "spin") box.append(...bits(2));
+	else if (spec.kind === "ring") {
+		// 札のかたちの輪が ひろがり、＋ が 3つ 立ちのぼる
+		box.append(...bits(2));
+		for (let i = 0; i < 3; i++) {
+			const e = el("b", { text: "＋" });
+			e.style.left = `${16 + i * 28}%`;
+			e.style.animationDelay = `${i * 0.09}s`;
+			box.append(e);
+		}
+	} else if (spec.kind === "aura") {
+		// 札の下から 立ちのぼる筋。ずらして出すと 一本ずつ上がって見える
+		for (let i = 0; i < 6; i++) {
+			const e = el("i");
+			e.style.left = `${6 + i * 16}%`;
+			e.style.animationDelay = `${i * 0.05}s`;
+			box.append(e);
+		}
+	} else if (spec.kind === "rain") {
+		box.style.setProperty("--fall", `${Math.round(h) + 40}px`);
+		for (let i = 0; i < 18; i++) {
+			const e = el("i", { text: spec.mark ?? "●" });
+			e.style.left = `${Math.round(Math.random() * 92)}%`;
+			e.style.animationDelay = `${(Math.random() * 0.35).toFixed(2)}s`;
+			box.append(e);
+		}
+	}
+	return box;
 };
 
 const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
@@ -686,6 +731,38 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	};
 
 	// ── ダメージ・演出 ──
+	/**
+	 * とくぎの演出を、当たる相手の上に出す。
+	 * 画面ぜんたいの色を変えるだけだと どの技も同じに見えるので、形を技ごとに変える。
+	 * 列ぜんたいに出す型（rain・spin）は、相手が並んでいる列の上にまとめて1つ。
+	 */
+	const playFx = (spec: FxSpec | undefined, targets: Fighter[]): void => {
+		if (!spec || !targets.length) return;
+		const wide = spec.kind === "rain" || spec.kind === "spin";
+		const spots = wide
+			? [targets[0].side === "enemy" ? enemyRow : partyRow]
+			: targets.map((t) => t.view);
+		const rr = root.getBoundingClientRect();
+		for (const spot of spots) {
+			const r = spot.getBoundingClientRect();
+			if (!r.width || !r.height) continue;
+			const box = fxNode(spec, r.height);
+			const st = box.style;
+			st.left = `${r.left - rr.left}px`;
+			st.top = `${r.top - rr.top}px`;
+			st.width = `${r.width}px`;
+			st.height = `${r.height}px`;
+			root.appendChild(box);
+			setTimeout(() => box.remove(), FX_MS);
+			// 受けた本人も ひと呼吸 ひからせる（なかまの札。style.css の .member.fx-lit）
+			spot.style.setProperty("--fx", spec.color ?? "#fff");
+			spot.classList.remove("fx-lit");
+			void spot.offsetWidth;
+			spot.classList.add("fx-lit");
+			setTimeout(() => spot.classList.remove("fx-lit"), FX_MS);
+		}
+	};
+
 	const hitEnemy = async (t: Fighter) => {
 		t.view.classList.remove("hit");
 		void t.view.offsetWidth;
@@ -939,23 +1016,30 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					? retarget(action.target)
 					: action.target;
 			const targetName = aimed?.name ?? "";
+			// 当たる顔ぶれを先に決める（演出とダメージで同じ相手をつかう）
+			const pool = a.side === "party" ? enemies : party;
+			const targets: Fighter[] =
+				s.kind === "attack"
+					? s.target === "enemies"
+						? alive(pool)
+						: [aimed ?? alive(pool)[0]].filter((x): x is Fighter => !!x)
+					: s.kind === "heal"
+						? s.target === "allies"
+							? alive(party)
+							: [action.target ?? a]
+						: alive(party);
+			// 演出は文といっしょに出す（送りの速い人を待たせない）
+			playFx(s.fx, targets);
 			await log(
 				s.text.replace("{user}", a.name).replace("{target}", targetName),
 				700,
 			);
 			if (s.kind === "attack") {
-				const pool = a.side === "party" ? enemies : party;
-				const targets =
-					s.target === "enemies"
-						? alive(pool)
-						: [aimed ?? alive(pool)[0]].filter((x): x is Fighter => !!x);
 				for (const t of targets) {
 					if (result) break;
 					await applyDamage(a, t, s.power);
 				}
 			} else if (s.kind === "heal") {
-				const targets =
-					s.target === "allies" ? alive(party) : [action.target ?? a];
 				for (const t of targets) await heal(t, 30 * s.power);
 			} else if (s.kind === "buff") {
 				for (const t of alive(party)) t.buff = 3;
@@ -1025,6 +1109,8 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 									kind: "attack",
 									text: pick.text.replace("{user}", e.name),
 									se: "enemyAttack",
+									// 敵のとくぎは、当たった人の札の上ではじける
+									fx: { kind: "burst", color: "#ff8a5c" },
 								},
 								target: t,
 							}
