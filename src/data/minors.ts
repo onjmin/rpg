@@ -1,5 +1,6 @@
 // おんJマイナーズ（おんJwiki の「一軍・二軍」まわりの顔文字キャラ）。本筋には からまない寄り道。
-// - にぃちぇ（町）… 「土曜日ど！」の派生。遊んでいる端末の曜日が日曜日なら、ことばが変わる。
+// - にぃちぇ（町）… 「土曜日ど！」の派生。遊んでいる端末の曜日が日曜・土曜なら、ことばが変わる。
+// - おんちゃん（町の広場）… 一軍（総選挙の「殿堂入り」）。「今日のおんちゃん」は遊んでいる端末の曜日で変わる。
 // - おんすちゃん（スレ街道の北東のすみ）… だれも来ない おんS のお嬢さま。
 // - ヤヤポジ（スタジアムのスタンド）… ポジハメを ひかえめにした子。5割が好き。
 // - ンゴ姉・パン松・総選挙のはり紙（過去ログ倉庫の奥の間。B2 のあと、ムッジェのまわり）
@@ -10,6 +11,7 @@ import type { EventDef, GameState, Story } from "../engine/defs";
 import { npc } from "./helpers";
 import { SPR } from "./sprites";
 import { ks, silent } from "./story";
+import { weekday } from "./weekday";
 
 /** 名前欄だけの話し手（J民ではないので 白い名前欄・読み上げなし）。 */
 const N = (s: Story, name: string, text: string) => s.say(null, text, { name });
@@ -185,7 +187,7 @@ export const panmatsu = (x: number, y: number): EventDef =>
 
 // ───────────────── 町・街道・スタジアム ─────────────────
 
-/** にぃちぇ（町。遊んでいる端末が日曜日なら「日曜日だニィ」）。 */
+/** にぃちぇ（町。遊んでいる端末が日曜日なら「日曜日だニィ」、土曜日なら あしたを 待つ）。 */
 export const nichie = (x: number, y: number): EventDef =>
 	npc(
 		"nichie",
@@ -196,7 +198,13 @@ export const nichie = (x: number, y: number): EventDef =>
 			await thanks(s, "nichie");
 			const again = !!s.flag("nichie_met");
 			s.set("nichie_met");
-			if (new Date().getDay() === 0) {
+			const w = weekday();
+			if (w === 6) {
+				await N(s, "にぃちぇ", "あ！あした　日曜日だニィ！");
+				await s.narrate("にぃちぇの　目が、いつもより\nひらいている。");
+				return;
+			}
+			if (w === 0) {
 				await N(s, "にぃちぇ", "あ！今日　日曜日だニィ！");
 				if (nanjActive(s.state)) {
 					await s.say("nanj", "火曜日やぞ");
@@ -217,6 +225,44 @@ export const nichie = (x: number, y: number): EventDef =>
 			await N(s, "にぃちぇ", "……まだだったニィ……");
 		},
 		{ dir: "left", when: day },
+	);
+
+/** 今日のおんちゃん（遊んでいる端末の曜日。日曜はじまり）。 */
+const ONCHAN_TODAY = [
+	"日曜日だおん。\nにぃちぇが　さわいでるおん",
+	"月曜日だおん。\n……やきうも　お休みの日だおん",
+	"火曜日だおん。\nなんにも　ない日だおん",
+	"水曜日だおん。\n週の　まんなかだおん",
+	"木曜日だおん。\n……なにする日だったおん？",
+	"金曜日だおん！\nあしたは　お休みだおん！",
+	"土曜日だおん！\n先住民が　今日は　正しいおん",
+] as const;
+
+/** おんちゃん（町の広場。一軍。ムッジェは おんちゃんの絵から生まれた）。 */
+export const onchan = (x: number, y: number): EventDef =>
+	npc(
+		"onchan",
+		x,
+		y,
+		SPR.onchan,
+		async (s) => {
+			const O = (t: string) => N(s, "おんちゃん", t);
+			if (!s.flag("onchan_met")) {
+				s.set("onchan_met");
+				await O("キリコちゃん、はじめましてだおん");
+				if (s.flag("nanj_in") && !s.flag("akukin"))
+					await s.say("nanj", "おんちゃんや。\n……ワイらより　有名やで");
+			}
+			await O(ONCHAN_TODAY[weekday()]);
+			// ムッジェに会ったあと（B2）。いちどだけ
+			if (s.flag("b2") && !s.flag("onchan_mujje")) {
+				s.set("onchan_mujje");
+				await O("……ムッジェ、元気に\nしてるおん？");
+				await ks(s, "「ホゲェ」って　言ってたンゴ");
+				await O("……そっかぁ。\nよかったおん");
+			}
+		},
+		{ dir: "down", when: day },
 	);
 
 /** おんすちゃん（スレ街道の すみ。だれも来ない おんS のお嬢さま）。 */

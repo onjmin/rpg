@@ -28,6 +28,7 @@ import { yayapoji } from "../minors";
 import { SPR } from "../sprites";
 import { ks, phono, silent } from "../story";
 import { base, STADIUM, TOWN } from "../tiles";
+import { weekday } from "../weekday";
 
 // ── タイル ──
 // §11-5 の ASCII をそのまま使う。"." はコンコースの石畳（町と同じ）。
@@ -452,7 +453,10 @@ export const stadium: MapDef = {
 			trigger: "talk",
 			when: day,
 			run: async (s) => {
-				await j(s, "観客", "ナイターは　ええなあ。\n夜風が　きもちええわ");
+				// 遊んでいる端末が月曜日なら（プロ野球は 月曜に 試合が ない。data/weekday.ts）
+				if (weekday() === 1)
+					await j(s, "観客", "……今日　月曜やろ。\nほんまは　試合　ない日やで");
+				else await j(s, "観客", "ナイターは　ええなあ。\n夜風が　きもちええわ");
 			},
 		},
 		{

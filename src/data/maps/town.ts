@@ -14,10 +14,11 @@ import type {
 } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { chest, npc, sign, warp } from "../helpers";
-import { nichie } from "../minors";
+import { nichie, onchan } from "../minors";
 import { SPR } from "../sprites";
 import { knows, ks, lockedDoor, phono, resLine, silent } from "../story";
 import { base, TOWN } from "../tiles";
+import { weekday } from "../weekday";
 
 /** J民系のモブ（黄色の名前欄・読み上げなし）。 */
 const J = (s: Story, text: string, name: string) =>
@@ -76,6 +77,20 @@ const ch1Intro = async (s: Story): Promise<void> => {
 	);
 };
 
+/**
+ * 勢い欄の2番目（B2 まで）。遊んでいる端末の曜日で変わる（外の曜日。data/weekday.ts）。
+ * 火曜（ゲームの中の日）と土曜は、もとの「土曜日ど！」。
+ */
+const IKIOI_WEEKDAY = [
+	"あ！今日日曜日だニィ！",
+	"【悲報】月曜日、はじまる",
+	"あ！今日土曜日ど！",
+	"水曜日って　週のまんなかやんけ",
+	"木曜日の　影のうすさは異常",
+	"【朗報】あした休み",
+	"あ！今日土曜日ど！",
+] as const;
+
 /** 勢い欄（初回は古参ニキがサイレントバルスを説明する）。 */
 const ikioi = async (s: Story): Promise<void> => {
 	const f = s.state.flags;
@@ -108,7 +123,7 @@ const ikioi = async (s: Story): Promise<void> => {
 		return;
 	}
 	const second = !f.b2
-		? "あ！今日土曜日ど！"
+		? IKIOI_WEEKDAY[weekday()]
 		: !f.b3
 			? "【実況】おんJスタジアム　ナイター"
 			: "【保守】キリコがんばれ";
@@ -624,14 +639,18 @@ const events: EventDef[] = [
 		SPR.townsfolk,
 		async (s) => {
 			await N(s, "あ！今日土曜日ど！", "先住民");
-			if (s.flag("nanj_in") && !s.flag("akukin"))
-				await s.say("nanj", "火曜日やぞ");
+			if (!s.flag("nanj_in") || s.flag("akukin")) return;
+			// 遊んでいる端末が ほんとうに土曜日なら、言いかけて やめる（data/weekday.ts）
+			if (weekday() === 6)
+				await s.narrate("おんJ民は　なにか　言いかけて、\nやめた。");
+			else await s.say("nanj", "火曜日やぞ");
 		},
 		{ wander: true, when: day },
 	),
 
-	// にぃちぇ（おんJマイナーズ。先住民の「土曜日ど！」の派生。data/minors.ts）
+	// にぃちぇ（おんJマイナーズ。先住民の「土曜日ど！」の派生）・おんちゃん（一軍。data/minors.ts）
 	nichie(20, 11),
+	onchan(15, 10),
 
 	// 囲碁J民（詰碁）
 	npc("igo", 19, 13, SPR.j_shinkan, igo, { dir: "left", when: day }),

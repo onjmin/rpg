@@ -30,6 +30,8 @@ export const SPR = {
 	panmatsu: "pub:sprites/minors_panmatsu.png",
 	/** ヤヤポジ (*^△^*)（ひかえめなポジハメ） */
 	yayapoji: "pub:sprites/minors_yayapoji.png",
+	/** おんちゃん (o'ω'n)（一軍。rpgen no.1212「おんちゃん」の歩行シート） */
+	onchan: "sa:oLrlUq",
 
 	// ── おんJ民・マッマ ──
 	j_yakiu: "sa:4rSOzo", // 野球民
