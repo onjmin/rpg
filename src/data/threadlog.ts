@@ -37,6 +37,7 @@ export const FLAG_DOMAIN: Record<
 	puyu_met: [undefined, true],
 	flood_1: [undefined, "991", "992", "993", "994"],
 	flood_2: [undefined, "995", "996", "997"],
+	p2_n: [undefined, 2, 5],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -456,6 +457,9 @@ const nextThread = (f: Flags): string[] => [
 		(f.puyu_met ? ">>5 またきてゆ🥺" : ">>5 きみ、はじめて　みるかおぷゆ？🥺"),
 ];
 
+/** いま何スレ目か（次スレを立てていなければ 1）。 */
+const partNo = (f: Flags): number => Math.max(1, num(f, "p2_n") || 1);
+
 /** 洪水で ひろえた声（ひろっていなければ セクションごと出さない）。 */
 const floodSection = (f: Flags): EndingSummary["sections"] => {
 	const got = [f.flood_1, f.flood_2]
@@ -479,7 +483,7 @@ export const threadSummary = (st: GameState): EndingSummary => ({
 		},
 		...floodSection(st.flags),
 		{
-			title: "【次スレ】蓄音キリコのうた　Part2",
+			title: `【次スレ】蓄音キリコのうた　Part${partNo(st.flags) + 1}`,
 			lines: nextThread(st.flags),
 		},
 	],

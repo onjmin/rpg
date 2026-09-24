@@ -326,9 +326,17 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 		3,
 		Math.min(9, Math.round(Math.min(viewport.w, viewport.h) / 95)),
 	);
+	/**
+	 * 次スレ（Part2 以降）の敵の強さ。前の周のレベルのまま始まるので、
+	 * そのぶん 敵も強くする（2周目 1.6倍、3周目 2.2倍…）。
+	 */
+	const hard = state.flags.p2
+		? 1 + 0.6 * Math.max(1, Number(state.flags.p2_n ?? 2) - 1)
+		: 1;
 	/** 敵を1体つくって列の後ろに並べる（はじめの顔ぶれと、召喚で使う）。 */
 	const spawn = (id: string, name: string): Fighter => {
 		const e = data.enemies[id];
+		const hp = Math.round(e.hp * hard);
 		const scale = Math.round(base * (e.scale ?? (isBoss ? 1.5 : 1)));
 		const sprite = enemyCanvas(e.sprite, scale);
 		const bar = el("div", { class: "hpbar" }, [el("i")]);
@@ -342,12 +350,12 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 		return {
 			side: "enemy",
 			name,
-			hp: e.hp,
-			maxHp: e.hp,
+			hp,
+			maxHp: hp,
 			mp: 0,
 			maxMp: 0,
-			atk: e.atk,
-			def: e.def,
+			atk: Math.round(e.atk * hard),
+			def: Math.round(e.def * hard),
 			spd: e.spd,
 			enemy: e,
 			skills: [],

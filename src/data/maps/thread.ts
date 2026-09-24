@@ -225,7 +225,12 @@ const ending = async (s: Story): Promise<void> => {
 	s.face("follower:teto", "left");
 	await s.say("teto", "……で、「ええもん」って　なんだったのさ");
 	await s.say("kiriko", "たぶん……これンゴ");
-	await s.say("nanj", "次スレ　立てといたで。\n「蓄音キリコのうた　Part2」や");
+	// 何スレ目かは、次スレを立てるたびに増える（engine/newgame.ts の p2_n）
+	const part = Math.max(1, Number(s.flag("p2_n") ?? 1)) + 1;
+	await s.say(
+		"nanj",
+		`次スレ　立てといたで。\n「蓄音キリコのうた　Part${part}」や`,
+	);
 	// 外野席のおでかけを見逃したときだけ
 	const date = VARIANTS.nanjDate(st);
 	if (date) await s.say("nanj", date);

@@ -2,6 +2,7 @@
 
 import type { GameState } from "../engine/defs";
 import type { Game } from "../engine/game";
+import { nextThreadState } from "../engine/newgame";
 import { hasSave, readSave } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { el } from "./dom";
@@ -64,9 +65,12 @@ export const showTitle = (game: Game): Promise<GameState> =>
 		};
 		raf = requestAnimationFrame(anim);
 
+		// 完走したきろくがあれば「次スレ」を出す（強くてニューゲーム）
+		const cleared = !!readSave()?.state.flags.clear;
 		const items = () => [
 			{ label: "はじめから", value: "new" },
 			{ label: "つづきから", value: "load", disabled: !hasSave() },
+			...(cleared ? [{ label: "次スレを　立てる", value: "part2" }] : []),
 			{ label: "せってい", value: "settings" },
 		];
 		let cur = hasSave() ? 1 : 0;
@@ -113,6 +117,26 @@ export const showTitle = (game: Game): Promise<GameState> =>
 			}
 			let state: GameState | null = null;
 			if (v === "load") state = readSave()?.state ?? null;
+			if (v === "part2") {
+				const old = readSave()?.state;
+				const n = await listWindow(
+					game,
+					"次スレを　立てますか？　いまの　スレは　しまわれます",
+					[
+						{
+							label: "立てる",
+							sub: "レベル・なかよし度・記録は　引きつぐ",
+							value: "yes",
+						},
+						{ label: "やめる", value: "no" },
+					],
+				);
+				if (n !== "yes" || !old) {
+					busy = false;
+					return;
+				}
+				state = nextThreadState(data, old);
+			}
 			if (v === "new" && hasSave()) {
 				const n = await listWindow(
 					game,

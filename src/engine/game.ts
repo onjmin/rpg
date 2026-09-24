@@ -26,6 +26,7 @@ import {
 	backText,
 	benchOf,
 	benchText,
+	expFor,
 	fixParty,
 	fromBench,
 	healAll,
@@ -958,6 +959,13 @@ export class Game {
 				const party = this.state.party;
 				if (party.some((m) => m.id === id)) return;
 				const m = newMember(this.data, id, activeOf(party));
+				// 次スレ（Part2）では、前の周で育てたレベルのまま加わる（engine/newgame.ts）
+				const kept = Number(this.state.flags[`p2_lv_${id}`] ?? 0);
+				if (kept > m.lv) {
+					m.lv = kept;
+					m.exp = expFor(kept);
+					healAll(this.data, [m]);
+				}
 				const full = activeOf(party).length >= MAX_ACTIVE;
 				if (opt?.bench || full) m.bench = true;
 				// たたかう仲間なら隊列の最後尾、控えなら控えの最後に入る
