@@ -64,6 +64,35 @@ syncHud();
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
+// iOS は user-scalable=no を聞かず、すばやく 2 回たたくと拡大してしまう。
+// 拡大するとピンチも止めてあるので戻せなくなる。2 回目のタップの既定動作を止める
+// （操作はすべて pointer イベントで受けているので、click が出なくても困らない）
+let lastTouchEnd = 0;
+document.addEventListener(
+	"touchend",
+	(e) => {
+		const now = e.timeStamp;
+		if (now - lastTouchEnd < 350) e.preventDefault();
+		lastTouchEnd = now;
+	},
+	{ passive: false },
+);
+
+// それでも拡大されたら（ブラウザ独自の操作など）、viewport を書き直して等倍に戻す
+const viewportMeta = document.querySelector<HTMLMetaElement>(
+	'meta[name="viewport"]',
+);
+const resetZoom = () => {
+	const vv = window.visualViewport;
+	if (!viewportMeta || !vv || vv.scale <= 1.01) return;
+	const content = viewportMeta.content;
+	viewportMeta.content = `${content}, minimum-scale=1`;
+	requestAnimationFrame(() => {
+		viewportMeta.content = content;
+	});
+};
+window.visualViewport?.addEventListener("resize", resetZoom);
+
 /**
  * 開発用：URL でタイトルを飛ばして好きな場所から始める（pnpm dev のときだけ）。
  * 例 `?map=town&x=11&y=16&dir=up&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
