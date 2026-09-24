@@ -8,6 +8,7 @@
 // 本筋との からみ：
 // - 話の進み（沈黙のあいだ・声がもどったあと・完走のあと）で、1回だけの ひとことが出る（stageOnce）
 // - たたかう仲間（ロゼ・フェリス・テト・おんJ民）が いると、口をはさむ
+// - 2回目からは、その子の 雑談（仲間の口出しつき）を1本ずつ（chat）。ぜんぶ見たら いつもの ひとこと
 // - 遊んでいる端末の日付（正月・クリスマスなど）で、期間限定の ひとことに変わる（weekday.ts の season）
 // - 会った子は 終章の レスの洪水（>>995〜>>997）に 書きこむ（threadlog.ts の MINOR_POSTS）
 // 設定は おんJwiki から、健全な ところだけ借りる（顔文字は フォントに無いので 文には出さない）。
@@ -61,6 +62,31 @@ const stageOnce = async (
 	const run = lines[st];
 	if (!run || !once(s, `${id}_${st}`)) return false;
 	await run();
+	return true;
+};
+
+/** 雑談の1本（with の仲間が みんな たたかう仲間に いるときだけ）。 */
+type Chat = {
+	key: string;
+	with?: string[];
+	when?: (st: GameState) => boolean;
+	run: (s: Story) => Promise<void>;
+};
+
+/**
+ * 雑談（上から順に、当てはまって まだ見ていない1本）。流したら true。
+ * フラグは `<id>_c_<key>`。ぜんぶ見たら false（いつもの ひとことへ）。
+ */
+const chat = async (s: Story, id: string, list: Chat[]): Promise<boolean> => {
+	const c = list.find(
+		(c) =>
+			!s.flag(`${id}_c_${c.key}`) &&
+			(c.with ?? []).every((w) => active(s.state, w)) &&
+			(c.when?.(s.state) ?? true),
+	);
+	if (!c) return false;
+	s.set(`${id}_c_${c.key}`);
+	await c.run(s);
 	return true;
 };
 
@@ -179,6 +205,109 @@ export const senkyo = (x: number, y: number): EventDef => ({
 
 // ───────────────── 過去ログ倉庫の奥の間（B2 のあと） ─────────────────
 
+const NGOANE_CHATS: Chat[] = [
+	{
+		key: "ngo",
+		run: async (s) => {
+			await ks(s, "ンゴ姉も、ンゴって　言うンゴね");
+			await N(s, "ンゴ姉", "ンゴねぇ、ンゴねぇ……");
+			await ks(s, "吾輩の　ンゴとは　ちがうンゴ");
+			await N(s, "ンゴ姉", "……年季が　ちがうンゴねぇ……");
+		},
+	},
+	{
+		key: "roze",
+		with: ["roze"],
+		run: async (s) => {
+			await s.say("roze", "フェリス先輩の、\nどこが　いいアル？");
+			await N(s, "ンゴ姉", "ぜんぶンゴねぇ……");
+			await s.say("roze", "……わかるアル");
+			await s.narrate("ふたりは　かたく　あくしゅした。");
+		},
+	},
+	{
+		key: "otouto",
+		run: async (s) => {
+			await N(
+				s,
+				"ンゴ姉",
+				"弟が　やきうで　負けると、\n家じゅう　しずかに　なるンゴねぇ……",
+			);
+			if (active(s.state, "nanj")) {
+				await s.say("nanj", "……ワイの　ことちゃうで");
+				await N(s, "ンゴ姉", "まだ　なにも　言ってないンゴねぇ……");
+			}
+		},
+	},
+	{
+		key: "kushami",
+		run: async (s) => {
+			await N(
+				s,
+				"ンゴ姉",
+				"フェリスちゃんの　くしゃみ、\n録音したいンゴねぇ……",
+			);
+			await ks(s, "蓄音機、かすンゴ？");
+			await s.narrate("ンゴ姉は　しばらく\n蓄音機を　見つめていた。");
+			await N(s, "ンゴ姉", "……や、やめておくンゴねぇ……\n燃えるンゴねぇ……");
+		},
+	},
+	{
+		key: "soko",
+		run: async (s) => {
+			await N(s, "ンゴ姉", "この　倉庫、しずかで\n好きンゴねぇ……");
+			await s.narrate("奥で　ムッジェが「ホゲェ！」と　鳴いた。");
+			await N(s, "ンゴ姉", "……ときどき　しずかンゴねぇ……");
+		},
+	},
+];
+
+const PAN_CHATS: Chat[] = [
+	{
+		key: "shoku",
+		run: async (s) => {
+			await ks(s, "パン松は、なにパンンゴ？");
+			await N(s, "パン松", "食パンだ。六枚切りだ");
+			await N(s, "パン松", "……八枚切りと　まちがえるな");
+		},
+	},
+	{
+		key: "feris",
+		with: ["feris"],
+		run: async (s) => {
+			await s.say("feris", "トースト、する〜？");
+			await N(s, "パン松", "……焼くな");
+			await N(s, "パン松", "…………いや、すこし　焼け");
+			await s.narrate("パン松は　すこし\nきつね色に　なった。");
+		},
+	},
+	{
+		key: "shinryaku",
+		run: async (s) => {
+			await N(s, "パン松", "侵略の　進みぐあいを\n報告する");
+			await N(s, "パン松", "……この　倉庫の　すみ、\n1マスぶんだ");
+			await ks(s, "……おめでとうンゴ");
+		},
+	},
+	{
+		key: "mabo",
+		run: async (s) => {
+			await ks(s, "パンに　マーボー、\nのせたら　どうンゴ？");
+			await s.narrate("パン松は　しばらく\n考えこんだ。");
+			await N(s, "パン松", "……あう。\nくやしいが　あう");
+		},
+	},
+	{
+		key: "nanj",
+		with: ["nanj"],
+		run: async (s) => {
+			await s.say("nanj", "パン板って、どんな　とこや");
+			await N(s, "パン松", "しずかだ。\n……パンの　話しか　しない");
+			await s.say("nanj", "ええとこやんけ");
+		},
+	},
+];
+
 /** ンゴ姉（やきう民の お姉ちゃん。フェリスの枠を ねらっている）。 */
 export const ngoane = (x: number, y: number): EventDef =>
 	npc(
@@ -238,6 +367,7 @@ export const ngoane = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
+			if (await chat(s, "ngoane", NGOANE_CHATS)) return;
 			await G("フェリスちゃんの　となりに　いれば\n……ふふ、ンゴねぇ……");
 		},
 		{ dir: "right", when: (st) => !!st.flags.b2 },
@@ -300,12 +430,59 @@ export const panmatsu = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
+			if (await chat(s, "pan", PAN_CHATS)) return;
 			await P("パンの　すばらしさを\n知ったか");
 		},
 		{ dir: "left", when: (st) => !!st.flags.b2 },
 	);
 
 // ───────────────── 町・街道・スタジアム ─────────────────
+
+const NICHIE_CHATS: Chat[] = [
+	{
+		key: "nanisuru",
+		run: async (s) => {
+			await ks(s, "日曜日は、なにするンゴ？");
+			await N(s, "にぃちぇ", "「日曜日だニィ」って\n言うニィ");
+			await ks(s, "……それだけンゴ？");
+			await N(s, "にぃちぇ", "それが　いちばん\nたのしいニィ");
+		},
+	},
+	{
+		key: "feris",
+		with: ["feris"],
+		run: async (s) => {
+			await s.say("feris", "私は　毎日、日曜日\nみたいだよ〜");
+			await s.narrate("にぃちぇは　フェリスを\nじっと　見た。");
+			await N(s, "にぃちぇ", "……弟子に　してほしいニィ");
+		},
+	},
+	{
+		key: "kazoe",
+		run: async (s) => {
+			await N(s, "にぃちぇ", "日曜日まで、あと……");
+			await s.narrate("にぃちぇは　ゆびを　おって、\nとちゅうで　やめた。");
+			await N(s, "にぃちぇ", "……かぞえると、\n遠く　なるニィ");
+		},
+	},
+	{
+		key: "teto",
+		with: ["teto"],
+		run: async (s) => {
+			await s.say("teto", "日曜日が　来たら、\nどうするのさ");
+			await N(s, "にぃちぇ", "……また　待つニィ");
+			await s.say("teto", "……ふうん");
+		},
+	},
+	{
+		key: "onchan",
+		when: (st) => !!st.flags.onchan_met,
+		run: async (s) => {
+			await N(s, "にぃちぇ", "おんちゃんは、曜日を\nぜんぶ　知ってるニィ");
+			await N(s, "にぃちぇ", "……えらいニィ");
+		},
+	},
+];
 
 /** にぃちぇ（町。遊んでいる端末が日曜日なら「日曜日だニィ」、土曜日なら あしたを 待つ）。 */
 export const nichie = (x: number, y: number): EventDef =>
@@ -370,6 +547,7 @@ export const nichie = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
+			if (await chat(s, "nichie", NICHIE_CHATS)) return;
 			await C("深淵を　のぞくとき……\n深淵も　日曜日を　まっているニィ");
 		},
 		{ dir: "left", when: day },
@@ -396,6 +574,53 @@ const ONCHAN_SEASON: Partial<Record<Season, string>> = {
 	xmas: "サンタさん、おんJにも\n来るおん？",
 	omisoka: "ことしの　スレも、\nそろそろ　1000だおん",
 };
+
+const ONCHAN_CHATS: Chat[] = [
+	{
+		key: "ichigun",
+		run: async (s) => {
+			await ks(s, "一軍って、なにするンゴ？");
+			await N(s, "おんちゃん", "まるく　しているおん");
+			await ks(s, "……それだけンゴ？");
+			await N(s, "おんちゃん", "それが　いちばん\nむずかしいおん");
+		},
+	},
+	{
+		key: "nanj",
+		with: ["nanj"],
+		run: async (s) => {
+			await s.say("nanj", "おんちゃん、いつから\nおるんや");
+			await N(s, "おんちゃん", "……おぼえてないおん。\nずっと　まえからだおん");
+			await s.say("nanj", "……ワイより　古参やな");
+		},
+	},
+	{
+		key: "kiriko",
+		run: async (s) => {
+			await N(s, "おんちゃん", "キリコちゃんも、\nまるく　なるおん？");
+			await ks(s, "吾輩、34キロンゴ");
+			await N(s, "おんちゃん", "……がんばるおん");
+		},
+	},
+	{
+		key: "feris",
+		with: ["feris"],
+		run: async (s) => {
+			await s.say("feris", "今日も　まるい〜");
+			await N(s, "おんちゃん", "毎日　まるいおん");
+			await s.say("feris", "えら〜い");
+		},
+	},
+	{
+		key: "teto",
+		with: ["teto"],
+		run: async (s) => {
+			await s.say("teto", "……その　まるさ、\nどうやって　たもってるのさ");
+			await N(s, "おんちゃん", "ひみつだおん");
+			await s.say("teto", "……べ、別に　知りたかった\nわけじゃない");
+		},
+	},
+];
 
 /** おんちゃん（町の広場。一軍。ムッジェは おんちゃんの絵から生まれた）。 */
 export const onchan = (x: number, y: number): EventDef =>
@@ -428,7 +653,7 @@ export const onchan = (x: number, y: number): EventDef =>
 				await O("……そっかぁ。\nよかったおん");
 				return;
 			}
-			await stageOnce(s, "onchan", {
+			const staged = await stageOnce(s, "onchan", {
 				back: async () => {
 					await s.narrate(
 						"おんちゃんの　足もとに、\n小石が　たくさん　ならんでいる。",
@@ -447,9 +672,60 @@ export const onchan = (x: number, y: number): EventDef =>
 					await s.narrate("おんちゃんは　小石を\nひとつ　キリコに　わたした。");
 				},
 			});
+			if (!staged) await chat(s, "onchan", ONCHAN_CHATS);
 		},
 		{ dir: "down", when: day },
 	);
+
+const ONSU_CHATS: Chat[] = [
+	{
+		key: "tea",
+		run: async (s) => {
+			await N(s, "おんすちゃん", "お紅茶、いかがぁ？");
+			await s.narrate(
+				"カップが　いくつも　出てきた。\nどれも　つめたく　なっている。",
+			);
+			await N(s, "おんすちゃん", "……い、いれたてよぉ");
+		},
+	},
+	{
+		key: "nanj",
+		with: ["nanj"],
+		run: async (s) => {
+			await s.say("nanj", "おんSって、実況　せんのか");
+			await N(s, "おんすちゃん", "しないわよぉ！");
+			await s.say("nanj", "ほな、なに　するんや");
+			await N(s, "おんすちゃん", "……お話よぉ。\nこういうのよぉ");
+		},
+	},
+	{
+		key: "jikkyo",
+		run: async (s) => {
+			await N(s, "おんすちゃん", "わたくし、実況は\nにがて　なのよぉ");
+			await N(
+				s,
+				"おんすちゃん",
+				"……だって、みんな\n書くのが　はやいんだものぉ",
+			);
+		},
+	},
+	{
+		key: "roze",
+		with: ["roze"],
+		run: async (s) => {
+			await s.say("roze", "おんSも、1000　いくアル？");
+			await N(s, "おんすちゃん", "い、いくわよぉ！\n……いつかぁ");
+			await s.say("roze", "……ときどき、保守しに\n来るアル");
+		},
+	},
+	{
+		key: "hankachi",
+		run: async (s) => {
+			await s.narrate("おんすちゃんは　ハンカチを\n何枚も　もっている。");
+			await N(s, "おんすちゃん", "……ぜんぶ、かみしめる\n用よぉ");
+		},
+	},
+];
 
 /** おんすちゃん（スレ街道の すみ。だれも来ない おんS のお嬢さま。沈黙のあいだも いる）。 */
 export const onsu = (x: number, y: number): EventDef =>
@@ -494,6 +770,7 @@ export const onsu = (x: number, y: number): EventDef =>
 				)
 					return;
 				if (s.flag("onsu_2")) {
+					if (await chat(s, "onsu", ONSU_CHATS)) return;
 					await O("……また　来たのぉ？\nふ、ふん");
 					await s.narrate("ハンカチが、すこし\nかわいている。");
 					return;
@@ -546,6 +823,86 @@ export const onsu = (x: number, y: number): EventDef =>
 		{ dir: "left" },
 	);
 
+const YAYA_CHATS: Chat[] = [
+	{
+		key: "score",
+		run: async (s) => {
+			await N(s, "ヤヤポジ", "好きな　スコアは、\n3対3なんだ");
+			await ks(s, "4対3は？");
+			await N(s, "ヤヤポジ", "……ちょっと　多いんだ");
+		},
+	},
+	{
+		key: "nanj",
+		with: ["nanj"],
+		run: async (s) => {
+			await s.say("nanj", "勝ったら、うれしいやろ");
+			await N(s, "ヤヤポジ", "……うれしいのは、\n5割くらいなんだ");
+			await s.say("nanj", "のこりの　5割は　なんやねん");
+			await N(s, "ヤヤポジ", "……あしたが　こわいんだ");
+		},
+	},
+	{
+		key: "tonari",
+		run: async (s) => {
+			await N(
+				s,
+				"ヤヤポジ",
+				"となりが　ああだから、\nわたしは　これで　いいんだ",
+			);
+			await s.narrate("となりで　ポジハメが\n「優勝なんだ！」と　さけんだ。");
+		},
+	},
+	{
+		key: "teto",
+		with: ["teto"],
+		run: async (s) => {
+			await s.say("teto", "ボクは、勝つのが　好きだ");
+			await N(s, "ヤヤポジ", "……それも　いいんだ。\nはんぶん　くらいなら");
+		},
+	},
+];
+
+const POSI_CHATS: Chat[] = [
+	{
+		key: "ame",
+		run: async (s) => {
+			await N(s, "ポジハメ", "雨で　中止でも、\n負けては　いないんだ！");
+			await s.narrate("となりの　ヤヤポジが、\nちいさく　うなずいた。");
+		},
+	},
+	{
+		key: "kiriko",
+		run: async (s) => {
+			await N(s, "ポジハメ", "キリコちゃんの　うたは、\n日本一なんだ！");
+			await ks(s, "まだ　あんまり\nうたって　ないンゴ");
+			await N(s, "ポジハメ", "じゃあ、これから\n日本一なんだ！");
+		},
+	},
+	{
+		key: "roze",
+		with: ["roze"],
+		run: async (s) => {
+			await s.say("roze", "……負けたら、どうするアル");
+			await N(
+				s,
+				"ポジハメ",
+				"負けは　ないんだ！\nあしたの　勝ちが　のびただけなんだ！",
+			);
+			await s.say("roze", "……べんりな　頭アル");
+		},
+	},
+	{
+		key: "feris",
+		with: ["feris"],
+		run: async (s) => {
+			await s.say("feris", "ポジハメちゃん、\nつかれない〜？");
+			await N(s, "ポジハメ", "つかれたら、\nよく　ねむれるんだ！");
+			await s.say("feris", "……ほんとだ〜");
+		},
+	},
+];
+
 /** ヤヤポジ（スタジアムのスタンド。ひかえめな ポジハメ）。 */
 export const yayapoji = (x: number, y: number): EventDef =>
 	npc(
@@ -588,6 +945,7 @@ export const yayapoji = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
+			if (await chat(s, "yaya", YAYA_CHATS)) return;
 			if (s.flag("b3")) {
 				await Y("はんぶんこ。\n……ちょうど　5割なんだ");
 				return;
@@ -640,6 +998,7 @@ export const posihame = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
+			if (await chat(s, "posi", POSI_CHATS)) return;
 			if (s.flag("b3")) {
 				await P("はんぶんこ！　つまり\nマスコットが　2倍なんだ！");
 				return;
