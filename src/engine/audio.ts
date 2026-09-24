@@ -64,6 +64,12 @@ const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
 /** dtm studio の出口の音量（createDtmStudio の masterVolume）。 */
 const STUDIO_MASTER_VOLUME = 100;
 /**
+ * 歌声つき（studio.playSingingMML）の曲に掛ける倍率。同じ setVolume でも インストの
+ * studio.play より 15.6 dB 小さく鳴るので、そのぶん上げて インストと同じ大きさにする
+ * （2026-09 測定：ending の出口の RMS、インスト -27.1 dB・歌声つき -42.7 dB。setVolume は振幅に比例）。
+ */
+const SING_GAIN = 10 ** (15.6 / 20);
+/**
  * ジングルを絞って止めたあと、studio の出口を戻すまでの秒数。止めても予約済みの音符
  * （先読み0.5秒＋長い音符・残響）は鳴り続けるので、それが消えるまで絞ったままにする。
  */
@@ -175,6 +181,8 @@ export class GameAudio {
 	private bgmLastStep = 0;
 	/** 今の曲を歌声つきで流すか（singBgm）。 */
 	private sing = false;
+	/** 歌声つきで鳴らしている再生（音量に SING_GAIN を掛ける）。 */
+	private singing = new WeakSet<MmlPlayback>();
 	/** 鳴っているジングル。軽量の音は自前の出口（bus）を通して絞れるようにする。 */
 	private jingleNow: { pb: MmlPlayback; bus: GainNode | null } | null = null;
 	/** 読み込み中・再生中のジングルの bgmToken（鳴り始める前に止める用）。 */
@@ -223,8 +231,9 @@ export class GameAudio {
 				this.bgmPlayback &&
 				this.bgmName
 			) {
+				const v = this.volumeFor(this.bgmData[this.bgmName] ?? "");
 				this.bgmPlayback.setVolume(
-					this.volumeFor(this.bgmData[this.bgmName] ?? ""),
+					this.singing.has(this.bgmPlayback) ? Math.min(100, v * SING_GAIN) : v,
 				);
 			}
 			if (cur.voice && !prev.voice) void this.prepareVoice();
@@ -515,7 +524,8 @@ export class GameAudio {
 				if (this.sing) {
 					try {
 						const pb = await studio.playSingingMML(mml, common);
-						pb.setVolume(volume);
+						pb.setVolume(Math.min(100, volume * SING_GAIN));
+						this.singing.add(pb);
 						return pb;
 					} catch (e) {
 						console.warn(

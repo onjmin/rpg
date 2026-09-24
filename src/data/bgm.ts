@@ -23,7 +23,8 @@
 // | sad      | -24.9    | 26 → 29 | -24.0    |
 // | ending   | -23.6    | 18 → 17 | -24.1    |
 // （2026-09 測定。「直した後」は比例から出した値。勝利のジングル＝title の 21〜24 小節は M-max -21.2）
-// 軽量モード（内蔵シンセ）は音色が違うので少しずれる。ending の歌入り（singBgm）は測っていない。
+// 軽量モード（内蔵シンセ）は音色が違うので少しずれる。ending の歌入り（singBgm）は インストより 15.6 dB
+// 小さく鳴るので、engine/audio.ts の SING_GAIN で上げて インストと そろえてある。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
 import battle from "./bgm/battle.mml?raw"; // b5ed6f97d24d49a4「ゲームっぽい」

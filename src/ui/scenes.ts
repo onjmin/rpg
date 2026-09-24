@@ -7,6 +7,9 @@ import { sleep } from "../engine/types";
 import { viewport } from "../engine/viewport";
 import { el, nextFrame } from "./dom";
 
+/** スタッフロールの早送り：最後に押してから この ms たつと、ふつうの速さへ戻りはじめる。 */
+const ROLL_IDLE_MS = 400;
+
 export const chapterCard = async (
 	game: Game,
 	label: string,
@@ -137,16 +140,33 @@ export const endingRoll = async (
 		],
 		{ duration: ms, easing: "linear", fill: "forwards" },
 	);
-	// タップし続けると早送り
+	// タップし続ける（キーの押しっぱなし・指の押しっぱなし）と早送り。
+	// 手を離して しばらくすると ふつうの速さに戻る
 	let speed = 1;
+	let lastPress = 0;
+	let holding = false;
 	const pop = game.input.push((k) => {
 		if (k === "a") speed = Math.min(8, speed * 2);
 		if (k === "b") speed = 8;
+		lastPress = performance.now();
 	});
 	// ロールが画面を覆うので、フィールドの代わりにロール自身でタップを受ける
-	roll.addEventListener("pointerdown", () => game.input.press("a"));
+	roll.addEventListener("pointerdown", () => {
+		holding = true;
+		game.input.press("a");
+	});
+	const release = () => {
+		holding = false;
+		lastPress = performance.now();
+	};
+	roll.addEventListener("pointerup", release);
+	roll.addEventListener("pointercancel", release);
+	roll.addEventListener("pointerleave", release);
 	for (const a of inner.getAnimations()) {
 		const tick = () => {
+			if (holding) speed = Math.min(8, speed * 1.05);
+			else if (performance.now() - lastPress > ROLL_IDLE_MS)
+				speed = Math.max(1, speed * 0.92);
 			a.playbackRate = speed;
 			if (a.playState === "running") requestAnimationFrame(tick);
 		};
