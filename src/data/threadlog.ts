@@ -36,7 +36,34 @@ export const FLAG_DOMAIN: Record<
 	puyu: [undefined, "ame", "uta", "suwaru"],
 	puyu_met: [undefined, true],
 	flood_1: [undefined, "991", "992", "993", "994"],
-	flood_2: [undefined, "995", "996", "997"],
+	flood_2: [
+		undefined,
+		"995",
+		"996",
+		"997",
+		"m_onsu",
+		"m_onchan",
+		"m_nichie",
+		"m_panmatsu",
+		"m_ngoane",
+		"m_yayapoji",
+	],
+	// 洪水の >>995〜>>997 に書きこむ おんJマイナーズ（MINOR_POSTS）
+	onsu_kaki: [undefined, true],
+	onchan_met: [undefined, true],
+	nichie_met: [undefined, true],
+	pan_met: [undefined, true],
+	ngoane_met: [undefined, true],
+	yaya_met: [undefined, true],
+	vote: [
+		undefined,
+		"mujje",
+		"ngoane",
+		"panmatsu",
+		"nichie",
+		"onsu",
+		"yayapoji",
+	],
 	p2_n: [undefined, 2, 5],
 };
 
@@ -90,9 +117,139 @@ export type FloodPick = {
 /** レスの洪水の1波。screen を読ませ、picks があれば そこから1つだけ蓄音できる。 */
 export type FloodWave = { screen: string; picks: FloodPick[] };
 
+/** 洪水の >>995〜>>997 に もとから流れるレス（おんJマイナーズが書きこむと、ﾌｪﾆｯｸｽ → アル？ナイ！ → ヒナリーの順に ゆずる）。 */
+const WAVE2_BASE: (FloodPick & { text: string })[] = [
+	{
+		key: "995",
+		text: "避難Jを研究しているヒナリーです",
+		label: ">>995 ヒナリー",
+		line: "となりの　スレの　声ンゴ",
+		item: { id: "pan", n: 2 },
+	},
+	{
+		key: "996",
+		text: "ﾌｪﾆｯｸｽ",
+		label: ">>996 ﾌｪﾆｯｸｽ",
+		line: "……ちょっと　こげたンゴ",
+		item: { id: "hane", n: 2 },
+	},
+	{
+		key: "997",
+		text: "アル？ナイ！",
+		label: ">>997 アル？ナイ！",
+		line: "やる気は……アルンゴ！",
+		item: { id: "spray", n: 3 },
+	},
+];
+
+/**
+ * 会っていれば 洪水に書きこむ おんJマイナーズ（minors.ts）。先の子ほど前に出て、3人まで。
+ * 総選挙で1票 入れた子は いちばん前。本文は2人で1行に ならぶので 全角7字まで。
+ */
+type MinorPost = {
+	id: string;
+	name: string;
+	met: (f: Flags) => boolean;
+	text: string;
+	line: string;
+	item: { id: string; n: number };
+	/** まとめカードの文。 */
+	sum: string;
+};
+export const MINOR_POSTS: MinorPost[] = [
+	{
+		id: "onsu",
+		name: "おんすちゃん",
+		met: (f) => !!f.onsu_kaki,
+		text: "保守ですわ",
+		line: "……保守、かえってきたンゴ",
+		item: { id: "candy", n: 3 },
+		sum: "おんすちゃんの　保守",
+	},
+	{
+		id: "onchan",
+		name: "おんちゃん",
+		met: (f) => !!f.onchan_met,
+		text: "がんばれだおん",
+		line: "一軍の　声ンゴ……！",
+		item: { id: "hane", n: 1 },
+		sum: "おんちゃんの　声援",
+	},
+	{
+		id: "nichie",
+		name: "にぃちぇ",
+		met: (f) => !!f.nichie_met,
+		text: "日曜日だニィ",
+		line: "……まだ　火曜日ンゴ",
+		item: { id: "candy", n: 2 },
+		sum: "にぃちぇの　日曜日",
+	},
+	{
+		id: "panmatsu",
+		name: "パン松",
+		met: (f) => !!f.pan_met,
+		text: "パンを　食え",
+		line: "食パンの　声、ひろったンゴ",
+		item: { id: "pan", n: 2 },
+		sum: "パン松の　パン",
+	},
+	{
+		id: "ngoane",
+		name: "ンゴ姉",
+		met: (f) => !!f.ngoane_met,
+		text: "ンゴねぇ……",
+		line: "……だれに　言ってるンゴ？",
+		item: { id: "spray", n: 2 },
+		sum: "ンゴ姉の　ンゴねぇ",
+	},
+	{
+		id: "yayapoji",
+		name: "ヤヤポジ",
+		met: (f) => !!f.yaya_met,
+		text: "5割で　いいんだ",
+		line: "はんぶん、もらうンゴ",
+		item: { id: "mabo", n: 1 },
+		sum: "ヤヤポジの　5割",
+	},
+];
+
+/** >>995〜>>997 に ならぶレス（番号の順）。 */
+const wave2Posts = (f: Flags): (FloodPick & { text: string })[] => {
+	const met = MINOR_POSTS.filter((m) => m.met(f));
+	const voted = met.findIndex((m) => m.id === f.vote);
+	if (voted > 0) met.unshift(...met.splice(voted, 1));
+	const minors = met.slice(0, 3);
+	// 長いヒナリーは いつも1行目（残っていれば）。マイナーズは2行目に ならぶ
+	const base = WAVE2_BASE.slice(0, 3 - minors.length);
+	return [
+		...base,
+		...minors.map((m, i) => {
+			const no = 995 + base.length + i;
+			return {
+				key: `m_${m.id}`,
+				text: m.text,
+				label: `>>${no} ${m.name}`,
+				line: m.line,
+				item: m.item,
+			};
+		}),
+	];
+};
+
+/** 2波目（>>995〜>>997）。1行目に1レス、2行目に2レス。 */
+const wave2 = (f: Flags): FloodWave => {
+	const posts = wave2Posts(f);
+	const res = posts.map((p, i) => `>>${995 + i} ${p.text}`);
+	return {
+		screen: `${res[0]}\n${res[1]}　${res[2]}`,
+		picks: posts.map(({ text: _, ...p }) => p),
+	};
+};
+
 /**
  * 恩赦のあとのレスの洪水。流れていくレスは、1波につき1つしか蓄音できない
- * （拾わなかった声は そのまま流れる）。変わるのは >>992 と >>994 の本文だけ。
+ * （拾わなかった声は そのまま流れる）。変わるのは >>992・>>994 の本文と、
+ * >>995〜>>997 に書きこむ おんJマイナーズ（会った子だけ）。
  */
 export const floodWaves = (st: GameState): FloodWave[] => {
 	const f = st.flags;
@@ -128,30 +285,7 @@ export const floodWaves = (st: GameState): FloodWave[] => {
 				},
 			],
 		},
-		{
-			screen:
-				">>995 避難Jを研究しているヒナリーです\n>>996 ﾌｪﾆｯｸｽ　>>997 アル？ナイ！",
-			picks: [
-				{
-					key: "995",
-					label: ">>995 ヒナリー",
-					line: "となりの　スレの　声ンゴ",
-					item: { id: "pan", n: 2 },
-				},
-				{
-					key: "996",
-					label: ">>996 ﾌｪﾆｯｸｽ",
-					line: "……ちょっと　こげたンゴ",
-					item: { id: "hane", n: 2 },
-				},
-				{
-					key: "997",
-					label: ">>997 アル？ナイ！",
-					line: "やる気は……アルンゴ！",
-					item: { id: "spray", n: 3 },
-				},
-			],
-		},
+		wave2(f),
 		{
 			screen:
 				">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
@@ -169,6 +303,17 @@ const FLOOD_SUM: Record<string, string> = {
 	"995": "ヒナリーの　あいさつ（>>995）",
 	"996": "ﾌｪﾆｯｸｽ（>>996）",
 	"997": "アル？ナイ！（>>997）",
+};
+
+/** 蓄音したレスの まとめカードの文（おんJマイナーズは 番号を 並びから引く）。 */
+const floodSum = (
+	f: Flags,
+	v: Flags[string] | undefined,
+): string | undefined => {
+	const m = typeof v === "string" && MINOR_POSTS.find((x) => `m_${x.id}` === v);
+	if (!m) return byFlag(FLOOD_SUM, v);
+	const no = wave2Posts(f).findIndex((p) => p.key === v);
+	return no < 0 ? m.sum : `${m.sum}（>>${995 + no}）`;
 };
 
 // ───────────────── last・エンディングの差分 ─────────────────
@@ -463,7 +608,7 @@ const partNo = (f: Flags): number => Math.max(1, num(f, "p2_n") || 1);
 /** 洪水で ひろえた声（ひろっていなければ セクションごと出さない）。 */
 const floodSection = (f: Flags): EndingSummary["sections"] => {
 	const got = [f.flood_1, f.flood_2]
-		.map((v) => byFlag(FLOOD_SUM, v))
+		.map((v) => floodSum(f, v))
 		.filter((x): x is string => !!x);
 	if (!got.length) return [];
 	return [
