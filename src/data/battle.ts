@@ -934,6 +934,12 @@ export const items: Record<string, ItemDef> = {
 		desc: "うまれた夜に　吹きこんだ　吾輩の声。",
 		key: true,
 	}),
+	rec_kako: it({
+		id: "rec_kako",
+		name: "レコード「過去ログの声」",
+		desc: "掘りおこした　4つのスレの　声。",
+		key: true,
+	}),
 	// 番長の宿題（絵日記）の魚。技の wakasagi（ワカサギつり）と id が重ならないよう hw_ を付ける
 	hw_wakasagi: it({
 		id: "hw_wakasagi",

@@ -6,6 +6,7 @@
 // B2 は負けても進む（F4。once なし・b2_met で短い前置き）、名言チャレンジ その2（F1・meigen2）。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
+import { DIGS, type Dig } from "../digs";
 import {
 	ankaChoose,
 	BOSS_EXP,
@@ -421,6 +422,58 @@ const hinary = npc(
 
 // ───────────────── マップ ─────────────────
 
+/**
+ * くずれかけた棚を掘る（data/digs.ts）。掘り出した過去ログは >>1 が欠けていて、
+ * レスの流れだけを読んで当てる。外しても棚のおくへ もどるだけで、何度でも掘り直せる。
+ */
+const digRun = (d: Dig) => async (s: Story) => {
+	if (s.flag(`dig_${d.id}`)) {
+		await s.narrate("掘ったあとの　棚。\n……もう　からっぽだ。");
+		return;
+	}
+	await s.narrate("ほこりの　つもった　棚。");
+	if ((await s.choose(["掘る", "やめる"], { cancel: 1 })) === 1) return;
+	s.se("item");
+	await s.narrate(
+		"古い　過去ログが　出てきた。\n>>1 は　文字化けして　読めない。",
+	);
+	for (const t of d.log) await s.narrate(t);
+	await s.narrate("……この　スレの　>>1 は、\nなんだった？");
+	if ((await s.choose(d.choices)) !== d.answer) {
+		s.se("miss");
+		await s.narrate(
+			"ログは　ぱらぱらと　くずれて、\nまた　棚の　おくへ　もどった。",
+		);
+		await ks(s, "……もう　いちど　読むンゴ");
+		return;
+	}
+	s.set(`dig_${d.id}`);
+	s.se("levelup");
+	await s.narrate("スレが　ゆっくり　浮かびあがった。\n（age）");
+	await ks(s, d.line);
+	s.se("item");
+	s.give(d.item.id, d.item.n);
+	await s.narrate(d.item.text);
+	// 4つ そろうと、掘りおこした声が ひとつのレコードになる
+	if (DIGS.every((x) => s.flag(`dig_${x.id}`)) && !s.flag("dig_all")) {
+		s.set("dig_all");
+		s.se("item");
+		s.give("rec_kako", 1);
+		await s.narrate(
+			"4つの　スレが　いっせいに　鳴った。\nレコード「過去ログの声」を　てにいれた！",
+		);
+	}
+};
+
+const digEvent = (d: Dig): EventDef => ({
+	id: `dig_${d.id}`,
+	x: d.x,
+	y: d.y,
+	trigger: "talk",
+	fixedDir: true,
+	run: digRun(d),
+});
+
 export const kakolog: MapDef = {
 	id: "kakolog",
 	name: "過去ログ倉庫",
@@ -534,5 +587,7 @@ export const kakolog: MapDef = {
 		},
 		...chest("kako1", 2, 4, "hane", 1),
 		...chest("kako2", 19, 12, "candy", 2),
+		// くずれかけた棚（b）を掘る読解パズル
+		...DIGS.map(digEvent),
 	],
 };
