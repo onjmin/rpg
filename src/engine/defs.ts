@@ -102,6 +102,10 @@ export type CharDef = {
 	portrait?: {
 		src: string;
 		side?: "left" | "right";
+		/** ふさがっていても反対側へ回らない（反転した絵を必ず見せたいときなど）。 */
+		fixedSide?: boolean;
+		/** 色を反転して出す（ほかのキャラの絵を使い回して別人に見せる）。 */
+		invert?: boolean;
 		facing?: "left" | "right";
 		/** 全身絵の上から何割を見せるか（既定 0.58 ＝頭〜腰あたり。1 で全身）。 */
 		crop?: number;

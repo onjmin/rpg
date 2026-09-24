@@ -36,6 +36,10 @@ export type PortraitSpec = {
 	src?: string;
 	/** いつも立つ側。 */
 	side: Side;
+	/** ふさがっていても反対側へ回らず、いつも side に立つ（そこにいる人と入れ替わる）。 */
+	fixedSide?: boolean;
+	/** 色を反転して出す（ほかのキャラの絵を使い回して別人に見せる）。 */
+	invert?: boolean;
 	/** 絵の中のキャラが向いている向き（既定 "right" = 画面の右側を見ている）。 */
 	facing?: Side;
 	/** 全身絵の上から何割を見せるか（既定 0.58 ＝頭〜腰。1 で全身）。 */
@@ -295,6 +299,7 @@ class PortraitSlot {
 			const want: Side = this.side === "left" ? "right" : "left";
 			const flip = (p.facing ?? "right") !== want;
 			view.classList.toggle("flip", flip);
+			view.classList.toggle("invert", !!p.invert);
 			// 枠の中央に来る点（頭の中心）。反転するときは鏡に映した位置
 			const hx = art.headX - ((p.offsetX ?? 0) * body) / canvas.width;
 			const s = view.style;
@@ -392,7 +397,7 @@ export class MessageWindow {
 		if (this.right.id === p.id) return this.right;
 		const home = p.side === "left" ? this.left : this.right;
 		const away = home === this.left ? this.right : this.left;
-		if (!home.id) return home;
+		if (!home.id || p.fixedSide) return home;
 		if (!away.id) return away;
 		return home.lastSpoke <= away.lastSpoke ? home : away;
 	}

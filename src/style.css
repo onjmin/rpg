@@ -345,6 +345,11 @@ body.shake #app {
 	transform: translateX(calc(var(--hx, 0.5) * -100%)) scaleX(-1);
 }
 
+/* 色を反転する（ボツキリコ。キリコの絵のネガ） */
+.portrait-img.invert {
+	filter: invert(1) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+}
+
 /* 立ち絵が届くまでのダミー（マップを隠しすぎないように小さめ・半透明） */
 .portrait-dummy {
 	position: relative;

@@ -15,7 +15,7 @@ const tiles: Record<string, TileDef> = {
 	".": { ...CYBER.X, passable: true },
 };
 
-/** ボツキリコのセリフ（data/cast.ts の botsu。キリコの立ち絵を反転して右に立つ）。 */
+/** ボツキリコのセリフ（data/cast.ts の botsu。キリコの立ち絵を色反転して右に立つ）。 */
 const botsuSay = (s: Story, text: string) => s.say("botsu", text);
 const balusSay = (s: Story, text: string) =>
 	s.say(null, text, { name: "サイレントバルス" });
