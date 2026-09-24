@@ -7,7 +7,7 @@
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
 import { warp } from "../helpers";
 import { CYBER, PROPS } from "../tiles";
-import { reiCare } from "./server";
+import { reiVisit } from "./server";
 
 const tiles: Record<string, TileDef> = {
 	...CYBER,
@@ -182,7 +182,7 @@ const events: EventDef[] = [
 		sprite: "char:rei",
 		dir: "left",
 		trigger: "talk",
-		run: (s) => reiCare(s, "テストサーバーの　保守も\n当機の　担当です"),
+		run: (s) => reiVisit(s, "テストサーバーの　保守も\n当機の　担当です"),
 	},
 	warp(
 		"ex_out",

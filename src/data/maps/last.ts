@@ -7,7 +7,7 @@ import { warp } from "../helpers";
 import { SPR } from "../sprites";
 import { floodWaves, VARIANTS } from "../threadlog";
 import { CYBER } from "../tiles";
-import { reiCare } from "./server";
+import { reiCare, reiVisit } from "./server";
 
 // ゲートの奥の「まっくらで　音が　ない」場所：床は虚無の黒い床（通れる）にする。
 const tiles: Record<string, TileDef> = {
@@ -172,8 +172,13 @@ export const last: MapDef = {
 						"rei",
 						"……もどってきた　人に、\n「おかえりなさい」を　言う係も　いります",
 					);
+					await reiCare(
+						s,
+						"この先が　1000レス目です。\n当機は　ここから　中継します",
+					);
+					return;
 				}
-				await reiCare(
+				await reiVisit(
 					s,
 					"この先が　1000レス目です。\n当機は　ここから　中継します",
 				);

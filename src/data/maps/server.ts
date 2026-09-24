@@ -4,6 +4,7 @@
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
 import { replyAnka } from "../freedom";
 import { chest, warp } from "../helpers";
+import { reiChat } from "../reichat";
 import { SPR } from "../sprites";
 import { objective, resLine } from "../story";
 import { base, CYBER, PROPS } from "../tiles";
@@ -28,80 +29,14 @@ export const reiCare = async (s: Story, ...lines: string[]): Promise<void> => {
 	await s.saveMenu();
 };
 
-/**
- * 2回目以降に話しかけたときの ひとこと（上から順に、当てはまって まだ見ていない1つだけ）。
- * 見たら rei_t_<id> が立つ。そのあと いつもの修復。
- */
-const REI_TALKS: {
-	id: string;
-	when?: (s: Story) => boolean;
-	run: (s: Story) => Promise<void>;
-}[] = [
-	{
-		// 端末の !aku でキリコが じぶんを アク禁したあと
-		id: "aku",
-		when: (s) => !!s.flag("aku_self"),
-		run: async (s) => {
-			await s.say("rei", "アク禁の　ログを　検知。\n対象：キリコさん");
-			await s.say("rei", "申請者：キリコさん");
-			await s.say("kiriko", "……押してみたかったンゴ");
-			await s.say("rei", "記録しました");
-		},
-	},
-	{
-		id: "feris",
-		run: async (s) => {
-			await s.say("feris", "ふぇ……ふぇ……");
-			await s.say(
-				"rei",
-				"警告。当機の　半径2メートルでの\n発火は、冷却系に　影響します",
-			);
-			await s.say("feris", "……がまんする〜");
-			await s.say("rei", "感謝します");
-		},
-	},
-	{
-		id: "roze",
-		run: async (s) => {
-			await s.say("roze", "レイは、ずっと　ここに\nひとりアルか？");
-			await s.say("rei", "肯定");
-			await s.say("rei", "ログが　ながれて　いるので、\n静かでは　ありません");
-			await s.say("roze", "……わたしたちの　レスも、\nながれて　きたアル？");
-			await s.say("rei", "肯定。「アル」も「ナイ」も、\nぜんぶ");
-			await s.say("roze", "……保守、おつかれさまアル");
-		},
-	},
-	{
-		id: "teto",
-		run: async (s) => {
-			await s.say("teto", "……正弦波だけで、\nよく　そこまで　しゃべるな");
-			await s.say("rei", "テトさんの　声も　解析済みです。\n由来：4月1日の");
-			await s.say("teto", "余計な　ことは　解析するな");
-			await s.say("rei", "了解。……保存だけ　します");
-			await s.say("teto", "……ふん");
-		},
-	},
-	{
-		id: "door",
-		when: (s) => !!s.flag("door_open"),
-		run: async (s) => {
-			await s.say("rei", "上の　扉の　アク禁、\n解除を　確認しました");
-			await s.say("kiriko", "吾輩が　!kaijo って　打ったンゴ");
-			await s.say("rei", "当機の　権限では、\nあの扉は　ひらけませんでした");
-			await s.say("rei", "……おみごとです");
-		},
-	},
-	{
-		id: "87",
-		when: (s) => !!s.flag("door_open") && !s.flag("clear"),
-		run: async (s) => {
-			await s.say("kiriko", "レイ。……87％の、のこりは？");
-			await s.say("rei", "13％です");
-			await s.say("kiriko", "そういう　ことじゃ　ないンゴ");
-			await s.say("rei", "……解析は、つづけます。\n1000レス目の　あとで");
-		},
-	},
-];
+/** 2回目以降のレイ：修復してもらうか、はなす（雑談）か。 */
+export const reiVisit = async (s: Story, ...lines: string[]): Promise<void> => {
+	const c = await s.choose(["修復して　もらう", "はなす", "なんでもない"], {
+		cancel: 2,
+	});
+	if (c === 0) await reiCare(s, ...lines);
+	else if (c === 1) await reiChat(s);
+};
 
 /** 足立レイ（初回は自己紹介・87％・恩赦の申請）。 */
 const reiRun = async (s: Story): Promise<void> => {
@@ -112,14 +47,7 @@ const reiRun = async (s: Story): Promise<void> => {
 			await reiCare(s, "スレ崩壊の　ログを　検知。\n……修復します。");
 			return;
 		}
-		const t = REI_TALKS.find(
-			(t) => !s.flag(`rei_t_${t.id}`) && (t.when?.(s) ?? true),
-		);
-		if (t) {
-			s.set(`rei_t_${t.id}`);
-			await t.run(s);
-		}
-		await reiCare(s, "修復します。");
+		await reiVisit(s, "修復します。");
 		return;
 	}
 	await s.say("rei", "……アクセスを　検知");

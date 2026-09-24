@@ -8,6 +8,7 @@
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
+import { reiChat } from "../reichat";
 import { SPR } from "../sprites";
 import { knows } from "../story";
 import { threadSummary, VARIANTS } from "../threadlog";
@@ -439,6 +440,7 @@ const events: EventDef[] = [
 		async (s) => {
 			if (s.flag("rei_end")) {
 				await s.say("rei", "本日のログ、保守完了");
+				await reiChat(s);
 				return;
 			}
 			// 完走のあと はじめて話したときだけ（1000レス目の手前の見送り・87％の呼び返し）
