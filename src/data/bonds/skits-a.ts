@@ -50,7 +50,7 @@ export const skits: SkitDef[] = [
 				"nanj",
 				"名前が　出たとき、「面白味がない」\nとか　言われとったけどな",
 			);
-			await s.say("kiriko", "吾輩は　気に入ってる。\nちくね。……ちくね、ンゴ");
+			await s.say("kiriko", "ちくね。……ちくね、ンゴ");
 			await s.say("nanj", "……せやな。ええ名前や");
 		},
 	},
@@ -62,11 +62,9 @@ export const skits: SkitDef[] = [
 		when: (st) => ch(st) >= 1 && !st.flags.b3,
 		run: async (s) => {
 			await s.say("nanj", "キリコの　肌の色、ワイらと\nおんなじ　山吹色やな");
-			await s.say("kiriko", "おんJ生まれの　あかしンゴ");
-			await s.say(
-				"nanj",
-				"語尾の　ンゴも、もとは\nワイらが　よう使う　ことばやで",
-			);
+			await s.say("kiriko", "……ほんとンゴ");
+			await s.narrate("ふたりで　手の甲を　ならべてみた。");
+			await s.say("nanj", "語尾も　いっしょやしな");
 			await s.say("kiriko", "吾輩の語尾は、おさがりンゴ？");
 			await s.say("nanj", "おさがりやない。おそろいや");
 			await s.say(
@@ -84,11 +82,10 @@ export const skits: SkitDef[] = [
 		members: ["nanj", "roze"],
 		when: (st) => !!st.flags.roze_in && !st.flags.b3,
 		run: async (s) => {
-			await s.say("roze", "わたしは　UTAUの　声が　アルから\n歌えるアル");
-			await s.say(
-				"nanj",
-				"ワイは　UTAUの　声が　ナイ。\nせやから　うたえへんのや",
-			);
+			await s.narrate("ロゼが　鼻歌を　うたっている。");
+			await s.say("nanj", "……ええ声やな");
+			await s.say("roze", "おんJ民は　うたわないアルか");
+			await s.say("nanj", "ワイは　ええねん");
 			await s.say("roze", "声は　アル？");
 			await s.say("nanj", "……ナイ！　そのぶん\nフルスイングと　応援で　いくで");
 			await s.say("kiriko", "じゃあ、その応援を\n蓄音機に　ためよう");
@@ -110,18 +107,19 @@ export const skits: SkitDef[] = [
 		members: ["roze", "nanj"],
 		when: (st) => !!st.flags.roze_in && !st.flags.b3,
 		run: async (s) => {
+			await s.say("roze", "キリコ、誕生日は　いつアル");
+			await s.say("kiriko", "8月18日。……の、深夜1時すぎ");
+			await s.say("roze", "……こまかいアル");
+			await s.say(
+				"kiriko",
+				"17日の夜に　スレが　立ったから、\nほんとは　17日かも",
+			);
 			await s.say(
 				"roze",
-				"わたしの　誕生日は　7月1日アル。\n作ってる　途中で　日付が　変わったアル",
+				"わたしも　作ってる　途中で\n日が　変わったアル。7月1日アル",
 			);
-			await s.say("roze", "キリが　いいから、7月1日アル");
-			await s.say("kiriko", "吾輩も　日付が　変わってから\n誕生日が　決まった");
-			await s.say(
-				"nanj",
-				"スレが　立ったのは　8月17日の夜。\n決まったんは　18日の　深夜1時すぎや",
-			);
-			await s.say("roze", "ふたりとも、夜ふかしの　子アルね");
 			await s.say("nanj", "安価スレは　深夜が　本番やからな");
+			await s.say("roze", "ふたりとも、夜ふかしの　子アルね");
 			await s.say("kiriko", "吾輩、まだ　眠くないンゴ");
 			await s.say("roze", "……もう　寝るアル。常識アル");
 		},
@@ -159,24 +157,13 @@ export const skits: SkitDef[] = [
 		members: ["nanj", "roze"],
 		when: (st) => !!st.flags.b1 && !st.flags.b2,
 		run: async (s) => {
-			await s.say(
-				"nanj",
-				"おんJの　スレは、dat落ち　せえへん。\nほんまは　消えへんのや",
-			);
-			await s.say(
-				"nanj",
-				"勢い欄から　見えなくなるだけ。\nそれを「落ちた」って　言うんや",
-			);
-			await s.say(
-				"roze",
-				"わたしの　2024年の　スレも、\nどこかで　ねむってるアル",
-			);
+			await s.say("kiriko", "「落ちた」スレって、\nここに　いるンゴ？");
+			await s.say("nanj", "落ちたんやない。見えんように\nなっただけや。……ほれ");
+			await s.narrate("棚の　おくで、古い　スレが　ねむっている。");
+			await s.say("roze", "わたしの　2024年の　スレも、\nこの　どこかアル");
 			await s.say("nanj", "探したろか？");
-			await s.say(
-				"roze",
-				"……いいアル。覚えてる人が　いるなら\nそれで　じゅうぶんアル",
-			);
-			await s.say("kiriko", "吾輩のスレも、いつか\n過去ログ倉庫に？");
+			await s.say("roze", "……いいアル。ねてる子は\n起こさないアル");
+			await s.say("kiriko", "吾輩のスレも、いつか　ここに？");
 			await s.say(
 				"nanj",
 				"完走したら、胸はって　しまわれるんや。\n落ちるのとは　ちがうで",
@@ -191,11 +178,9 @@ export const skits: SkitDef[] = [
 		members: ["nanj", "roze"],
 		when: (st) => !!st.flags.b1 && !st.flags.b3,
 		run: async (s) => {
-			await s.say(
-				"roze",
-				"釣りと　囲碁。キリコの　趣味は\nどっちも　待つ　趣味アルね",
-			);
+			await s.say("roze", "キリコの　趣味、釣りと　囲碁アル？");
 			await s.say("kiriko", "氷に　穴を　あけて、\nワカサギを　じっと　待つ");
+			await s.say("roze", "……どっちも　動かないアルね");
 			await s.say("roze", "わたしは　麻婆豆腐は　待てないアル");
 			await s.say(
 				"nanj",

@@ -66,9 +66,9 @@ export const chats: ChatDef[] = [
 			await s.say("teto", "ボクの声も、むかし　UTAUで\nみんなに　配られた");
 			await s.say(
 				"teto",
-				"だから　いろんな　場所で　鳴ってる。\n君の　蓄音機と　おんなじさ",
+				"いまも　どこかで　鳴ってるよ。\nボクの　知らない　歌でね",
 			);
-			await s.say("kiriko", "吾輩の声も、いつか\nいろんな　場所で　鳴る？");
+			await s.say("kiriko", "吾輩の声も、いつか\n鳴る？");
 			await s.say("teto", "……鳴るさ。ボクが　保証してやる");
 		},
 	},
@@ -123,7 +123,10 @@ export const chats: ChatDef[] = [
 			await s.say("nanj", "今夜は　ナイターや！");
 			await s.say("nanj", "実況スレは　名前欄に\n試合の　スコアが　出るんやで");
 			await s.say("kiriko", "名無しの　となりに\nスコアが　出る……？");
-			await s.say("nanj", "せや。みんなで　同じ　試合を\n見とる　しるしや");
+			await s.say(
+				"nanj",
+				"せや。名無しが　何人　おっても、\nスコアだけは　おんなじや",
+			);
 			await nighterNotice(s);
 		},
 	},
@@ -167,10 +170,9 @@ export const chats: ChatDef[] = [
 		// N6 序章 — フォールバック
 		who: "nanj",
 		run: async (s) => {
-			await s.say(
-				"nanj",
-				"ワイらの　ありがとうは「サンガツ」や。\n「31」（サンイチ）とも　書くで",
-			);
+			await s.say("nanj", "キリコ、ありがとうは　なんて　言う？");
+			await s.say("kiriko", "……ありがとう？");
+			await s.say("nanj", "サンガツや。「31」とも　書くで");
 			await s.say("kiriko", "サンガツ、ンゴ！");
 			await s.say("nanj", "……混ぜたら　あかん");
 		},

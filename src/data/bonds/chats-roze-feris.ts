@@ -97,10 +97,9 @@ export const chats: ChatDef[] = [
 				"フェリス先輩は　なんJ時代からの\n大先輩アル。あこがれアル",
 			);
 			await s.say("kiriko", "ロゼ先輩にも　先輩が　いるんだ");
-			await s.say(
-				"roze",
-				"先輩の　先輩の　そのまた先輩……\nみんな　つながってるアル",
-			);
+			await s.say("roze", "先輩の　先輩の　そのまた先輩……\nきりが　ないアル");
+			await s.say("kiriko", "吾輩の　うしろは、まだ　だれも　いない");
+			await s.say("roze", "そのうち　来るアル");
 		},
 	},
 	{
@@ -145,11 +144,11 @@ export const chats: ChatDef[] = [
 		who: "feris",
 		when: (st) => silent(st),
 		run: async (s) => {
-			await s.say(
-				"feris",
-				"私も　UTAUの　声は　ないけど、\nちゃんと　ここに　いるよ〜",
+			await s.say("feris", "私も　うたえないんだ〜");
+			await s.narrate(
+				"フェリスが　となりに　すわって、\n羽を　すこし　ひろげた。",
 			);
-			await s.say("feris", "キリコちゃんも、ちゃんと　いるよ〜");
+			await s.say("feris", "……あったかい？");
 			await ks(s, "……うん");
 		},
 	},
