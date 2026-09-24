@@ -13,6 +13,7 @@ import {
 	replyAnka,
 } from "../freedom";
 import { chest, npc, warp, warpLine } from "../helpers";
+import { onsu } from "../minors";
 import { SPR } from "../sprites";
 import { ks, phono } from "../story";
 import { base, FIELD } from "../tiles";
@@ -486,6 +487,8 @@ export const road: MapDef = {
 		// そのほか
 		fish,
 		signRoad,
+		// おんすちゃん（おんJマイナーズ。北東のすみ。data/minors.ts）
+		onsu(22, 4),
 		...chest("road1", 2, 16, "candy", 2),
 		...chest("road2", 20, 3, "mabo", 1),
 	],

@@ -14,6 +14,7 @@ import type {
 } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { chest, npc, sign, warp } from "../helpers";
+import { nichie } from "../minors";
 import { SPR } from "../sprites";
 import { knows, ks, lockedDoor, phono, resLine, silent } from "../story";
 import { base, TOWN } from "../tiles";
@@ -628,6 +629,9 @@ const events: EventDef[] = [
 		},
 		{ wander: true, when: day },
 	),
+
+	// にぃちぇ（おんJマイナーズ。先住民の「土曜日ど！」の派生。data/minors.ts）
+	nichie(20, 11),
 
 	// 囲碁J民（詰碁）
 	npc("igo", 19, 13, SPR.j_shinkan, igo, { dir: "left", when: day }),

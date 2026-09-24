@@ -24,6 +24,7 @@ import {
 	symCount,
 } from "../freedom";
 import { chest, warp } from "../helpers";
+import { yayapoji } from "../minors";
 import { SPR } from "../sprites";
 import { ks, phono, silent } from "../story";
 import { base, STADIUM, TOWN } from "../tiles";
@@ -487,6 +488,9 @@ export const stadium: MapDef = {
 					await j(s, "観客", "キリコ？　知らん子やな。\n……けど、応援したるわ");
 			},
 		},
+
+		// ヤヤポジ（おんJマイナーズ。data/minors.ts）
+		yayapoji(20, 11),
 
 		// ── スコアボード（(10,2) から上を向いて調べる） ──
 		{ id: "score", x: 10, y: 1, trigger: "talk", run: scoreRun },

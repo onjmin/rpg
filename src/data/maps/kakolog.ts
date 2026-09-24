@@ -16,6 +16,7 @@ import {
 	replyAnka,
 } from "../freedom";
 import { chest, npc, warp } from "../helpers";
+import { mujjeThanks, ngoane, panmatsu, senkyo } from "../minors";
 import { SPR } from "../sprites";
 import { benchHint, ks, phono } from "../story";
 import { base, CAVE, PROPS } from "../tiles";
@@ -484,9 +485,9 @@ export const kakolog: MapDef = {
 	rows: [
 		"######################", // y0
 		"#WWWWWWWWWWWWWWWWWWWW#", // y1
-		"#wwwwwwwww[]wwwwwwwww#", // y2  奥の間の正面に古い掲示板
+		"#wwwwwwwww[]wwwwwwwww#", // y2  奥の間の正面に古い掲示板（B2 後: (10,2) に総選挙のはり紙）
 		"#,,,,#..........#,,,,#", // y3  奥の間: フェリス (10,3)、ムッジェ (11,3)（B2 後は mujje_after）
-		"#,,,,#..........#,,,p#", // y4  宝箱 (2,4)
+		"#,,,,#..........#,,,p#", // y4  宝箱 (2,4)。B2 後: ンゴ姉 (7,4)、パン松 (14,4)
 		"#,,,,#..........#,,,,#", // y5
 		"#,,,,wwwww.wwwwww,,,,#", // y6  奥の間の入口 (10,6) = bossfloor
 		"#,p,,,,,,......,,,,,,#", // y7  蓄音機 (13,7)
@@ -569,6 +570,7 @@ export const kakolog: MapDef = {
 			trigger: "talk",
 			when: (st) => !!st.flags.b2,
 			run: async (s) => {
+				await mujjeThanks(s);
 				if (s.flag("feris_in"))
 					await s.say("feris", "ムッジェ〜、あそびに　来たよ〜");
 				await N(s, "ムッジェ", "ホゲェ！");
@@ -585,6 +587,10 @@ export const kakolog: MapDef = {
 				await N(s, "ムッジェ", "ホゲェ♪");
 			},
 		},
+		// おんJマイナーズ（B2 のあと、ムッジェのまわりに いつく。data/minors.ts）
+		ngoane(7, 4),
+		panmatsu(14, 4),
+		senkyo(10, 2),
 		...chest("kako1", 2, 4, "hane", 1),
 		...chest("kako2", 19, 12, "candy", 2),
 		// くずれかけた棚（b）を掘る読解パズル

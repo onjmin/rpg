@@ -19,6 +19,17 @@ export const SPR = {
 	mujje: "pub:sprites/mujje.png",
 	/** ボツキリコ（再安価で流された最初のキリコ。灰色の角刈り） */
 	botsu: "pub:sprites/kiriko_botsu.png",
+	// おんJマイナーズ（おんJwiki の「一軍・二軍」まわりの顔文字キャラ）
+	/** にぃちぇ ξ◉ω◉)ξ（日曜日の子） */
+	nichie: "pub:sprites/minors_nichie.png",
+	/** おんすちゃん（おんS のお嬢さま。縦ロール） */
+	onsu: "pub:sprites/minors_onsu.png",
+	/** ンゴ姉 ﾝ´ヮ｀ｺﾞ（やきう民のお姉ちゃん） */
+	ngoane: "pub:sprites/minors_ngoane.png",
+	/** パン松 |｀°Ο°´|（パン板の食パン） */
+	panmatsu: "pub:sprites/minors_panmatsu.png",
+	/** ヤヤポジ (*^△^*)（ひかえめなポジハメ） */
+	yayapoji: "pub:sprites/minors_yayapoji.png",
 
 	// ── おんJ民・マッマ ──
 	j_yakiu: "sa:4rSOzo", // 野球民

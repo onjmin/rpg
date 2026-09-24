@@ -3,6 +3,7 @@
 // - public/sprites/mujje.png        … ムッジェ ΣΩΩ>（赤い毛むくじゃら）。RPGEN 歩行グラ規格 32x64
 // - public/sprites/kiriko_botsu.png … ボツキリコ。キリコの歩行グラを灰色に沈めた差分 32x64
 // - public/sprites/phono.png        … ちいさな蓄音機（置物）16x16
+// - public/sprites/minors_*.png     … おんJマイナーズ（にぃちぇ・おんすちゃん・ンゴ姉・パン松・ヤヤポジ）32x64
 //
 // 依存なし（zlib だけ）。ドット絵は下の文字の絵から作る。
 
@@ -275,6 +276,364 @@ for (let f = 0; f < 2; f++) {
 }
 writeFileSync(join(OUT, "mujje.png"), encodePng(32, 64, mujje));
 
+// ───────────────── おんJマイナーズ ─────────────────
+// おんJwiki の「おんJマイナーズ」まわりの顔文字キャラ。顔文字の特徴だけを 16x16 に落とす。
+// 1コマ目の絵を描き、2コマ目は足もと（下の2行）だけ差し替える。左向きは右向きの反転。
+
+/** 上・右・下向き（各16行）と、2コマ目の足もと2行から RPGEN 規格のシートを作る。 */
+const walkSheet = (file, pal, { up, right, down }, feet) => {
+	const step = (art) => [...art.slice(0, 14), ...feet];
+	const buf = Buffer.alloc(32 * 64 * 4);
+	const rows = [up, right, down, null];
+	for (let row = 0; row < 4; row++) {
+		const art = rows[row] ?? right;
+		const flip = row === 3 ? mirror : (a) => a;
+		paint(buf, 32, 0, row, flip(art), pal);
+		paint(buf, 32, 1, row, flip(step(art)), pal);
+	}
+	writeFileSync(join(OUT, file), encodePng(32, 64, buf));
+};
+
+const FEET = [".....SS..SS.....", "................"];
+const FEET_B = ["....SS....SS....", "................"];
+
+// にぃちぇ ξ◉ω◉)ξ … 両わきの ξ のドリル、見ひらいた目、ω の口。日曜日の子。
+walkSheet(
+	"minors_nichie.png",
+	{
+		K: hex("#2a1a3a"),
+		H: hex("#b48be0"),
+		h: hex("#7d5aa8"),
+		F: hex("#ffe0c8"),
+		W: hex("#ffffff"),
+		B: hex("#141414"),
+		D: hex("#3a4a8a"),
+		d: hex("#28336a"),
+		S: hex("#4a2a2a"),
+	},
+	{
+		down: [
+			"....KKKKKKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"..KHhHHHHHHhHK..",
+			".KHKFFFFFFFFKHK.",
+			"KHKKWWWFFWWWKKHK",
+			".KHKWBWFFWBWKHK.",
+			"KHKKWWWFFWWWKKHK",
+			".KHKFFKFFKFFKHK.",
+			"KHK.KFFKKFFK.KHK",
+			".KHK.KKKKKK.KHK.",
+			"..K.KDDDDDDK.K..",
+			"....KDdDDdDK....",
+			"...KDDDDDDDDK...",
+			...FEET,
+		],
+		up: [
+			"....KKKKKKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"..KHHhHHHHhHHK..",
+			".KHKHHHHHHHHKHK.",
+			"KHKKHHhHHhHHKKHK",
+			".KHKHHHHHHHHKHK.",
+			"KHKKHhHHHHhHKKHK",
+			".KHKHHHHHHHHKHK.",
+			"KHK.KHHHHHHK.KHK",
+			".KHK.KKKKKK.KHK.",
+			"..K.KDDDDDDK.K..",
+			"....KDdDDdDK....",
+			"...KDDDDDDDDK...",
+			...FEET,
+		],
+		right: [
+			"....KKKKKKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"..KHHhHHHHHHHK..",
+			".KHKHHHHFFFFFK..",
+			"KHKKHHHFFFWWWK..",
+			".KHKHHHFFFWBWK..",
+			"KHKKHHHFFFWWWK..",
+			".KHKHHHFFFFKFK..",
+			"KHK.KHHFFFKFK...",
+			".KHK.KKKKKKK....",
+			"..K.KDDDDDDK....",
+			"....KDdDDdDK....",
+			"...KDDDDDDDDK...",
+			...FEET,
+		],
+	},
+	FEET_B,
+);
+
+// おんすちゃん S｡ﾟ(｡ﾟ@ω@°｡)ﾟ｡S … 両わきの縦ロール、リボン、ぐるぐる目と涙。おんS のお嬢さま。
+const ONSU_BODY = ["..KK.KPPPPK.KK..", "....KPpPPpPK....", "...KPPPPPPPPK..."];
+walkSheet(
+	"minors_onsu.png",
+	{
+		K: hex("#3a2410"),
+		R: hex("#e0405a"),
+		H: hex("#f2c94c"),
+		h: hex("#c79a22"),
+		F: hex("#ffe4cc"),
+		W: hex("#ffffff"),
+		B: hex("#2a2a2a"),
+		T: hex("#7cc8f0"),
+		P: hex("#f49ac1"),
+		p: hex("#d0689a"),
+		S: hex("#6a3a2a"),
+	},
+	{
+		down: [
+			"......KRRK......",
+			"....KKKRRKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"KHHKFFFFFFFFKHHK",
+			"KHHKBBBFFBBBKHHK",
+			"KHHKBWBFFBWBKHHK",
+			"KHHKTFTFFTFTKHHK",
+			"KHHKFFKFFKFFKHHK",
+			".KHHKFFKKFFKHHK.",
+			".KHHKKKKKKKKHHK.",
+			...ONSU_BODY,
+			...FEET,
+		],
+		up: [
+			"......KRRK......",
+			"....KKKRRKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"KHHKHHHHHHHHKHHK",
+			"KHHKHhHHHHhHKHHK",
+			"KHHKHHHHHHHHKHHK",
+			"KHHKHhHHHHhHKHHK",
+			"KHHKHHHHHHHHKHHK",
+			".KHHKHHHHHHKHHK.",
+			".KHHKKKKKKKKHHK.",
+			...ONSU_BODY,
+			...FEET,
+		],
+		right: [
+			"......KRRK......",
+			"....KKKRRKKK....",
+			"...KHHHHHHHHK...",
+			"..KHHHHHHHHHHK..",
+			"KHHKHHHFFFFFFK..",
+			"KHHKHHFFFFBBBK..",
+			"KHHKHHFFFFBWBK..",
+			"KHHKHHFFFFTFTK..",
+			"KHHKHHFFFFFKFK..",
+			".KHHKHFFFFKK....",
+			".KHHKKKKKKKK....",
+			"..KK.KPPPPK.....",
+			"....KPpPPpPK....",
+			"...KPPPPPPPPK...",
+			...FEET,
+		],
+	},
+	FEET_B,
+);
+
+// ンゴ姉 ﾝ´ヮ｀ｺﾞ … やきう民の お姉ちゃん。やきう帽、´ ｀ の目、ヮ の口、長い髪。
+walkSheet(
+	"minors_ngoane.png",
+	{
+		K: hex("#2a1a10"),
+		Y: hex("#f5d142"),
+		H: hex("#6a3a1e"),
+		h: hex("#4a2612"),
+		F: hex("#ffdcbc"),
+		B: hex("#2a1a10"),
+		M: hex("#b8303a"),
+		O: hex("#f08a3a"),
+		o: hex("#c0602a"),
+		S: hex("#3a2a2a"),
+	},
+	{
+		down: [
+			"....KKKKKKKK....",
+			"...KYYYYYYYYK...",
+			"..KYYYYYYYYYYK..",
+			".KKKKKKKKKKKKKK.",
+			".KHHFFFFFFFFHHK.",
+			".KHFFBFFFFBFFHK.",
+			".KHFBFFFFFFBFHK.",
+			".KHFFFKKKKFFFHK.",
+			".KHHFFKMMKFFHHK.",
+			".KHHKFFKKFFKHHK.",
+			".KHHHKKKKKKHHHK.",
+			".KHHKOOOOOOKHHK.",
+			"..KKKOoOOoOKKK..",
+			"...KOOOOOOOOK...",
+			...FEET,
+		],
+		up: [
+			"....KKKKKKKK....",
+			"...KYYYYYYYYK...",
+			"..KYYYYYYYYYYK..",
+			".KKYYYYYYYYYYKK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHhHHHHHHhHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHhHHHHHHhHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHhHHHHHHhHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHKOOOOOOKHHK.",
+			"..KKKOoOOoOKKK..",
+			"...KOOOOOOOOK...",
+			...FEET,
+		],
+		right: [
+			"....KKKKKKKK....",
+			"...KYYYYYYYYK...",
+			"...KYYYYYYYYYK..",
+			"..KKKKKKKKKKKKKK",
+			"..KHHHHFFFFFFK..",
+			"..KHHHHFFFFBFK..",
+			"..KHHHHFFFFFBK..",
+			"..KHHHHFFFFKKK..",
+			"..KHHHHFFFKMK...",
+			"..KHHHHKFFKKK...",
+			"..KHHHHKKKK.....",
+			"..KHHKOOOOOOK...",
+			"...KKOoOOoOK....",
+			"....KOOOOOOK....",
+			...FEET,
+		],
+	},
+	FEET_B,
+);
+
+// パン松 |｀°Ο°´| … 食パン。｀´ の眉、° の目、Ο の口。パン板から おんJを 侵略しに来る。
+const PAN_TOP = ["..KKKKK..KKKKK..", ".KCCCCCKKCCCCCK.", ".KCWWWWWWWWWWCK."];
+const PAN_BOTTOM = [
+	".KCCCCCCCCCCCCK.",
+	".KKKKKKKKKKKKKK.",
+	"....KK....KK....",
+	"....KK....KK....",
+];
+const PLAIN = ".KCWWWWWWWWWWCK.";
+walkSheet(
+	"minors_panmatsu.png",
+	{
+		K: hex("#3a2210"),
+		C: hex("#c98a3e"),
+		W: hex("#fff3d6"),
+		B: hex("#3a2210"),
+		M: hex("#8a3a2a"),
+	},
+	{
+		down: [
+			...PAN_TOP,
+			".KCWBWWWWWWBWCK.",
+			".KCWWBWWWWBWWCK.",
+			".KCWWKWWWWKWWCK.",
+			PLAIN,
+			".KCWWWWKKWWWWCK.",
+			".KCWWWKMMKWWWCK.",
+			".KCWWWWKKWWWWCK.",
+			"KKCWWWWWWWWWWCKK",
+			PLAIN,
+			...PAN_BOTTOM,
+		],
+		up: [
+			...PAN_TOP,
+			PLAIN,
+			PLAIN,
+			PLAIN,
+			PLAIN,
+			PLAIN,
+			PLAIN,
+			PLAIN,
+			"KKCWWWWWWWWWWCKK",
+			PLAIN,
+			...PAN_BOTTOM,
+		],
+		right: [
+			...PAN_TOP,
+			".KCWWWBWWWWWBCK.",
+			".KCWWWWBWWWBWCK.",
+			".KCWWWWKWWWKWCK.",
+			PLAIN,
+			".KCWWWWWWKKWWCK.",
+			".KCWWWWWKMMKWCK.",
+			".KCWWWWWWKKWWCK.",
+			".KCWWWWWWWWWWCKK",
+			PLAIN,
+			...PAN_BOTTOM,
+		],
+	},
+	["....KK....KK....", "...KK......KK..."],
+);
+
+// ヤヤポジ (*^△^*) … ポジハメを ひかえめにした子。青いやきう帽、^ の目、△ の口、* のほっぺ。
+const YAYA_BODY = ["...KKKKKKKKKK...", "..KWWWLLLLWWWK..", "..KWWWLLLLWWWK.."];
+walkSheet(
+	"minors_yayapoji.png",
+	{
+		K: hex("#1a2240"),
+		L: hex("#2a5cc8"),
+		H: hex("#3a2a1a"),
+		F: hex("#ffe0c4"),
+		P: hex("#f28aa0"),
+		W: hex("#f4f6fa"),
+		S: hex("#2a2a3a"),
+	},
+	{
+		down: [
+			"....KKKKKKKK....",
+			"...KLLLLLLLLK...",
+			"..KLLLLLLLLLLK..",
+			"..KKKKKKKKKKKK..",
+			".KFFFFFFFFFFFFK.",
+			".KFFFKFFFFKFFFK.",
+			".KFFKFKFFKFKFFK.",
+			".KPFFFFKKFFFFPK.",
+			".KPFFFKFFKFFFPK.",
+			"..KFFFKKKKFFFK..",
+			"...KFFFFFFFFK...",
+			...YAYA_BODY,
+			...FEET,
+		],
+		up: [
+			"....KKKKKKKK....",
+			"...KLLLLLLLLK...",
+			"..KLLLLLLLLLLK..",
+			"..KLLLLLLLLLLK..",
+			".KHHHHHHHHHHHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHHHHHHHHHHHK.",
+			"..KHHHHHHHHHHK..",
+			"...KHHHHHHHHK...",
+			...YAYA_BODY,
+			...FEET,
+		],
+		right: [
+			"....KKKKKKKK....",
+			"...KLLLLLLLLK...",
+			"..KLLLLLLLLLLK..",
+			"..KKKKKKKKKKKKKK",
+			".KHHFFFFFFFFFFK.",
+			".KHHFFFFFFKFFFK.",
+			".KHHFFFFFKFKFFK.",
+			".KHHFFFFPFFFKFK.",
+			"..KHFFFFFFFKKKK.",
+			"...KFFFFFFFFK...",
+			"...KKKKKKKKKK...",
+			"..KWWWLLLLWWWK..",
+			"..KWWWLLLLWWWK..",
+			"..KWWWWWWWWWWK..",
+			...FEET,
+		],
+	},
+	FEET_B,
+);
+
 // ───────────────── ボツキリコ ─────────────────
 // キリコの歩行グラを「色を抜いて、冷たい灰色に沈めた」差分。
 // 若草色の髪（ポニテ）は黒っぽい鉄色にして、角刈りっぽい重さを出す。
@@ -340,4 +699,4 @@ const phono = Buffer.alloc(16 * 16 * 4);
 paint(phono, 16, 0, 0, phonoArt, PHONO_PAL);
 writeFileSync(join(OUT, "phono.png"), encodePng(16, 16, phono));
 
-console.log("wrote mujje.png, kiriko_botsu.png, phono.png");
+console.log("wrote mujje.png, kiriko_botsu.png, phono.png, minors_*.png");
