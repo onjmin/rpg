@@ -35,6 +35,8 @@ export const FLAG_DOMAIN: Record<
 	date_nanj: [undefined, true],
 	puyu: [undefined, "ame", "uta", "suwaru"],
 	puyu_met: [undefined, true],
+	flood_1: [undefined, "991", "992", "993", "994"],
+	flood_2: [undefined, "995", "996", "997"],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -72,16 +74,100 @@ const S994: Record<string, string> = {
 	lose: "勝負は　ワイの勝ちや",
 };
 
-/** 恩赦のあとのレスの洪水。1要素 = narrate 1回。変わるのは >>992 と >>994 だけ。 */
-export const floodScreens = (st: GameState): string[] => {
+/** 洪水の中から 蓄音できる1レス。 */
+export type FloodPick = {
+	/** フラグに残す番号（まとめカードで引く）。 */
+	key: string;
+	/** 選択肢の見出し（全角14字まで。フラグで変わる本文は入れない）。 */
+	label: string;
+	/** きれいに ひろえたときの キリコの一言。 */
+	line: string;
+	/** もらえる どうぐ（しくじると1つだけ）。 */
+	item: { id: string; n: number };
+};
+
+/** レスの洪水の1波。screen を読ませ、picks があれば そこから1つだけ蓄音できる。 */
+export type FloodWave = { screen: string; picks: FloodPick[] };
+
+/**
+ * 恩赦のあとのレスの洪水。流れていくレスは、1波につき1つしか蓄音できない
+ * （拾わなかった声は そのまま流れる）。変わるのは >>992 と >>994 の本文だけ。
+ */
+export const floodWaves = (st: GameState): FloodWave[] => {
 	const f = st.flags;
 	const s992 = byFlag(S992, f.reply_srv) ?? "キリコがんばれ";
 	const s994 = byFlag(S994, f.b1_how) ?? "宿題おわったで";
 	return [
-		`>>991 kskst　>>992 ${s992}\n>>993 ホゲェ　>>994 ${s994}`,
-		">>995 避難Jを研究しているヒナリーです\n>>996 ﾌｪﾆｯｸｽ　>>997 アル？ナイ！",
-		">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
+		{
+			screen: `>>991 kskst　>>992 ${s992}\n>>993 ホゲェ　>>994 ${s994}`,
+			picks: [
+				{
+					key: "991",
+					label: ">>991 kskst",
+					line: "加速の　声。……のどに　いいンゴ",
+					item: { id: "spray", n: 2 },
+				},
+				{
+					key: "992",
+					label: ">>992 レスバJ民",
+					line: "あの夜の　返しンゴ",
+					item: { id: "mabo", n: 2 },
+				},
+				{
+					key: "993",
+					label: ">>993 ホゲェ",
+					line: "ホゲェ……　なんでも　ためるンゴ",
+					item: { id: "candy", n: 3 },
+				},
+				{
+					key: "994",
+					label: ">>994 番長",
+					line: "あの夏の　声ンゴ",
+					item: { id: "hane", n: 1 },
+				},
+			],
+		},
+		{
+			screen:
+				">>995 避難Jを研究しているヒナリーです\n>>996 ﾌｪﾆｯｸｽ　>>997 アル？ナイ！",
+			picks: [
+				{
+					key: "995",
+					label: ">>995 ヒナリー",
+					line: "となりの　スレの　声ンゴ",
+					item: { id: "pan", n: 2 },
+				},
+				{
+					key: "996",
+					label: ">>996 ﾌｪﾆｯｸｽ",
+					line: "……ちょっと　こげたンゴ",
+					item: { id: "hane", n: 2 },
+				},
+				{
+					key: "997",
+					label: ">>997 アル？ナイ！",
+					line: "やる気は……アルンゴ！",
+					item: { id: "spray", n: 3 },
+				},
+			],
+		},
+		{
+			screen:
+				">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
+			picks: [],
+		},
 	];
+};
+
+/** 蓄音したレス（まとめカード）。 */
+const FLOOD_SUM: Record<string, string> = {
+	"991": "kskst（>>991）",
+	"992": "レスバJ民の　ソース（>>992）",
+	"993": "ホゲェ（>>993）",
+	"994": "番長の　夏（>>994）",
+	"995": "ヒナリーの　あいさつ（>>995）",
+	"996": "ﾌｪﾆｯｸｽ（>>996）",
+	"997": "アル？ナイ！（>>997）",
 };
 
 // ───────────────── last・エンディングの差分 ─────────────────
@@ -370,6 +456,20 @@ const nextThread = (f: Flags): string[] => [
 		(f.puyu_met ? ">>5 またきてゆ🥺" : ">>5 きみ、はじめて　みるかおぷゆ？🥺"),
 ];
 
+/** 洪水で ひろえた声（ひろっていなければ セクションごと出さない）。 */
+const floodSection = (f: Flags): EndingSummary["sections"] => {
+	const got = [f.flood_1, f.flood_2]
+		.map((v) => byFlag(FLOOD_SUM, v))
+		.filter((x): x is string => !!x);
+	if (!got.length) return [];
+	return [
+		{
+			title: "【蓄音】ひろった　レス",
+			lines: [...got, "ワイらが　もろたで！（>>999）"],
+		},
+	];
+};
+
 /** スタッフロールのあとの「このスレの　まとめ」（1行22字まで・1セクション10行まで）。 */
 export const threadSummary = (st: GameState): EndingSummary => ({
 	sections: [
@@ -377,6 +477,7 @@ export const threadSummary = (st: GameState): EndingSummary => ({
 			title: `【完走】蓄音キリコ、${headline(st.flags)}`,
 			lines: myThread(st),
 		},
+		...floodSection(st.flags),
 		{
 			title: "【次スレ】蓄音キリコのうた　Part2",
 			lines: nextThread(st.flags),

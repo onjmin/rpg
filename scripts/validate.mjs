@@ -894,14 +894,14 @@ try {
 	} catch (e) {
 		tlWhy = `読めない（${String(e?.message ?? e).split("\n")[0]}）`;
 	}
-	const need = ["FLAG_DOMAIN", "floodScreens", "VARIANTS", "threadSummary"];
+	const need = ["FLAG_DOMAIN", "floodWaves", "VARIANTS", "threadSummary"];
 	const missing = tl ? need.filter((k) => tl[k] == null) : need;
 	if (!tl || missing.length) {
 		warn(
 			`threadlog.ts: ${tl ? `${missing.join("・")} が無い` : tlWhy}ので、組み立てる文とフラグの約束の検査を飛ばす`,
 		);
 	} else {
-		const { FLAG_DOMAIN, floodScreens, VARIANTS, threadSummary } = tl;
+		const { FLAG_DOMAIN, floodWaves, VARIANTS, threadSummary } = tl;
 		const keys = Object.keys(FLAG_DOMAIN);
 		const party = ["kiriko", "roze", "feris", "teto"].map((id) => ({
 			id,
@@ -925,26 +925,34 @@ try {
 		const checkState = (flags) => {
 			const note = noteOf(flags);
 			const st = stateOf(flags);
+			const where = "threadlog floodWaves";
 			try {
-				const screens = floodScreens(st);
-				if (
-					!Array.isArray(screens) ||
-					screens.some((t) => typeof t !== "string")
-				)
-					err("threadlog floodScreens: 文字列の配列を返していない", note);
+				const waves = floodWaves(st);
+				if (!Array.isArray(waves)) err(`${where}: 配列を返していない`, note);
 				else {
-					if (screens.length !== 3)
-						warn(
-							`threadlog floodScreens: ${screens.length} 画面（3画面の約束）`,
-							note,
-						);
-					for (const t of screens) {
-						checkText("threadlog floodScreens", t, note);
-						checkValue("threadlog floodScreens", t, note);
+					if (waves.length !== 3)
+						warn(`${where}: ${waves.length} 波（3波の約束）`, note);
+					for (const w of waves) {
+						if (typeof w?.screen !== "string" || !Array.isArray(w?.picks)) {
+							err(`${where}: screen（文字列）と picks（配列）が要る`, note);
+							continue;
+						}
+						checkText(where, w.screen, note);
+						checkValue(where, w.screen, note);
+						for (const p of w.picks) {
+							// 見出しは選択肢なので、セリフより短い MAX_CHOICE で見る
+							if (width(p.label) > MAX_CHOICE)
+								warn(`${where}: 見出しが長い: ${p.label}`, note);
+							checkWords(where, p.label, note);
+							checkText(where, p.line, note);
+							checkValue(where, p.line, note);
+							if (!data.items[p.item?.id])
+								err(`${where}: 知らない どうぐ "${p.item?.id}"`, note);
+						}
 					}
 				}
 			} catch (e) {
-				err(`threadlog floodScreens: 例外: ${e?.message ?? e}`, note);
+				err(`${where}: 例外: ${e?.message ?? e}`, note);
 			}
 			for (const [name, fn] of Object.entries(VARIANTS)) {
 				const where = `threadlog VARIANTS.${name}`;
