@@ -7,6 +7,7 @@ import { bonds } from "./bonds";
 import { cast } from "./cast";
 import { registerItemNames } from "./helpers";
 import { admin } from "./maps/admin";
+import { exserver } from "./maps/exserver";
 import { kakolog } from "./maps/kakolog";
 import { last } from "./maps/last";
 import { odekake } from "./maps/odekake";
@@ -32,6 +33,7 @@ export const data: GameData = {
 		last,
 		odekake,
 		admin,
+		exserver,
 	},
 	cast,
 	enemies,

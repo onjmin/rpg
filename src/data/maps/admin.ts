@@ -325,6 +325,19 @@ const events: EventDef[] = [
 	// ひろゆきは観戦席のいす (9,5) のとなり
 	npc("hiro", 8, 5, SPR.hiro, hiroRun, { dir: "left" }),
 	phono("admin_phono", 2, 6),
+	// サーバーラック (1,3)。中は検証用の「テストサーバー」＝歴代ボスと何度でも戦える場所
+	{
+		id: "admin_rack",
+		x: 1,
+		y: 3,
+		trigger: "talk",
+		fixedDir: true,
+		run: async (s) => {
+			await s.narrate("サーバーラック。\n札に「検証用／入ってよし」と　ある。");
+			if ((await s.choose(["入る", "やめておく"], { cancel: 1 })) === 1) return;
+			await s.warp("exserver", 5, 8, "up", { se: "warp" });
+		},
+	},
 	{
 		id: "admin_sign",
 		x: 3,
