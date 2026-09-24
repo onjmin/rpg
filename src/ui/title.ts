@@ -67,11 +67,16 @@ export const showTitle = (game: Game): Promise<GameState> =>
 
 		// 完走したきろくがあれば「次スレ」を出す（強くてニューゲーム）
 		const cleared = !!readSave()?.state.flags.clear;
+		const showDebug =
+			!!data.debug &&
+			(import.meta.env.DEV ||
+				new URLSearchParams(location.search).has("debug"));
 		const items = () => [
 			{ label: "はじめから", value: "new" },
 			{ label: "つづきから", value: "load", disabled: !hasSave() },
 			...(cleared ? [{ label: "次スレを　立てる", value: "part2" }] : []),
 			{ label: "せってい", value: "settings" },
+			...(showDebug ? [{ label: "デバッグルーム", value: "debug" }] : []),
 		];
 		let cur = hasSave() ? 1 : 0;
 		const render = () => {
@@ -150,6 +155,11 @@ export const showTitle = (game: Game): Promise<GameState> =>
 					busy = false;
 					return;
 				}
+			}
+			if (v === "debug" && data.debug) {
+				// flags.debug が立っていると記録しない（engine/save.ts）
+				const st = game.newState();
+				state = { ...st, ...data.debug, flags: { ...st.flags, debug: true } };
 			}
 			state ??= game.newState();
 			pop();

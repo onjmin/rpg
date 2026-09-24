@@ -364,6 +364,8 @@ export type GameData = {
 	bonds?: BondData;
 	/** 古いセーブで たたかう仲間が多すぎたとき、先に控えへ回す順（本編で控えに回る順）。無ければ いちばん新しい仲間。 */
 	benchFirst?: string[];
+	/** デバッグルームの入口（開発中か URL に ?debug があるとき、タイトルに「デバッグルーム」を出す）。 */
+	debug?: { mapId: string; x: number; y: number; dir: Dir };
 };
 
 // ───────────────── シナリオ API ─────────────────

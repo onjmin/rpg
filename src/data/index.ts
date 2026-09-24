@@ -7,6 +7,7 @@ import { bonds } from "./bonds";
 import { cast } from "./cast";
 import { registerItemNames } from "./helpers";
 import { admin } from "./maps/admin";
+import { debug, debugStart } from "./maps/debug";
 import { exserver } from "./maps/exserver";
 import { kakolog } from "./maps/kakolog";
 import { last } from "./maps/last";
@@ -34,6 +35,7 @@ export const data: GameData = {
 		odekake,
 		admin,
 		exserver,
+		debug,
 	},
 	cast,
 	enemies,
@@ -60,6 +62,7 @@ export const data: GameData = {
 	// 古いセーブ（たたかう仲間が4人）で先に控えへ回す順＝本編で控えに回る順
 	// （第二章でおんJ民、スタジオでテト）
 	benchFirst: ["nanj", "teto"],
+	debug: debugStart,
 	credits: [
 		"# 蓄音キリコ　〜1000レス目のうた〜",
 		"",

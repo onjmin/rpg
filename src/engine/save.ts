@@ -16,6 +16,8 @@ export const hasSave = (): boolean => {
 };
 
 export const writeSave = (state: GameState): boolean => {
+	// デバッグルームから飛んだ状態は記録しない（本物のセーブを上書きしない）
+	if (state.flags.debug) return true;
 	try {
 		const file: SaveFile = { v: VERSION, savedAt: Date.now(), state };
 		localStorage.setItem(KEY, JSON.stringify(file));
