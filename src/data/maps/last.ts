@@ -162,8 +162,22 @@ export const last: MapDef = {
 			sprite: "char:rei",
 			dir: "right",
 			trigger: "talk",
-			run: (s) =>
-				reiCare(s, "この先が　1000レス目です。\n当機は　ここから　中継します"),
+			run: async (s) => {
+				// はじめて話したときだけ、見送りの ひとこと（最初の「いってらっしゃい」と対）
+				if (!s.flag("rei_wait") && !s.flag("f1_done")) {
+					s.set("rei_wait");
+					await s.say("kiriko", "レイは、いっしょに\n来ないンゴ？");
+					await s.say("rei", "否定。当機は　保守です");
+					await s.say(
+						"rei",
+						"……もどってきた　人に、\n「おかえりなさい」を　言う係も　いります",
+					);
+				}
+				await reiCare(
+					s,
+					"この先が　1000レス目です。\n当機は　ここから　中継します",
+				);
+			},
 		},
 		{
 			id: "balus_last",

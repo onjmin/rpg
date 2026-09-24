@@ -436,7 +436,25 @@ const events: EventDef[] = [
 		8,
 		7,
 		"char:rei",
-		async (s) => s.say("rei", "本日のログ、保守完了"),
+		async (s) => {
+			if (s.flag("rei_end")) {
+				await s.say("rei", "本日のログ、保守完了");
+				return;
+			}
+			// 完走のあと はじめて話したときだけ（1000レス目の手前の見送り・87％の呼び返し）
+			s.set("rei_end");
+			if (s.flag("rei_wait")) {
+				await s.say("rei", "おかえりなさい");
+				await s.say("kiriko", "ただいまンゴ！");
+			}
+			await s.say("kiriko", "レイ。あの　87％……");
+			await s.say(
+				"rei",
+				"再解析、完了しました。\n発信元の　音声は、もう　検知されません",
+			);
+			await s.say("rei", "のこりの　13％は、\nログに　保存してあります");
+			await s.say("kiriko", "……うん");
+		},
 		{
 			dir: "left",
 			when: clear,
