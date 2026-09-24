@@ -45,7 +45,7 @@ pnpm dev
   `http://localhost:5173/?map=town&x=11&y=16&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
   - `&bench=nanj`（`,` で区切って複数）でその仲間を控えにして始めます。たたかう仲間が4人以上いると、古いセーブと同じく自動で控えに回ります。
   - 管理人室（クリア後）: `?map=admin&x=5&y=8&dir=up&flags={"clear":true,"ending_seen":true,"res":1000}&party=kiriko,roze,feris,teto&bench=teto&lv=12`
-- タイトルの「デバッグルーム」（`pnpm dev` のとき。公開版でも URL に `?debug` を付けると出る）から、各章のはじめ・1000レス目・クリア後へ、その場面までのフラグ・仲間・レベルをそろえて飛べます（`src/data/maps/debug.ts`）。レベル上げ・どうぐ補充の人もいます。デバッグルームから始めた状態は記録しません（本物のセーブを上書きしない）。
+- タイトルの「デバッグルーム」（`pnpm dev` のとき。公開版でも URL に `?debug` を付けると出る）から、各章のはじめ・1000レス目・クリア後へ、その場面までのフラグ・仲間・レベルをそろえて飛べます（`src/data/maps/debug.ts`）。レベルは飛ぶ前に目安から上げ下げできます。どうぐ補充の人もいます。デバッグルームから始めた状態は記録しません（本物のセーブを上書きしない）。
 - main に push すると GitHub Actions（`.github/workflows/gh-pages.yml`）がビルドして GitHub Pages に公開します（Settings → Pages の Source は「GitHub Actions」）。
 
 ### 構成

@@ -4,7 +4,7 @@
 // フラグの並びは本編の s.set の順（各マップ）。本編の流れを変えたら、ここも合わせる。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
-import { expFor, statsOf } from "../../engine/party";
+import { expFor, MAX_LV, statsOf } from "../../engine/party";
 import type { Dir } from "../../engine/types";
 import { cast } from "../cast";
 import { npc, savePoint } from "../helpers";
@@ -219,14 +219,14 @@ const SUPPLY: Record<string, number> = {
 };
 
 /** その場面の手前まで進めた状態に作りなおす（いまの状態は捨てる）。 */
-const rebuild = (st: GameState, cp: Checkpoint): void => {
+const rebuild = (st: GameState, cp: Checkpoint, lv: number): void => {
 	st.flags = { ...cp.flags, debug: true };
 	st.party = cp.party.map(({ id, bench }) => {
-		const s = statsOf(cast[id], cp.lv);
+		const s = statsOf(cast[id], lv);
 		return {
 			id,
-			lv: cp.lv,
-			exp: expFor(cp.lv),
+			lv,
+			exp: expFor(lv),
 			hp: s.maxHp,
 			mp: s.maxMp,
 			...(bench ? { bench: true } : {}),
@@ -236,29 +236,38 @@ const rebuild = (st: GameState, cp: Checkpoint): void => {
 	for (const id of cp.items) st.items[id] = 1;
 };
 
+/** レベルを変える幅（選択肢）。 */
+const STEPS = [-5, -1, 1, 5];
+
+/** 場面を見せ、レベルを選んで（目安から上げ下げできる）飛ぶ。 */
 const jump =
 	(cp: Checkpoint) =>
 	async (s: Story): Promise<void> => {
-		await s.narrate(
-			`${cp.label}\nLv${cp.lv}・${cp.party.map((m) => cast[m.id].name).join("／")}`,
-		);
-		if ((await s.choose(["とぶ", "やめる"], { cancel: 1 })) === 1) return;
-		rebuild(s.state, cp);
+		// たたかう仲間の名前と、控えの人数（1行に収める）
+		const bench = cp.party.filter((m) => m.bench).length;
+		const names = `${cp.party
+			.filter((m) => !m.bench)
+			.map((m) => cast[m.id].name)
+			.join("／")}${bench ? `＋控え${bench}` : ""}`;
+		let lv = cp.lv;
+		for (;;) {
+			await s.narrate(`${cp.label}\nLv${lv}（目安${cp.lv}）${names}`);
+			const i = await s.choose(
+				[
+					`Lv${lv}で　とぶ`,
+					...STEPS.map((d) => `Lv${d > 0 ? "+" : "−"}${Math.abs(d)}`),
+					"やめる",
+				],
+				{ cancel: STEPS.length + 1 },
+			);
+			if (i === STEPS.length + 1) return;
+			if (i === 0) break;
+			lv = Math.min(MAX_LV, Math.max(1, lv + STEPS[i - 1]));
+			s.se("cursor");
+		}
+		rebuild(s.state, cp, lv);
 		await s.warp(cp.to.map, cp.to.x, cp.to.y, cp.to.dir, { se: "warp" });
 	};
-
-/** たたかう仲間のレベルを1つ上げる（全回復もする）。 */
-const levelUp = async (s: Story): Promise<void> => {
-	for (const m of s.state.party) {
-		m.lv += 1;
-		m.exp = expFor(m.lv);
-	}
-	s.heal();
-	s.se("levelup");
-	await s.narrate(
-		`みんな　Lv${s.state.party[0]?.lv ?? 1}に　なった。（全回復）`,
-	);
-};
 
 /** どうぐを配る。 */
 const supply = async (s: Story): Promise<void> => {
@@ -286,7 +295,6 @@ const events: EventDef[] = [
 	...CHECKPOINTS.map((cp, i) =>
 		npc(cp.id, spots[i][0], spots[i][1], cp.sprite, jump(cp)),
 	),
-	npc("dbg_lv", 2, 8, "char:kiriko", levelUp, { dir: "right" }),
 	npc("dbg_items", 8, 8, "char:nanj", supply, { dir: "left" }),
 	savePoint("dbg_save", 5, 8),
 ];
