@@ -59,26 +59,21 @@ const lastRun = async (s: Story): Promise<void> => {
 	await s.say("nanj", "キリコォ！　恩赦や！\n書きこめるようになったで！");
 	s.set("onsha");
 	// >>991〜>>999。流れていくので、1波につき1つしか蓄音できない。
-	// 波が目の前に来た合図を読んでハンドルを回す（釣りと同じ手ざわり）。
-	// しくじっても ひろえるが、かすれて すこしだけ。ひろった声は まとめカードに残る
+	// ひろった声は どうぐになり（F2 の装備）、まとめカードに残る
 	let wave = 0;
 	for (const w of floodWaves(s.state)) {
 		await s.narrate(w.screen);
 		if (!w.picks.length) continue;
-		const pick = w.picks[await s.choose(w.picks.map((p) => p.label))];
-		const near = Math.random() < 0.5;
 		await s.narrate(
-			near
-				? "レスが　目の前に　来た。"
-				: "レスは　まだ　遠い。\n……ハンドルは、いつ　まわす？",
+			wave === 0
+				? "レスが　どんどん　流れていく。\n蓄音機で　ひろえるのは、ひとつだけ。"
+				: "また　流れてくる。\nひろえるのは、ひとつだけ。",
 		);
-		const turned = (await s.choose(["ハンドルを　まわす", "まつ"])) === 0;
-		const ok = near === turned;
-		if (ok && !near)
-			await s.narrate("ひと呼吸　おいた。\n……レスが　目の前に　来た。");
-		s.se(ok ? "item" : "miss");
-		s.give(pick.item.id, ok ? pick.item.n : 1);
-		await s.say("kiriko", ok ? pick.line : "……すこし　かすれたンゴ");
+		const pick = w.picks[await s.choose(w.picks.map((p) => p.label))];
+		await s.narrate("キリコは　蓄音機の　ハンドルを　まわした。");
+		s.se("item");
+		s.give(pick.item.id, pick.item.n);
+		await s.say("kiriko", pick.line);
 		s.set(`flood_${++wave}`, pick.key);
 	}
 	await s.narrate("蓄音機が、すこし　あたたかい。");

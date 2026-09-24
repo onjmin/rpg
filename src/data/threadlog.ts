@@ -81,9 +81,9 @@ export type FloodPick = {
 	key: string;
 	/** 選択肢の見出し（全角14字まで。フラグで変わる本文は入れない）。 */
 	label: string;
-	/** きれいに ひろえたときの キリコの一言。 */
+	/** ひろったときの キリコの一言。 */
 	line: string;
-	/** もらえる どうぐ（しくじると1つだけ）。 */
+	/** もらえる どうぐ。 */
 	item: { id: string; n: number };
 };
 
