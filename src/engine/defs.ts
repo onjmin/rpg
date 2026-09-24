@@ -64,7 +64,12 @@ export type MapDef = {
 	rows: string[];
 	events?: EventDef[];
 	/** ランダムエンカウント（encounter: true の地形の上で1歩ごとに rate の確率）。 */
-	encounters?: { rate: number; groups: string[] };
+	encounters?: {
+		rate: number;
+		groups: string[];
+		/** まれに出る組（エンカウントしたとき rate の確率で groups の かわりに出る）。 */
+		rare?: { group: string; rate: number };
+	};
 	/** マップに入るたびに走るスクリプト（ワープの後）。 */
 	onEnter?: Script;
 	/** マップの外側の色。 */
@@ -206,6 +211,11 @@ export type EnemyDef = {
 	summon?: SummonConfig;
 	/** 倒れたときの文（既定「{user}を　たおした！」）。 */
 	downText?: string;
+	/**
+	 * メタル（隠し狩場のレア敵）。こうげきも うたも 0か1しか通らない（かいしんは ふつうに通る）。
+	 * 自分の番に flee の確率で にげる（にげた敵の けいけんち・落とし物は入らない）。
+	 */
+	metal?: { flee: number };
 };
 
 /** 裏ボスが呼び出す1体。文は1要素＝ログ1枚（改行は効かない）。{user}＝呼ぶ敵、{name}＝出る敵。 */

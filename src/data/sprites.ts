@@ -19,6 +19,8 @@ export const SPR = {
 	mujje: "pub:sprites/mujje.png",
 	/** ボツキリコ（再安価で流された最初のキリコ。灰色の角刈り） */
 	botsu: "pub:sprites/kiriko_botsu.png",
+	/** メタルンゴ（隠し狩場のレア敵。銀色の しずく） */
+	metalngo: "pub:sprites/metalngo.png",
 	// おんJマイナーズ（おんJwiki の「一軍・二軍」まわりの顔文字キャラ）
 	/** にぃちぇ ξ◉ω◉)ξ（日曜日の子） */
 	nichie: "pub:sprites/minors_nichie.png",

@@ -16,6 +16,7 @@ import { road } from "./maps/road";
 import { server } from "./maps/server";
 import { stadium } from "./maps/stadium";
 import { studio } from "./maps/studio";
+import { sukima } from "./maps/sukima";
 import { thread } from "./maps/thread";
 import { town } from "./maps/town";
 import { sfx } from "./sfx";
@@ -36,6 +37,7 @@ export const data: GameData = {
 		admin,
 		exserver,
 		debug,
+		sukima,
 	},
 	cast,
 	enemies,

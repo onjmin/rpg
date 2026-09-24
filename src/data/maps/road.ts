@@ -24,6 +24,7 @@ import { base, FIELD } from "../tiles";
 //   l  屋台のひさし＋ちょうちん（ひさしの両はし）
 //   y  屋台の板床（安全）
 //   f  釣り場（川にハスの葉。通れない）
+//   M  山脈に見えるが 通れる（隠し狩場 maps/sukima.ts への すきま。案内は 出さない）
 const AWNING = base(1, 366); // 紅白しまの幕（すそがギザギザ）
 const LANTERN = base(3, 297); // 赤いちょうちん（小・2つ）
 
@@ -33,6 +34,7 @@ const tiles: Record<string, TileDef> = {
 	l: { ...FIELD[","], above: [AWNING, LANTERN] },
 	y: { layers: [base(0, 46)], color: "#b8905a", passable: true },
 	f: { ...FIELD.w, layers: [...FIELD.w.layers, base(7, 12)] },
+	M: { ...FIELD["^"], passable: true },
 };
 
 // ───────────────── セリフの部品 ─────────────────
@@ -440,7 +442,7 @@ export const road: MapDef = {
 		"^,,FFF,,,,,,,,,,,,,,.,,^", // y3  宝箱 (20,3)
 		"^,,FFF,,,,,,,,,,,,,,,,,^", // y4
 		"^,,,,,,,,,,,,,,,,,,,,,,^", // y5
-		"^.*.........:.......%..^", // y6
+		"M.*.........:.......%..^", // y6  西のはし (0,6) は 通れる山（隠し狩場へ）
 		"wwwwfwwwwwwwHwwwwwwwwwww", // y7  川。橋 (12,7)。釣り (4,7)
 		"^..%........:......*...^", // y8  番長 (12,8)、子分 (11,8)(13,8)
 		"^,,,,,,,,,,,:,,,,,,,,,,^", // y9  番長の前 (12,9) まで道
@@ -476,6 +478,8 @@ export const road: MapDef = {
 			{ map: "kakolog", x: 11, y: 16, dir: "up" },
 			{ se: "stairs" },
 		),
+		// 隠し狩場（極秘。西のはしの山を ぬける）
+		warp("to_sukima", 0, 6, { map: "sukima", x: 10, y: 6, dir: "left" }),
 		// 屋台
 		yatai,
 		phono("phono_road", 6, 12),

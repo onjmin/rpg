@@ -53,6 +53,8 @@ type Fighter = {
 	skills: SkillDef[];
 	/** 敵のみ */
 	enemy?: EnemyDef;
+	/** 敵のみ：にげた（メタル。倒れたあつかいで場から消えるが、けいけんちは入らない） */
+	fled?: boolean;
 	guard: boolean;
 	/** 攻撃力アップの残りターン */
 	buff: number;
@@ -70,6 +72,7 @@ type Action =
 	| { kind: "item"; item: string; target: Fighter }
 	| { kind: "guard" }
 	| { kind: "flee" }
+	| { kind: "run" }
 	| { kind: "idle"; text: string };
 
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
@@ -879,6 +882,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		const crit = a.side === "party" && power <= 1 && Math.random() < 1 / 16;
 		if (crit) dmg = atk * power * 1.6;
 		if (t.guard) dmg /= 2;
+		// メタル：かいしんでなければ 0か1
+		if (t.enemy?.metal && !crit)
+			return { dmg: Math.random() < 0.5 ? 0 : 1, crit };
 		dmg = Math.max(1, Math.round(dmg));
 		return { dmg, crit };
 	};
@@ -906,7 +912,11 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			audio.se("attack");
 			await hitEnemy(t);
 			renderEnemies(t);
-			await log(`${t.name}に　${dmg}の　ダメージ！`);
+			await log(
+				dmg > 0
+					? `${t.name}に　${dmg}の　ダメージ！`
+					: `ミス！　${t.name}に　ダメージを　あたえられない！`,
+			);
 			if (t.hp <= 0) {
 				// 撃破音とフェードアウトを同時に始める
 				audio.se("enemyDown");
@@ -951,7 +961,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const pool = alive(t.side === "enemy" ? enemies : party);
 			return pool.find((f) => !shielded(f)) ?? pool[0] ?? null;
 		};
-		if (action.kind === "attack") {
+		if (action.kind === "run") {
+			// メタルが にげる（倒れたあつかいで場から消す）
+			a.fled = true;
+			a.hp = 0;
+			audio.se("flee");
+			renderEnemies();
+			await log(`${a.name}は　にげだした！`, 600);
+		} else if (action.kind === "attack") {
 			const t = retarget(action.target);
 			if (!t) return;
 			audio.se(a.side === "party" ? "attackStart" : "enemyAttack");
@@ -1098,6 +1115,15 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			if (action.kind === "flee") break;
 		}
 		for (const e of alive(enemies)) {
+			const metal = e.enemy?.metal;
+			if (metal && Math.random() < metal.flee) {
+				plans.push({
+					f: e,
+					action: { kind: "run" },
+					order: e.spd * rand(0.8, 1.2),
+				});
+				continue;
+			}
 			const acts = e.enemy?.acts;
 			let action: Action;
 			const targets = alive(party);
@@ -1183,14 +1209,19 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			}
 		}
 	};
+	// ぜんぶ にげられた（メタル）ときは 勝ちにしない
+	if (result === "win" && enemies.every((e) => e.fled)) result = "escape";
 	if (result === "win") {
-		const exp = enemies.reduce((s, e) => s + (e.enemy?.exp ?? 0), 0);
+		const exp = enemies.reduce(
+			(s, e) => s + (e.fled ? 0 : (e.enemy?.exp ?? 0)),
+			0,
+		);
 		audio.bgm(null);
 		if (data.victoryBgm) void audio.jingle(data.victoryBgm, 21, 5500);
 		await log(group.victory ?? "あらしを　しずめた！", 900);
 		await share(exp);
 		for (const e of enemies) {
-			const d = e.enemy?.drop;
+			const d = e.fled ? undefined : e.enemy?.drop;
 			if (d && Math.random() < d.rate) {
 				game.story.give(d.item);
 				audio.se("item");

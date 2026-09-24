@@ -207,6 +207,27 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 	}),
 
+	// ── 隠し狩場（スレ街道の西のはし。maps/sukima.ts）のレア敵 ──
+	// メタルスライムの枠。こうげきも うたも 0か1（かいしんは通る）、3割で にげる。HP 4。
+	// けいけんちは Lv3〜4 なら 2レベルぶん・Lv10 なら 3分の1レベルぶん（寄り道の ごほうび）。
+	metalngo: en({
+		id: "metalngo",
+		name: "メタルンゴ",
+		sprite: SPR.metalngo,
+		hp: 4,
+		atk: 12,
+		def: 99,
+		spd: 40,
+		exp: 150,
+		metal: { flee: 0.3 },
+		drop: { item: "hane", rate: 0.25 },
+		acts: [
+			a(2, 0.8, "{user}は　ぷるんと　体当たりした！"),
+			a(3, 0, "{user}は　キラキラ　ひかっている……"),
+		],
+		downText: "{user}を　たおした！",
+	}),
+
 	// ── 段階2（過去ログ倉庫／Lv5〜6） ──
 	zonj: en({
 		id: "zonj",
@@ -806,6 +827,12 @@ export const groups: Record<string, EnemyGroup> = {
 	g_road2: g({ id: "g_road2", enemies: ["copipe", "kskbot"] }),
 	g_road3: g({ id: "g_road3", enemies: ["natsukids"] }),
 	g_road4: g({ id: "g_road4", enemies: ["kskbot", "copipe"] }),
+	// 隠し狩場のレア（maps/sukima.ts の encounters.rare）
+	g_metal: g({
+		id: "g_metal",
+		enemies: ["metalngo"],
+		intro: "キラキラした　なにかが　あらわれた！",
+	}),
 	g_b1: g({
 		id: "g_b1",
 		enemies: ["natsuboss", "natsukids"],

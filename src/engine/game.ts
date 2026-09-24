@@ -552,7 +552,10 @@ export class Game {
 		) {
 			this.path = [];
 			this.pathTalk = null;
-			const g = enc.groups[Math.floor(Math.random() * enc.groups.length)];
+			const g =
+				enc.rare && Math.random() < enc.rare.rate
+					? enc.rare.group
+					: enc.groups[Math.floor(Math.random() * enc.groups.length)];
 			void this.runScript(async (s) => {
 				await s.battle(g);
 			});

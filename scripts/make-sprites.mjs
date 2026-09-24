@@ -4,6 +4,7 @@
 // - public/sprites/kiriko_botsu.png … ボツキリコ。キリコの歩行グラを灰色に沈めた差分 32x64
 // - public/sprites/phono.png        … ちいさな蓄音機（置物）16x16
 // - public/sprites/minors_*.png     … おんJマイナーズ（にぃちぇ・おんすちゃん・ンゴ姉・パン松・ヤヤポジ）32x64
+// - public/sprites/metalngo.png     … メタルンゴ（隠し狩場のレア敵。銀色の しずく）32x64
 //
 // 依存なし（zlib だけ）。ドット絵は下の文字の絵から作る。
 
@@ -632,6 +633,64 @@ walkSheet(
 		],
 	},
 	FEET_B,
+);
+
+// ───────────────── メタルンゴ（隠し狩場のレア敵） ─────────────────
+// 銀色の しずく。まるい目と ちいさな口、左上に光。2コマ目は すこし つぶれる。
+const METAL_BODY = [
+	"................",
+	"................",
+	".......KK.......",
+	"......KLSK......",
+	".....KLWSSK.....",
+	"....KLWSSSSK....",
+	"...KSLSSSSSSK...",
+	"..KSSSSSSSSSSK..",
+];
+const METAL_BOTTOM = [
+	".KSSSSSSSSSSSSK.",
+	".KDSSSSSSSSSSDK.",
+	"..KDDSSSSSSDDK..",
+	"...KKKKKKKKKK...",
+];
+walkSheet(
+	"metalngo.png",
+	{
+		K: hex("#2a2e3a"),
+		S: hex("#b8c2d0"),
+		L: hex("#e6edf5"),
+		W: hex("#ffffff"),
+		D: hex("#7c8698"),
+		E: hex("#1a1c24"),
+		M: hex("#4a5060"),
+	},
+	{
+		down: [
+			...METAL_BODY,
+			"..KSSESSSSESSK..",
+			".KSSSESSSSESSSK.",
+			".KSSSSSMMSSSSSK.",
+			".KSSSSSSSSSSSSK.",
+			...METAL_BOTTOM,
+		],
+		up: [
+			...METAL_BODY,
+			"..KSSSSSSSSSSK..",
+			".KSSSSSSSSSSSSK.",
+			".KSSSSSSSSSSSSK.",
+			".KSSSSSSSSSSSSK.",
+			...METAL_BOTTOM,
+		],
+		right: [
+			...METAL_BODY,
+			"..KSSSSSSESSEK..",
+			".KSSSSSSSESSEKK.",
+			".KSSSSSSSSSMMSK.",
+			".KSSSSSSSSSSSSK.",
+			...METAL_BOTTOM,
+		],
+	},
+	["..KKKKKKKKKKKK..", "................"],
 );
 
 // ───────────────── ボツキリコ ─────────────────
