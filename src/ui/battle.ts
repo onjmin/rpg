@@ -1148,10 +1148,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			f.guard = false;
 			if (f.buff > 0) f.buff--;
 		}
-		if (auto && !result) {
-			logEl.textContent = "オート中……（Bで　とめる）";
-			await sleep(250);
-		}
+		if (auto && !result) await sleep(250);
 	}
 	setAuto(false);
 
