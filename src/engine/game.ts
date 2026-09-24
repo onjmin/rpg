@@ -643,12 +643,24 @@ export class Game {
 		const cy = this.player.fy * TILE + TILE / 2 - height / 2;
 		// 画面下にメッセージ窓・ボタンが重なるので、少し上寄りに見せる
 		const bias = Math.min(height * 0.12, TILE * 2);
+		/*
+		 * いちばん上の段には 出入り口が置かれることがある（町の北口は y=0）。
+		 * そこが画面の上ぴったり、あるいは画面の外に出てしまうと、タップで歩いて行けない
+		 * （スマホではブラウザのバーのすぐ下にもなる）。半マスぶん 余白をあける。
+		 * とくに マップが画面より低いときは、上の bias をそのまま足すと
+		 * マップごと上へ押し出されて、いちばん上の段が画面から消えていた
+		 */
+		const topPad = TILE / 2;
+		/** マップが収まるとき、上下に残る余白（片側）。 */
+		const slack = Math.max(0, (height - mh) / 2);
 		this.camX =
 			mw <= width ? (mw - width) / 2 : Math.max(0, Math.min(mw - width, cx));
 		this.camY =
 			mh <= height
-				? (mh - height) / 2 + bias
-				: Math.max(0, Math.min(mh - height + bias, cy + bias));
+				? // 収まるとき：真ん中から bias だけ上へ寄せる。ただし上の余白は
+					// topPad を下回らせず、下がはみ出すほど（余白の合計を超えては）寄せない
+					-Math.min(2 * slack, Math.max(topPad, slack - bias))
+				: Math.max(-topPad, Math.min(mh - height + bias, cy + bias));
 		this.camX = this.screen.snap(this.camX);
 		this.camY = this.screen.snap(this.camY);
 	}
