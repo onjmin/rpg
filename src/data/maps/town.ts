@@ -636,7 +636,7 @@ const events: EventDef[] = [
 		"senju",
 		18,
 		10,
-		SPR.townsfolk,
+		SPR.senju,
 		async (s) => {
 			await N(s, "あ！今日土曜日ど！", "先住民");
 			if (!s.flag("nanj_in") || s.flag("akukin")) return;

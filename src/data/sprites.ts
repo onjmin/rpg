@@ -32,6 +32,8 @@ export const SPR = {
 	yayapoji: "pub:sprites/minors_yayapoji.png",
 	/** おんちゃん (o'ω'n)（一軍。rpgen no.1212「おんちゃん」の歩行シート） */
 	onchan: "sa:oLrlUq",
+	/** ポジハメ (*^◯^*)（ヤヤポジの もと。rpgen no.1040「ポジハメ2」。顔の はっきりした方） */
+	posihame: "sa:bC3ZP1",
 
 	// ── おんJ民・マッマ ──
 	j_yakiu: "sa:4rSOzo", // 野球民
@@ -50,10 +52,11 @@ export const SPR = {
 	j_cyclo: "sa:DUfPo9", // サイクロJ民
 	j_yosuko: "sa:C2hS8U", // 陽すこ民
 	mamma: "sa:rzXCtC", // J( ´ー`)し マッマ
+	senju: "sa:PLsNO9", // ( ‘ｊ’ ) 先住民（rpgen no.937「あ！今日土曜日ど！」。no.944 の sa:HJDVki は上向きにも顔があるので使わない）
 	puyu: "sa:DszPWT", // ぷゆゆ🥺（rpgen「PIEN」の歩行シート。sp:4IFEOzI は由来の都合で使わない）
 
 	// ── 住民（同梱の RPGEN DQ 風キャラ） ──
-	townsfolk: "pub:assets/rpgen/char/14-man-a.png", // 先住民・原住民の代わり
+	townsfolk: "pub:assets/rpgen/char/14-man-a.png", // 原住民の代わり（先住民は senju）
 	elder: "pub:assets/rpgen/char/03-elderly-a.png",
 	shopkeeper: "pub:assets/rpgen/char/02-merchant.png",
 	child: "pub:assets/rpgen/char/04-child.png",

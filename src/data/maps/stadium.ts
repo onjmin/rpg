@@ -24,7 +24,7 @@ import {
 	symCount,
 } from "../freedom";
 import { chest, warp } from "../helpers";
-import { yayapoji } from "../minors";
+import { posihame, yayapoji } from "../minors";
 import { SPR } from "../sprites";
 import { ks, phono, silent } from "../story";
 import { base, STADIUM, TOWN } from "../tiles";
@@ -495,6 +495,7 @@ export const stadium: MapDef = {
 
 		// ヤヤポジ（おんJマイナーズ。data/minors.ts）
 		yayapoji(20, 11),
+		posihame(20, 12),
 
 		// ── スコアボード（(10,2) から上を向いて調べる） ──
 		{ id: "score", x: 10, y: 1, trigger: "talk", run: scoreRun },
