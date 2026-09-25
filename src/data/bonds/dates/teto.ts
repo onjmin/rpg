@@ -91,7 +91,9 @@ export const date: DateDef | null = {
 
 				if (again) {
 					// 前スレの約束（「次は……1曲だけ、いっしょに　歌ってやる」）。ふたりで歌う
-					await s.narrate("テトが、もう　1本の　マイクを\nにぎった。");
+					await s.narrate(
+						"キリコが　マイクを　にぎると、\nテトも　もう1本を　にぎった。",
+					);
 					await s.say("kiriko", "……先輩も？");
 					await s.say("teto", "……1曲だけ、だ");
 					s.face("player", "up");

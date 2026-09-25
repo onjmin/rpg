@@ -502,7 +502,13 @@ const nanjBack = async (s: Story): Promise<void> => {
 	await s.say("teto", "……フランスパンを　なめるな");
 	await s.say("kiriko", "おんJ民。……いっしょに　来る？");
 	await s.say("nanj", "……アク禁　明けの　名無しに、\n席なんか　あらへんやろ");
-	await s.say("teto", "……控えなら、ボクの　となりが\nあいてる");
+	// テトが 控えなら「ボクの となり」。前に出ていれば 席の話だけ
+	await s.say(
+		"teto",
+		s.state.party.some((m) => m.id === "teto" && m.bench)
+			? "……控えなら、ボクの　となりが\nあいてる"
+			: "……控えの　席なら、\nまだ　あいてる",
+	);
 	await s.say("nanj", "……ほな、スタンド側で\n見とくわ");
 	s.hide("end_nanj");
 	s.join("nanj", { bench: true });
