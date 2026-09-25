@@ -1,10 +1,10 @@
 // 誕生スレ【安価】安価でボカロ作ろうぜ（序章・エンディング）。設計書 §11-1・§8-1・§8-12。
-// 序章: opening（安価 → 誕生 → おんJ民の冷やかし → キリコ vs おんJ民 → 蓄音機 →
-//        kskボット → おんJ民加入 → チュートリアル戦）。
+// 序章: opening（安価 → 誕生 → やきうの冷やかし → キリコ vs やきう → 蓄音機 →
+//        kskボット → やきう加入 → チュートリアル戦）。
 // 終章: last から (6,6) に着くと ending_ev（みんなが集まる → s.ending()）。
 //       住民の一言とまとめカードは、それまでの安価・返し方で変わる（data/threadlog.ts）。
 // クリア後: エンディングを見たら（ending_seen）下の扉が 管理人室へ（data/maps/admin.ts）。
-//         さとるに勝ったら モニターで 1000の先の5レス（monitorRun）。おんJ民は 控えで もどる（nanjEnd）。
+//         さとるに勝ったら モニターで 1000の先の5レス（monitorRun）。やきうは 控えで もどる（nanjEnd）。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { KIRIKO_DAY_J, kirikoDay } from "../days";
@@ -77,7 +77,7 @@ const opening = async (s: Story): Promise<void> => {
 	s.face("j_b", "player");
 	await J(s, "誕生日は　実質今日やな。8月18日や", "J民B");
 
-	// おんJ民の冷やかし（キリコ vs おんJ民）
+	// やきうの冷やかし（キリコ vs やきう）
 	s.se("door");
 	await s.shake(300);
 	s.set("onj_raid");
@@ -472,15 +472,15 @@ const monitorRun = async (s: Story): Promise<void> => {
 const onigiriLate = async (s: Story): Promise<void> => {
 	await s.narrate("キリコは　大きな　おにぎりを\nさしだした。");
 	await s.say("nanj", "……冷めとるやん");
-	await s.narrate("おんJ民は　ひとくちで　半分　食べた。");
+	await s.narrate("やきうは　ひとくちで　半分　食べた。");
 	await s.say("nanj", "……マッマの　おにぎり、\n塩　きつすぎやねん");
 	s.set("onigiri_done");
 };
 
-/** 控えの となり：テトと おんJ民の はじめての 顔あわせ。おんJ民が 控えで もどる。 */
+/** 控えの となり：テトと やきうの はじめての 顔あわせ。やきうが 控えで もどる。 */
 const nanjBack = async (s: Story): Promise<void> => {
 	await s.say("nanj", "名言、できたやん");
-	await s.say("teto", "……君が、おんJ民か");
+	await s.say("teto", "……君が、やきうか");
 	await s.say("nanj", "せや。キリコの　名付け親や");
 	await s.say("teto", "自称、だろ");
 	await s.say("nanj", "……なんで　知っとんねん");
@@ -492,15 +492,13 @@ const nanjBack = async (s: Story): Promise<void> => {
 	await s.say("kiriko", "「31」とも　書くンゴ");
 	await s.say("nanj", "……いらんこと　教えてもうたな");
 	await s.say("teto", "……ふん");
-	await s.narrate(
-		"テトは　フランスパンを　ちぎって、\nおんJ民に　つきだした。",
-	);
+	await s.narrate("テトは　フランスパンを　ちぎって、\nやきうに　つきだした。");
 	await s.say("nanj", "……なんや");
 	await s.say("teto", "はんぶんこだ。\n……べ、別に　余っただけだ");
-	await s.narrate("おんJ民は　パンを　かじった。");
+	await s.narrate("やきうは　パンを　かじった。");
 	await s.say("nanj", "……固っ");
 	await s.say("teto", "……フランスパンを　なめるな");
-	await s.say("kiriko", "おんJ民。……いっしょに　来る？");
+	await s.say("kiriko", "やきう。……いっしょに　来る？");
 	await s.say("nanj", "……アク禁　明けの　名無しに、\n席なんか　あらへんやろ");
 	// テトが 控えなら「ボクの となり」。前に出ていれば 席の話だけ
 	await s.say(
@@ -515,14 +513,14 @@ const nanjBack = async (s: Story): Promise<void> => {
 	s.set("nanj_back");
 	s.se("item");
 	await s.narrate(
-		"おんJ民が　なかまに　もどった！\nおんJ民は　控えで　見まもっている。",
+		"やきうが　なかまに　もどった！\nやきうは　控えで　見まもっている。",
 	);
 	await s.say("nanj", "……こっち、せまいな");
 	await s.say("teto", "文句　言うな");
 };
 
 /**
- * クリア後の おんJ民（エンディングの輪の まま）。
+ * クリア後の やきう（エンディングの輪の まま）。
  * 3回目に話すか、テトを 前に出して話すと、控えで 仲間に もどる（本編のあいだは 第四章から もどらない）。
  */
 const nanjEnd = async (s: Story): Promise<void> => {
@@ -551,7 +549,7 @@ const events: EventDef[] = [
 		run: ending,
 	},
 
-	// おんJ民（オープニングで扉から乗りこんでくる。onj_raid が立ってから出る）
+	// やきう（オープニングで扉から乗りこんでくる。onj_raid が立ってから出る）
 	npc("nanj", 6, 9, "char:nanj", async (s) => s.say("nanj", "……"), {
 		dir: "up",
 		when: (st) => !!st.flags.onj_raid && !st.flags.nanj_in,

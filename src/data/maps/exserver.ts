@@ -31,7 +31,7 @@ const COURSES: Course[] = [
 		label: "腕だめし　3戦",
 		title: "なかまとの　腕だめし",
 		groups: [
-			{ group: "g_rival_nanj", name: "おんJ民" },
+			{ group: "g_rival_nanj", name: "やきう" },
 			{ group: "g_rival_roze", name: "ロゼ" },
 			{ group: "g_rival_teto", name: "テト" },
 		],

@@ -1,6 +1,6 @@
 // なんでも実況J町（拠点）。設計書 §11-2・§8-2・§8-7・§8-8・§9。
 // 第一章: ch1_intro・勢い欄（古参ニキ）・ボイスニキ。
-// 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → おんJ民アク禁）、
+// 第四章: night_ev（前夜祭 → サイレントバルス → 負けイベント → やきうアク禁）、
 //         沈黙期間（住民が消える）→ マッマ → テト登場 → スタジオへ。
 // 古参ニキは倉庫での返し方（reply_kako。kakolog の kosan_k）をナイター前と前夜祭で拾う。
 // ぷゆゆ🥺: 小花のそば (9,11) の任意の寄り道（scratchpad/puyuyu/spec.md）。第一章の到着で声だけ聞かせる。
@@ -29,7 +29,7 @@ const N = (s: Story, text: string, name: string) => s.say(null, text, { name });
 const flag = (name: string) => (st: GameState) => !!st.flags[name];
 /** 「昼」の住民（前夜祭までは居て、負けイベントのあと消える）。 */
 const day = (st: GameState) => !silent(st);
-/** おんJ民が隊列にいる（アク禁の前）。 */
+/** やきうが隊列にいる（アク禁の前）。 */
 const nanjHere = (st: GameState) => !!st.flags.nanj_in && !st.flags.akukin;
 
 /** 数のフラグを1つ進め、進める前の値を返す（admin.ts の bump と同じ形）。 */
@@ -227,10 +227,10 @@ const nightEv = async (s: Story): Promise<void> => {
 	);
 	await s.say("roze", "わたしと……おなじ……！　キリコ！");
 	await s.say("nanj", "――――！　――――！");
-	await s.narrate("おんJ民の　口もとに、【アク禁】の　ふだが\nはられている。");
+	await s.narrate("やきうの　口もとに、【アク禁】の　ふだが\nはられている。");
 	await s.say("feris", "書きこめないんだ……");
 	await s.narrate(
-		"おんJ民は　勢い欄を　ゆびさし、\nキリコの　せなかを　おした。",
+		"やきうは　勢い欄を　ゆびさし、\nキリコの　せなかを　おした。",
 	);
 	await s.narrate(
 		"「ここは　ワイが　見張っとく」――\nそう　言っている　ようだった。",
@@ -280,26 +280,26 @@ const mammaNight = async (s: Story): Promise<void> => {
 	await s.warp("studio", 7, 6, "up"); // ここで終了。スタジオの rec_ev が続く
 };
 
-// ── もうひとつの おにぎり（声が もどってから 恩赦まで。勢い欄の前の おんJ民 → マッマ → おんJ民） ──
-// マッマと おんJ民の間がらは ほのめかすだけ（「息子」「弟」とは 書かない）。
+// ── もうひとつの おにぎり（声が もどってから 恩赦まで。勢い欄の前の やきう → マッマ → やきう） ──
+// マッマと やきうの間がらは ほのめかすだけ（「息子」「弟」とは 書かない）。
 
-/** 第一〜三章の前ふり（おんJ民が 隊列に いて、3回目から。1回だけ）。 */
+/** 第一〜三章の前ふり（やきうが 隊列に いて、3回目から。1回だけ）。 */
 const mammaCup = async (s: Story): Promise<void> => {
 	await J(s, "……そっちの　あんたも。\nちゃんと　食べとるんか", "マッマ");
 	await s.say("nanj", "……お、おう。\n食べとる　食べとる");
 	await J(s, "カップめんは、食べたうちに\n入らんで", "マッマ");
 	await s.say("nanj", "…………");
-	await s.say("kiriko", "おんJ民、声が　ちいさいンゴ");
+	await s.say("kiriko", "やきう、声が　ちいさいンゴ");
 	await s.say("nanj", "う、うっさいわ");
 	s.set("mamma_cup");
 };
 
-/** おんJ民の おなかが 鳴ったあと（aku_mimai）。大きい おにぎりを あずかる。 */
+/** やきうの おなかが 鳴ったあと（aku_mimai）。大きい おにぎりを あずかる。 */
 const mammaOnigiri = async (s: Story): Promise<void> => {
 	await s.narrate("マッマは　もうひとつ、\nおにぎりを　にぎりはじめた。");
 	await s.narrate("大きい。キリコの　ぶんより、\nずっと　大きい。");
 	await s.narrate("マッマは　だまって　それを\nキリコの　手に　のせた。");
-	s.face("mamma", "right"); // 広場（勢い欄の前の おんJ民）のほう
+	s.face("mamma", "right"); // 広場（勢い欄の前の やきう）のほう
 	await s.narrate("それから、広場の　ほうを　見た。");
 	s.se("item");
 	s.set("onigiri_got");
@@ -433,7 +433,7 @@ const onigiriHand = async (s: Story): Promise<void> => {
 	// マッマの家（左上）のほう。右から話したときは 上を見て、くるりと むくのが 見えるように
 	s.face("nanj_aku", away === "left" ? "up" : "left");
 	await s.narrate(
-		"おんJ民は　おにぎりを　見て、\nそれから　マッマの　家を　見た。",
+		"やきうは　おにぎりを　見て、\nそれから　マッマの　家を　見た。",
 	);
 	s.face("nanj_aku", away);
 	await s.narrate("……くるりと、せなかを　むけた。");
@@ -442,10 +442,10 @@ const onigiriHand = async (s: Story): Promise<void> => {
 	await s.narrate("しばらく、肩が　ゆれていた。");
 	s.face("nanj_aku", "player");
 	await s.narrate(
-		"ふりむいた　おんJ民の　口もとに、\nごはんつぶが　ついている。",
+		"ふりむいた　やきうの　口もとに、\nごはんつぶが　ついている。",
 	);
 	await s.say("kiriko", "……ついてるンゴ");
-	await s.narrate("おんJ民は　あわてて　口を　ぬぐって、\n親指を　立てた。");
+	await s.narrate("やきうは　あわてて　口を　ぬぐって、\n親指を　立てた。");
 	await s.narrate("【アク禁】の　ふだの　すみが、\nすこし　しめっていた。");
 	s.set("onigiri_done"); // 洪水の >>998 が かわる（threadlog の floodWaves）
 };
@@ -453,7 +453,7 @@ const onigiriHand = async (s: Story): Promise<void> => {
 const nanjAku = async (s: Story): Promise<void> => {
 	await s.say("nanj", "――――！");
 	if (silent(s.state)) {
-		await s.narrate("おんJ民は　勢い欄を　ゆびさして\n親指を　立てた。");
+		await s.narrate("やきうは　勢い欄を　ゆびさして\n親指を　立てた。");
 		return;
 	}
 	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) {
@@ -461,11 +461,11 @@ const nanjAku = async (s: Story): Promise<void> => {
 		return;
 	}
 	await s.narrate(
-		"おんJ民は　キリコの　声を　聞いて\nうれしそうに　親指を　立てた。",
+		"やきうは　キリコの　声を　聞いて\nうれしそうに　親指を　立てた。",
 	);
 	await s.say("kiriko", "待ってて。……かならず　完走するンゴ");
 	if (!s.flag("onigiri_got")) {
-		await s.narrate("……おんJ民の　おなかが、\nぐう、と　鳴った。");
+		await s.narrate("……やきうの　おなかが、\nぐう、と　鳴った。");
 		s.set("aku_mimai");
 	}
 };
@@ -615,7 +615,7 @@ const puyuRec = async (s: Story, how: Puyu): Promise<void> => {
 	s.set("puyu_back");
 	await ks(s, "……ぷゆゆの　声も、\n蓄音させて　ほしい");
 	await P(s, "ぼくちんの　こえ？\n……ぷゆうゆ🥺");
-	// おんJ民のおでかけと同じ形（wait で窓を閉じると、場面のとちゅうで 十字キーが見える）
+	// やきうのおでかけと同じ形（wait で窓を閉じると、場面のとちゅうで 十字キーが見える）
 	s.se("save");
 	await s.narrate("蓄音機が　くるくる　まわって、\nちいさな　声を　ためた。");
 	s.set("puyu_rec");
@@ -638,7 +638,7 @@ const puyuTalk = async (s: Story): Promise<void> => {
 			await P(s, PUYU_AGAIN[how]);
 			return;
 		}
-		// 2026-08-18 は火曜日（先住民の「土曜日ど！」→ おんJ民「火曜日やぞ」と同じ日）
+		// 2026-08-18 は火曜日（先住民の「土曜日ど！」→ やきう「火曜日やぞ」と同じ日）
 		await P(s, "きょうは　火曜日だから\nぷゆってる🥺");
 		await ks(s, "……曜日、関係あるンゴ？");
 		await P(s, "ないゆ🥺");
@@ -705,7 +705,7 @@ const events: EventDef[] = [
 		run: nightEv,
 	},
 
-	// 北口 → スレ街道（勢い欄を見るまでは おんJ民が止める）
+	// 北口 → スレ街道（勢い欄を見るまでは やきうが止める）
 	...[0, 1].map(
 		(i): EventDef => ({
 			id: `to_road_${i}`,
@@ -793,7 +793,7 @@ const events: EventDef[] = [
 			if (!s.flag("nanj_in") || s.flag("akukin")) return;
 			// 遊んでいる端末が ほんとうに土曜日なら、言いかけて やめる（data/weekday.ts）
 			if (weekday() === 6)
-				await s.narrate("おんJ民は　なにか　言いかけて、\nやめた。");
+				await s.narrate("やきうは　なにか　言いかけて、\nやめた。");
 			else await s.say("nanj", "火曜日やぞ");
 		},
 		{ wander: true, when: day },
@@ -852,7 +852,7 @@ const events: EventDef[] = [
 		},
 	},
 
-	// 第四章：サイレントバルス・アク禁のおんJ民・文字化けの住民・テト
+	// 第四章：サイレントバルス・アク禁のやきう・文字化けの住民・テト
 	npc(
 		"balus",
 		12,

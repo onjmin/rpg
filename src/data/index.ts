@@ -63,7 +63,7 @@ export const data: GameData = {
 		flags: { ch: 0, res: 0, play_track: true },
 	},
 	// 古いセーブ（たたかう仲間が4人）で先に控えへ回す順＝本編で控えに回る順
-	// （第二章でおんJ民、スタジオでテト）
+	// （第二章でやきう、スタジオでテト）
 	benchFirst: ["nanj", "teto"],
 	debug: debugStart,
 	credits: [

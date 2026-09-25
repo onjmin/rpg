@@ -96,7 +96,7 @@ export const DAYS: DayDef[] = [
 			await s.say("kiriko", "……ろうそく、ンゴ？");
 			await s.say("feris", "……まにあった〜");
 			await s.narrate("キリコは　ハンドルを　まわして、\nその　音を　ためた。");
-			// 仲間の口出しは、テトか おんJ民の どちらか1つと、ロゼだけ
+			// 仲間の口出しは、テトか やきうの どちらか1つと、ロゼだけ
 			if (inParty(st, "teto")) {
 				await s.narrate(
 					"テトが　フランスパンを　半分に　わって、\nだまって　キリコに　よこした。",

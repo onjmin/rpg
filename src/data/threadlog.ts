@@ -310,7 +310,7 @@ export const floodWaves = (st: GameState): FloodWave[] => {
 		},
 		wave2(f),
 		{
-			// おにぎりを 届けていれば、恩赦のあとの おんJ民の 最初のレスが その礼（town の nanjAku）
+			// おにぎりを 届けていれば、恩赦のあとの やきうの 最初のレスが その礼（town の nanjAku）
 			screen: f.onigiri_done
 				? ">>998 くっさ。……けど　ごちそうさん\n>>999 ワイらが　もろたで！"
 				: ">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
@@ -428,7 +428,7 @@ const botsuVoice = (st: GameState): string =>
 		"……こんど、角刈りも\nためしてほしいンゴ",
 	);
 
-/** おんJ民（「次スレ　立てといたで」のあと）：外野席デートを見逃したときだけ。 */
+/** やきう（「次スレ　立てといたで」のあと）：外野席デートを見逃したときだけ。 */
 const nanjDate = (st: GameState): string | null =>
 	st.flags.date_nanj ? null : "……ナイターは、次スレで\nいっしょに　行こな";
 
@@ -492,7 +492,7 @@ const shibariSong = (st: GameState): string | null =>
 		? "……キリコ、ここまで　ずっと\nなぐってた　だけアル？"
 		: null;
 
-/** 低レベルで ボツキリコに勝つ（おんJ民が気づく）。 */
+/** 低レベルで ボツキリコに勝つ（やきうが気づく）。 */
 const shibariLv = (st: GameState): string | null =>
 	shibari(st.flags).includes("lv")
 		? "……いま　気づいたけど、\nワイら　めっちゃ　弱ない？"
@@ -558,7 +558,7 @@ const DATES: [id: string, name: string][] = [
 	["roze", "ロゼ"],
 	["feris", "フェリス"],
 	["teto", "テト"],
-	["nanj", "おんJ民"],
+	["nanj", "やきう"],
 ];
 
 /** 自分の道（>>101〜1000）。当てはまらない行は出さない。 */

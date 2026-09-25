@@ -101,14 +101,14 @@ const CLEAR: Flags = {
 type Member = { id: string; bench?: boolean };
 const P1: Member[] = [{ id: "kiriko" }, { id: "nanj" }];
 const P2: Member[] = [...P1, { id: "roze" }];
-// 過去ログ倉庫で おんJ民が控えに回り、フェリスが入る
+// 過去ログ倉庫で やきうが控えに回り、フェリスが入る
 const P3: Member[] = [
 	{ id: "kiriko" },
 	{ id: "roze" },
 	{ id: "feris" },
 	{ id: "nanj", bench: true },
 ];
-// 前夜祭の夜（town の night_ev）で おんJ民が抜ける（クリア後に もどるまで）
+// 前夜祭の夜（town の night_ev）で やきうが抜ける（クリア後に もどるまで）
 const P4: Member[] = [{ id: "kiriko" }, { id: "roze" }, { id: "feris" }];
 // 録音（studio の rec_ev）で テトが控えに入る
 const P5: Member[] = [...P4, { id: "teto", bench: true }];

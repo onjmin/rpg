@@ -44,7 +44,7 @@ export const skills: Record<string, SkillDef> = {
 		// 蓄音機の 音の波が ひろがる
 		fx: { kind: "ring", color: "#ffcf4a" },
 	}),
-	// おんJ民・フェリスは UTAU の声が無いので「うたう」を持たない（cast.ts の attackTexts で演出）
+	// やきう・フェリスは UTAU の声が無いので「うたう」を持たない（cast.ts の attackTexts で演出）
 	// ロゼ
 	floral: sk({
 		id: "floral",
@@ -462,7 +462,7 @@ export const enemies: Record<string, EnemyDef> = {
 	// 序章: キリコ Lv1 ひとりで。うたは まだ ない（こうげきだけ）。オートで 5 ターン前後
 	rival_nanj: en({
 		id: "rival_nanj",
-		name: "おんJ民",
+		name: "やきう",
 		sprite: cast.nanj.walk,
 		hp: 18,
 		atk: 8,
@@ -490,7 +490,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「ほーん、で？」"),
 		],
 	}),
-	// 第一章: キリコ＋おんJ民 Lv2（キリコのうたは ワカサギつりだけ）。4 ターン前後
+	// 第一章: キリコ＋やきう Lv2（キリコのうたは ワカサギつりだけ）。4 ターン前後
 	rival_roze: en({
 		id: "rival_roze",
 		name: "ロゼ",
@@ -516,7 +516,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「本物の　声か、聞かせるアル」"),
 		],
 	}),
-	// 第二章 B2: ムッジェといっしょに。キリコ／おんJ民／ロゼ Lv6 前後。フェリスのはねは フェリスが落とす
+	// 第二章 B2: ムッジェといっしょに。キリコ／やきう／ロゼ Lv6 前後。フェリスのはねは フェリスが落とす
 	rival_feris: en({
 		id: "rival_feris",
 		name: "フェリス",
@@ -562,7 +562,7 @@ export const enemies: Record<string, EnemyDef> = {
 	// F1・F2 はテトを入れた3人で勝率 6〜7 割（ふつう）。入れない3人（キリコ・ロゼ・フェリス）だと 4 割ほど
 	// （むずかしい。手動で 5〜6 割、道具を使えば 9 割）。急いで来た人（1 レベルほど下）もテト入り・手動なら 4〜5 割。
 	// B1〜B3 の経験値の合計は freedom.ts の BOSS_EXP と同じにする（負けて通してもらったときと そろえる）。
-	// B1: キリコ／おんJ民／ロゼ Lv4 前後で 7 ターン前後。50＋キッズ 8 ＝ 58
+	// B1: キリコ／やきう／ロゼ Lv4 前後で 7 ターン前後。50＋キッズ 8 ＝ 58
 	natsuboss: en({
 		id: "natsuboss",
 		name: "夏休みキッズ番長",
@@ -597,7 +597,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "{user}「ホゲェ……」　さびしそうに　ないている。"),
 		],
 	}),
-	// B3: キリコ／ロゼ／フェリス Lv7〜8 で 7〜8 ターン。おんJ民を入れもどすと少し（ロゼの代わり）〜
+	// B3: キリコ／ロゼ／フェリス Lv7〜8 で 7〜8 ターン。やきうを入れもどすと少し（ロゼの代わり）〜
 	// かなり（フェリスの代わり）むずかしくなる。113＋ピッチャー 9 ＝ 122
 	kantoku: en({
 		id: "kantoku",
@@ -996,7 +996,7 @@ export const items: Record<string, ItemDef> = {
 	memo_nanj: it({
 		id: "memo_nanj",
 		name: "ホームランボール",
-		desc: "おんJ民と　みた　試合の　おもいで。",
+		desc: "やきうと　みた　試合の　おもいで。",
 		key: true,
 	}),
 	rec_botsu: it({

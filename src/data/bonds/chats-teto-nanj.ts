@@ -1,6 +1,6 @@
-// 仲間との親睦：テトとおんJ民の「なかまと はなす」とプロフィール。
+// 仲間との親睦：テトとやきうの「なかまと はなす」とプロフィール。
 // チャットは上から順に調べ、最初に当てはまったものを使う（上ほど遅い時期・特別な条件、最後がフォールバック）。
-// おんJ民は第四章で抜けるので、序章〜第三章の分と、クリア後に控えで もどってからの分（N0）。
+// やきうは第四章で抜けるので、序章〜第三章の分と、クリア後に控えで もどってからの分（N0）。
 // テトは録音後（第四章）〜終章と、クリア後。
 
 import { bondOf } from "../../engine/bonds";
@@ -34,14 +34,14 @@ export const skits: SkitDef[] = [];
 export const chats: ChatDef[] = [
 	// ───────── テト ─────────
 	{
-		// T0' クリア後・管理人に会ったあと、おんJ民が まだ もどっていないとき
-		// （誕生スレの おんJ民。テトを前に出して話すと もどる。thread.ts の end_nanj）
+		// T0' クリア後・管理人に会ったあと、やきうが まだ もどっていないとき
+		// （誕生スレの やきう。テトを前に出して話すと もどる。thread.ts の end_nanj）
 		who: "teto",
 		when: (st) =>
 			!!st.flags.clear && !!st.flags.satoru_met && !st.flags.nanj_back,
 		run: async (s) => {
 			await s.say("teto", "……あの　名無し、さっきから\nこっちばかり　見てるな");
-			await s.say("kiriko", "おんJ民ンゴ");
+			await s.say("kiriko", "やきうンゴ");
 			await s.say("teto", "……ふうん");
 		},
 	},
@@ -113,7 +113,7 @@ export const chats: ChatDef[] = [
 		},
 	},
 
-	// ───────── おんJ民 ─────────
+	// ───────── やきう ─────────
 	{
 		// N0 クリア後（控えに もどってから。thread.ts の end_nanj）
 		who: "nanj",
@@ -248,7 +248,7 @@ export const profiles: ProfileDef[] = [
 		pages: [
 			{
 				bond: 0,
-				title: "おんJ民",
+				title: "やきう",
 				lines: [
 					"名無しのおんJ民。黄色い、やきうのすがた。",
 					"一人称は「ワイ」。しゃべり方は猛虎弁（〜やで・草・サンガツ）。",

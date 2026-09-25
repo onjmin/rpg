@@ -74,7 +74,7 @@ const reiRun = async (s: Story): Promise<void> => {
 	await s.say("teto", "考えるのは　あとだ。行けば　わかる");
 	await s.say(
 		"rei",
-		"それと、おんJ民さんの　アク禁。\n当機から　恩赦を　申請しておきます",
+		"それと、やきうさんの　アク禁。\n当機から　恩赦を　申請しておきます",
 	);
 	await s.say(
 		"rei",

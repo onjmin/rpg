@@ -236,7 +236,7 @@ const CHATS: ReiChat[] = [
 		},
 	},
 	{
-		// 完走後、おんJ民が もどってから
+		// 完走後、やきうが もどってから
 		id: "nanj",
 		with: ["nanj"],
 		when: (st) => !!st.flags.clear,

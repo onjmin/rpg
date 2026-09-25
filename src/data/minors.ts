@@ -7,7 +7,7 @@
 // 総選挙は1票だけ（vote）。入れた子は、次に話しかけたとき1回だけ ひとこと足す（vote_thx）。
 // 本筋との からみ：
 // - 話の進み（沈黙のあいだ・声がもどったあと・完走のあと）で、1回だけの ひとことが出る（stageOnce）
-// - たたかう仲間（ロゼ・フェリス・テト・おんJ民）が いると、口をはさむ
+// - たたかう仲間（ロゼ・フェリス・テト・やきう）が いると、口をはさむ
 // - 2回目からは、その子の 雑談（仲間の口出しつき）を1本ずつ（chat）。ぜんぶ見たら いつもの ひとこと
 // - 遊んでいる端末の日付（正月・クリスマスなど）で、期間限定の ひとことに変わる（weekday.ts の season）
 // - 会った子は 終章の レスの洪水（>>995〜>>997）に 書きこむ（threadlog.ts の MINOR_POSTS）
@@ -22,7 +22,7 @@ import { bySeason, type Season, weekday } from "./weekday";
 /** 名前欄だけの話し手（J民ではないので 白い名前欄・読み上げなし）。 */
 const N = (s: Story, name: string, text: string) => s.say(null, text, { name });
 
-/** その仲間が いま たたかう仲間に いる（控えや、おんJ民の アク禁中は いない）。 */
+/** その仲間が いま たたかう仲間に いる（控えや、やきうの アク禁中は いない）。 */
 const active = (st: GameState, id: string): boolean =>
 	!(id === "nanj" && st.flags.akukin) &&
 	st.party.some((m) => m.id === id && !m.bench);

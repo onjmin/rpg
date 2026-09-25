@@ -3,7 +3,7 @@
 // ランダムエンカウントはなし。
 // 自由度（scratchpad/freedom/spec.md）：シンボルに「たたかう／レスする／スルー」（F3-3）、
 // 監督は負けても進む（F4。3回で雨天コールド）、代打と名言その3を安価で記録（F1）、
-// おんJ民のデートの予告（F5）。
+// やきうのデートの予告（F5）。
 
 import { bondOf } from "../../engine/bonds";
 import type {
@@ -149,7 +149,7 @@ const loseB3 = async (s: Story, n: number): Promise<void> => {
 	}
 };
 
-/** 名言チャレンジ その3 への おんJ民の返し（MEIGEN[2] の順）。 */
+/** 名言チャレンジ その3 への やきうの返し（MEIGEN[2] の順）。 */
 const REACT3 = [
 	"それは　名言やなくて　宣言や",
 	"それ、監督の　持ちネタやんけ",

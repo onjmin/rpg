@@ -70,7 +70,7 @@ const intro = async (s: Story): Promise<void> => {
 // ───────────────── 矢野さとる ─────────────────
 
 const satoruRun = async (s: Story): Promise<void> => {
-	// 1回だけの ひとこと（控えに もどった おんJ民・1000の先の5レス）。流したら いつもの流れへ
+	// 1回だけの ひとこと（控えに もどった やきう・1000の先の5レス）。流したら いつもの流れへ
 	if (s.state.party.some((m) => m.id === "nanj") && !s.flag("satoru_onsha")) {
 		s.set("satoru_onsha");
 		await S(s, "お、ひとり　ふえとるねえ。\nにぎやかで　ええね。");

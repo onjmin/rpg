@@ -1,7 +1,7 @@
 // 過去ログ倉庫（第二章）。設計書 §8-5・§11-4。
 // 落ちたスレが流れつく倉庫。本棚の前で「……ンゴ……」の伏線（whisper）→ ロゼが本棚をどかす →
 // 蓄音機（B2 前のセーブ）→ 奥の間でムッジェの相手をしていたフェリス → やきうを見てかんちがい →
-// B2（ムッジェ＆フェリス）→ 和解してフェリス加入（おんJ民は自分から控えへ）→ 町へ浮上（600/1000）。rival-joins.md §3。
+// B2（ムッジェ＆フェリス）→ 和解してフェリス加入（やきうは自分から控えへ）→ 町へ浮上（600/1000）。rival-joins.md §3。
 // 自由度（scratchpad/freedom/spec.md）：入口で古参ニキに「どう返す？」（F3-2・reply_kako）、
 // B2 は負けても進む（F4。once なし・b2_met で短い前置き）、名言チャレンジ その2（F1・meigen2）。
 // 隠し（知らせない）：ヒナリーの　お勉強（hinary → obenkyo）、名無しの　ログ（北東の空き部屋の棚 (20,2)）。
@@ -315,14 +315,14 @@ const b2After = async (s: Story): Promise<void> => {
 		"feris",
 		"「また　あそびに　きてな」だって〜。\n私も　いっしょに　行っていい？",
 	);
-	// たたかって歩くのは3人まで。おんJ民が自分から控えへ（大先輩に席をゆずる。三章のスタジアムへの前ふり）
+	// たたかって歩くのは3人まで。やきうが自分から控えへ（大先輩に席をゆずる。三章のスタジアムへの前ふり）
 	// 先に bench してから join する（join は たたかう仲間の平均レベルで入る）
 	await s.say(
 		"nanj",
 		"大先輩の　たのみや、ことわれんわ。\n……ほな、ワイは　一歩　下がっとくで",
 	);
 	await s.say("nanj", "ワイは　スタンド側や。\n後ろから　応援しとくで");
-	await ks(s, "……おんJ民、いなく　なっちゃうンゴ？");
+	await ks(s, "……やきう、いなく　なっちゃうンゴ？");
 	await s.say("nanj", "なるかいな。声かけたら　すぐ\nグラウンドに　降りたるわ");
 	await s.say("feris", "……やきうくん、ありがとね〜");
 	s.bench("nanj");
@@ -331,7 +331,7 @@ const b2After = async (s: Story): Promise<void> => {
 	s.set("feris_in");
 	s.se("item");
 	await s.narrate(
-		"フェリスが　なかまに　なった！\nおんJ民は　控えに　まわった。",
+		"フェリスが　なかまに　なった！\nやきうは　控えに　まわった。",
 	);
 	await benchHint(s);
 	s.set("b2");
@@ -477,8 +477,8 @@ const hinary = npc(
 
 // ───────────────── 名無しの　ログ（隠し。北東の空き部屋の奥の棚） ─────────────────
 // 本棚をどけたあと〜終章。仲間の顔ぶれで3段（フラグだけで分ける）。kako_2015 = 1|2|3。
-// (i) フェリスがまだ → おんJ民が棚の前に立つ。(ii) フェリスが仲間でおんJ民が控え →
-// 読む（おんJ民がてれる）。(iii) 録音のあと → 読む（おんJ民はいない）。
+// (i) フェリスがまだ → やきうが棚の前に立つ。(ii) フェリスが仲間でやきうが控え →
+// 読む（やきうがてれる）。(iii) 録音のあと → 読む（やきうはいない）。
 // 2以上で読んだあとの一言。エンディング（thread.ts）が 2以上を拾う。
 // DIGS には入れない（rec_kako の条件が変わる）。dig_ にもしない（次スレへ持ち越すと (i) が飛ぶ）。
 
@@ -515,7 +515,7 @@ const nanashiLog: EventDef = {
 			await s.narrate("「フェリスおったよな」。\n……いまも、ちゃんと　読める。");
 			return;
 		}
-		// (i) フェリスがまだ（B1〜B2）：おんJ民が読ませない
+		// (i) フェリスがまだ（B1〜B2）：やきうが読ませない
 		if (!s.flag("feris_in")) {
 			if (k === 1) await s.say("nanj", "……ほっとき　言うたやろ");
 			else {
@@ -524,11 +524,11 @@ const nanashiLog: EventDef = {
 				await ks(s, "……黒歴史ンゴ？");
 				await s.say("nanj", "ちゃうわ");
 			}
-			await s.narrate("おんJ民が、棚の　前に　立った。");
+			await s.narrate("やきうが、棚の　前に　立った。");
 			s.set("kako_2015", 1);
 			return;
 		}
-		// (ii) B2〜アク禁（フェリスが仲間、おんJ民は控え）
+		// (ii) B2〜アク禁（フェリスが仲間、やきうは控え）
 		if (s.flag("nanj_in") && !s.flag("akukin")) {
 			if (!k) await s.narrate(LOG_SHELF);
 			await s.say(
@@ -538,9 +538,9 @@ const nanashiLog: EventDef = {
 					: "……古いログなんか　ほっとき。\nほこり　すごいで",
 			);
 			await logOpen(s);
-			await s.narrate("キリコは　おんJ民を\nふりかえった。");
+			await s.narrate("キリコは　やきうを\nふりかえった。");
 			await s.say("nanj", "……名無しは　いっぱい　おるやろ");
-			await ks(s, "おんJ民、耳が　赤いンゴ");
+			await ks(s, "やきう、耳が　赤いンゴ");
 			await s.say("nanj", "……倉庫が　あついんや");
 			// 「過去ログ倉庫は　ひんやりして」（ロゼの「なかまと　はなす」R7）
 			await s.say("roze", "倉庫は　ひんやりアル");
@@ -549,7 +549,7 @@ const nanashiLog: EventDef = {
 			s.set("kako_2015", 2);
 			return;
 		}
-		// (iii) 録音のあと（おんJ民はいない）
+		// (iii) 録音のあと（やきうはいない）
 		await s.narrate(LOG_SHELF);
 		await logOpen(s);
 		await s.say("roze", "名無しは　いっぱい　いるアル");
