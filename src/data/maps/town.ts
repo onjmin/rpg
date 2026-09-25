@@ -419,23 +419,23 @@ const igo = async (s: Story): Promise<void> => {
 /** マッマの おにぎりを 届ける（もうひとつの おにぎり）。テトとの 初対面は 誕生スレに とっておく。 */
 const onigiriHand = async (s: Story): Promise<void> => {
 	await s.narrate("キリコは　大きな　おにぎりを\nさしだした。");
-	s.face("nanj_aku", "left"); // マッマの家のほう
-	await s.narrate(
-		"おんJ民は　おにぎりを　見て、\nそれから　マッマの　家を　見た。",
-	);
-	// せなかを むける（キリコから見て 奥のほう）
+	// せなかを むける向き（キリコから見て 奥のほう）
 	const dx = 12 - s.state.x;
 	const dy = 8 - s.state.y;
-	s.face(
-		"nanj_aku",
+	const away: Dir =
 		Math.abs(dx) > Math.abs(dy)
 			? dx > 0
 				? "right"
 				: "left"
 			: dy > 0
 				? "down"
-				: "up",
+				: "up";
+	// マッマの家（左上）のほう。右から話したときは 上を見て、くるりと むくのが 見えるように
+	s.face("nanj_aku", away === "left" ? "up" : "left");
+	await s.narrate(
+		"おんJ民は　おにぎりを　見て、\nそれから　マッマの　家を　見た。",
 	);
+	s.face("nanj_aku", away);
 	await s.narrate("……くるりと、せなかを　むけた。");
 	await s.narrate("せなかごしに、アク禁の　ふだを\nずらす　音が　した。");
 	await s.wait(800);

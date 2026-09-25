@@ -272,7 +272,7 @@ const wave2 = (f: Flags): FloodWave => {
 /**
  * 恩赦のあとのレスの洪水。流れていくレスは、1波につき1つしか蓄音できない
  * （拾わなかった声は そのまま流れる）。変わるのは >>992・>>994 の本文と、
- * >>995〜>>997 に書きこむ おんJマイナーズ（会った子だけ）。
+ * >>995〜>>997 に書きこむ おんJマイナーズ（会った子だけ）と、>>998（onigiri_done）。
  */
 export const floodWaves = (st: GameState): FloodWave[] => {
 	const f = st.flags;
