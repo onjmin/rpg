@@ -41,6 +41,8 @@ const recEv: Script = async (s) => {
 	s.set("rec");
 	await s.say("kiriko", "……こえ、出る……出るンゴ！");
 	await s.narrate("うすれていた　足もとに、色が　もどってきた。");
+	// 沈黙期間の町で つないだ手（town の rozeHand）
+	if (s.flag("roze_hand")) await s.narrate("ロゼが、そっと　手を　はなした。");
 	await s.say("teto", "声は　消えないよ。だれかが　ためて、\nまた　鳴らせばね");
 	// ── 腕だめし（rival-joins §4）。勝っても負けても話は進む（canLose） ──
 	await s.say(

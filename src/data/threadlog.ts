@@ -71,6 +71,8 @@ export const FLAG_DOMAIN: Record<
 	play_song: [undefined, 1],
 	f2_lv: [undefined, 8, 12], // 8 は LOW_LV（低レベルの さかい目）
 	f2_solo: [undefined, true],
+	// 洪水の >>998（もうひとつの おにぎり。town の nanjAku で立つ）
+	onigiri_done: [undefined, true],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -308,8 +310,10 @@ export const floodWaves = (st: GameState): FloodWave[] => {
 		},
 		wave2(f),
 		{
-			screen:
-				">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
+			// おにぎりを 届けていれば、恩赦のあとの おんJ民の 最初のレスが その礼（town の nanjAku）
+			screen: f.onigiri_done
+				? ">>998 くっさ。……けど　ごちそうさん\n>>999 ワイらが　もろたで！"
+				: ">>998 くっさ。……けど　保守しといたる\n>>999 ワイらが　もろたで！",
 			picks: [],
 		},
 	];

@@ -29,6 +29,15 @@ const N = (s: Story, text: string, name: string) => s.say(null, text, { name });
 const flag = (name: string) => (st: GameState) => !!st.flags[name];
 /** 「昼」の住民（前夜祭までは居て、負けイベントのあと消える）。 */
 const day = (st: GameState) => !silent(st);
+/** おんJ民が隊列にいる（アク禁の前）。 */
+const nanjHere = (st: GameState) => !!st.flags.nanj_in && !st.flags.akukin;
+
+/** 数のフラグを1つ進め、進める前の値を返す（admin.ts の bump と同じ形）。 */
+const bump = (s: Story, name: string): number => {
+	const n = Number(s.flag(name) ?? 0);
+	s.set(name, n + 1);
+	return n;
+};
 
 /** プレイヤーを (x, y) のほうへ向ける。 */
 const faceToward = (s: Story, x: number, y: number): void => {
@@ -46,12 +55,42 @@ const faceToward = (s: Story, x: number, y: number): void => {
 	s.face("player", d);
 };
 
+/**
+ * 沈黙期間に 3回目に止められたとき（1回だけ）。ロゼが だまって 手を とり、1歩 引きもどす。
+ * 手を はなすのは 声が もどったとき（studio の rec_ev）。
+ */
+const rozeHand = async (
+	s: Story,
+	back: "u" | "d" | "l" | "r",
+): Promise<void> => {
+	await s.narrate("……キリコの　足もとが、\nまた　すこし　うすくなった。");
+	await s.narrate("ロゼが、だまって\nキリコの　手を　とった。");
+	await s.move("player", back); // 手を引かれて1歩もどる
+	await s.narrate("ロゼの　手には、重さが　なかった。");
+	await s.narrate("キリコが　にぎると、\nちゃんと　にぎりかえしてきた。");
+	await s.say("roze", "……歩くアル");
+	await ks(s, "……どこへ？");
+	await s.say("roze", "どこでも　いいアル。\n……歩いてれば、いいアル");
+	if (s.state.party.some((m) => m.id === "feris")) {
+		await s.narrate("反対の手を、フェリスの　羽が\nそっと　つつんだ。");
+		await s.say("feris", "……あったかいでしょ〜");
+	}
+	await ks(s, "…………うん");
+	await s.say("roze", "……手が　冷えてた　だけアル。\n常識アル");
+	s.set("roze_hand");
+};
+
 /** 沈黙期間は町の外へ出さない（ロゼが止めて1歩もどす）。止めたら true。 */
 const holdSilent = async (
 	s: Story,
 	back: "u" | "d" | "l" | "r",
 ): Promise<boolean> => {
 	if (!silent(s.state)) return false;
+	// 止められた回数（北口・東門・スレの扉を合わせて）。3回目は つないだ手
+	if (bump(s, "hold_n") >= 2 && !s.flag("roze_hand")) {
+		await rozeHand(s, back);
+		return true;
+	}
 	await s.say("roze", "……今は、マッマの　ところへ\n行くアル");
 	await s.move("player", back);
 	return true;
@@ -241,15 +280,72 @@ const mammaNight = async (s: Story): Promise<void> => {
 	await s.warp("studio", 7, 6, "up"); // ここで終了。スタジオの rec_ev が続く
 };
 
+// ── もうひとつの おにぎり（声が もどってから 恩赦まで。勢い欄の前の おんJ民 → マッマ → おんJ民） ──
+// マッマと おんJ民の間がらは ほのめかすだけ（「息子」「弟」とは 書かない）。
+
+/** 第一〜三章の前ふり（おんJ民が 隊列に いて、3回目から。1回だけ）。 */
+const mammaCup = async (s: Story): Promise<void> => {
+	await J(s, "……そっちの　あんたも。\nちゃんと　食べとるんか", "マッマ");
+	await s.say("nanj", "……お、おう。\n食べとる　食べとる");
+	await J(s, "カップめんは、食べたうちに\n入らんで", "マッマ");
+	await s.say("nanj", "…………");
+	await s.say("kiriko", "おんJ民、声が　ちいさいンゴ");
+	await s.say("nanj", "う、うっさいわ");
+	s.set("mamma_cup");
+};
+
+/** おんJ民の おなかが 鳴ったあと（aku_mimai）。大きい おにぎりを あずかる。 */
+const mammaOnigiri = async (s: Story): Promise<void> => {
+	await s.narrate("マッマは　もうひとつ、\nおにぎりを　にぎりはじめた。");
+	await s.narrate("大きい。キリコの　ぶんより、\nずっと　大きい。");
+	await s.narrate("マッマは　だまって　それを\nキリコの　手に　のせた。");
+	s.face("mamma", "right"); // 広場（勢い欄の前の おんJ民）のほう
+	await s.narrate("それから、広場の　ほうを　見た。");
+	s.se("item");
+	s.set("onigiri_got");
+	await s.narrate("大きな　おにぎりを　あずかった。");
+	await s.say("kiriko", "……うん");
+};
+
+/** 届けたあと、はじめて 話したとき（1回だけ。回復つき）。 */
+const mammaAsk = async (s: Story): Promise<void> => {
+	await J(s, "……食べとった？", "マッマ");
+	await s.say("kiriko", "のこさず。……ごはんつぶ、\nついてたンゴ");
+	await J(s, "……あの子は、いつも　そうや", "マッマ");
+	await s.narrate(
+		"マッマは　すこし　わらって、\nキリコの　ぶんも　にぎってくれた。",
+	);
+	s.heal();
+	s.se("inn");
+	s.set("mamma_ask");
+};
+
 const mamma = async (s: Story): Promise<void> => {
 	if (silent(s.state) && !s.flag("teto_met")) {
 		await mammaNight(s);
+		return;
+	}
+	const n = bump(s, "mamma_n");
+	if (s.flag("onigiri_done") && !s.flag("mamma_ask")) {
+		await mammaAsk(s);
 		return;
 	}
 	await J(s, "34キロしか　ないんやから、\nちゃんと　食べていき", "マッマ");
 	s.heal();
 	s.se("inn");
 	await s.narrate("HPと　こえが　ぜんかいふくした！");
+	if (n >= 2 && nanjHere(s.state) && !s.flag("mamma_cup")) {
+		await mammaCup(s);
+		return;
+	}
+	if (s.flag("aku_mimai") && !s.flag("onigiri_got") && !s.flag("onsha")) {
+		await mammaOnigiri(s);
+		return;
+	}
+	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) {
+		s.face("mamma", "right");
+		await s.narrate("マッマは、広場の　ほうを　見た。");
+	}
 };
 
 // ───────────────── 町の人たち ─────────────────
@@ -320,16 +416,58 @@ const igo = async (s: Story): Promise<void> => {
 	);
 };
 
+/** マッマの おにぎりを 届ける（もうひとつの おにぎり）。テトとの 初対面は 誕生スレに とっておく。 */
+const onigiriHand = async (s: Story): Promise<void> => {
+	await s.narrate("キリコは　大きな　おにぎりを\nさしだした。");
+	s.face("nanj_aku", "left"); // マッマの家のほう
+	await s.narrate(
+		"おんJ民は　おにぎりを　見て、\nそれから　マッマの　家を　見た。",
+	);
+	// せなかを むける（キリコから見て 奥のほう）
+	const dx = 12 - s.state.x;
+	const dy = 8 - s.state.y;
+	s.face(
+		"nanj_aku",
+		Math.abs(dx) > Math.abs(dy)
+			? dx > 0
+				? "right"
+				: "left"
+			: dy > 0
+				? "down"
+				: "up",
+	);
+	await s.narrate("……くるりと、せなかを　むけた。");
+	await s.narrate("せなかごしに、アク禁の　ふだを\nずらす　音が　した。");
+	await s.wait(800);
+	await s.narrate("しばらく、肩が　ゆれていた。");
+	s.face("nanj_aku", "player");
+	await s.narrate(
+		"ふりむいた　おんJ民の　口もとに、\nごはんつぶが　ついている。",
+	);
+	await s.say("kiriko", "……ついてるンゴ");
+	await s.narrate("おんJ民は　あわてて　口を　ぬぐって、\n親指を　立てた。");
+	await s.narrate("【アク禁】の　ふだの　すみが、\nすこし　しめっていた。");
+	s.set("onigiri_done"); // 洪水の >>998 が かわる（threadlog の floodWaves）
+};
+
 const nanjAku = async (s: Story): Promise<void> => {
 	await s.say("nanj", "――――！");
 	if (silent(s.state)) {
 		await s.narrate("おんJ民は　勢い欄を　ゆびさして\n親指を　立てた。");
 		return;
 	}
+	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) {
+		await onigiriHand(s);
+		return;
+	}
 	await s.narrate(
 		"おんJ民は　キリコの　声を　聞いて\nうれしそうに　親指を　立てた。",
 	);
 	await s.say("kiriko", "待ってて。……かならず　完走するンゴ");
+	if (!s.flag("onigiri_got")) {
+		await s.narrate("……おんJ民の　おなかが、\nぐう、と　鳴った。");
+		s.set("aku_mimai");
+	}
 };
 
 // ───────────────── ぷゆゆ🥺（任意の寄り道。scratchpad/puyuyu/spec.md） ─────────────────
@@ -346,8 +484,6 @@ const puyuOf = (st: GameState): Puyu | undefined => {
 	const v = st.flags.puyu;
 	return v === "ame" || v === "uta" || v === "suwaru" ? v : undefined;
 };
-/** おんJ民が隊列にいる（アク禁の前）。 */
-const nanjHere = (st: GameState) => !!st.flags.nanj_in && !st.flags.akukin;
 
 /** こたえたあとの昼（曜日の話の次から）。 */
 const PUYU_AGAIN: Record<Puyu, string> = {
@@ -601,7 +737,22 @@ const events: EventDef[] = [
 
 	// マッマ（回復。第四章は無言のおにぎり）と開かない扉
 	npc("mamma", 5, 6, SPR.mamma, mamma),
-	lockedDoor("mamma_door", 4, 5, "カギが　かかっている。"),
+	// 実家の扉（lockedDoor と同じ動き。おにぎりを 届けたあとは においが する）
+	{
+		id: "mamma_door",
+		x: 4,
+		y: 5,
+		trigger: "touch",
+		through: true,
+		run: async (s) => {
+			await s.narrate(
+				s.flag("onigiri_done")
+					? "カギが　かかっている。\n……ごはんの　においが　する。"
+					: "カギが　かかっている。",
+			);
+			await s.move("player", "d");
+		},
+	},
 	lockedDoor("ne_door", 18, 5, "カギが　かかっている。"),
 
 	// ボイス案内（到着位置のすぐ右）
