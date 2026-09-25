@@ -687,7 +687,12 @@ const events: EventDef[] = [
 		2,
 		9,
 		SPR.hinary,
-		async (s) => N(s, "避難Jを研究しているヒナリーです。", "ヒナリー"),
+		async (s) => {
+			await N(s, "避難Jを研究しているヒナリーです。", "ヒナリー");
+			// 倉庫の「ヒナリーの　お勉強」（kakolog.ts の obenkyo）を見ていたら
+			if (s.flag("hinary_q"))
+				await s.narrate("白衣の　ポケットに、\n新しい　紙が　入っている。");
+		},
 		{
 			dir: "right",
 			when: clear,

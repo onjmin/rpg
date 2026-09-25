@@ -4,6 +4,7 @@
 // B2（ムッジェ＆フェリス）→ 和解してフェリス加入（おんJ民は自分から控えへ）→ 町へ浮上（600/1000）。rival-joins.md §3。
 // 自由度（scratchpad/freedom/spec.md）：入口で古参ニキに「どう返す？」（F3-2・reply_kako）、
 // B2 は負けても進む（F4。once なし・b2_met で短い前置き）、名言チャレンジ その2（F1・meigen2）。
+// 隠し（知らせない）：ヒナリーの　お勉強（hinary → obenkyo）、名無しの　ログ（北東の空き部屋の棚 (20,2)）。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
 import { DIGS, type Dig } from "../digs";
@@ -27,6 +28,7 @@ import { base, CAVE, PROPS } from "../tiles";
 //   B  古いスレの本棚（通れない）  b  くずれかけた本棚（通れない）
 //   K k  倒れた本棚（左右。通れない）
 //   [ ]  岩壁にかかった古い掲示板（奥の間の正面。左右。通れない）
+//   n  岩壁の前に ひとつだけ はなれた棚（b と同じ絵。北東の空き部屋の奥。通れない）
 const DARK = base(1, 162);
 const C_CAVE = "#6a5a3a";
 const shelf = (img: string): TileDef => ({
@@ -50,6 +52,7 @@ const tiles: Record<string, TileDef> = {
 	k: shelf(base(6, 272, 1, 2)),
 	"[": { ...CAVE.w, layers: [...CAVE.w.layers, base(6, 37, 1, 2)] },
 	"]": { ...CAVE.w, layers: [...CAVE.w.layers, base(7, 37, 1, 2)] },
+	n: { ...CAVE.w, layers: [...CAVE.w.layers, base(3, 270, 1, 2)] },
 };
 
 /**
@@ -399,7 +402,47 @@ const bossfloor: EventDef = {
 	},
 };
 
-/** ヒナリー（3回目だけセリフが変わる）。 */
+/**
+ * ヒナリーの　お勉強（隠し）。「言いたそうだ」を見たあと、フェリスが前にいると出す問題。
+ * スタジアムの門の「追いつかれません」と、b_obenkyo のロゼの「算数じゃ　ないアル」の呼び返し。
+ * hinary_q はクリア後の end_hinary と、1000の先の >>995 が拾う（thread.ts）。
+ */
+const obenkyo = async (s: Story): Promise<void> => {
+	await s.say("feris", "ヒナリーちゃん、また　研究？");
+	await N(s, "ヒナリー", "……避難Jを研究しているヒナリーです。");
+	await s.narrate(
+		"ヒナリーは　白衣の　ポケットから、\nおりたたんだ　紙を　出した。",
+	);
+	await N(s, "ヒナリー", "……お勉強の、時間です");
+	await s.narrate("フェリスの　羽が、ぴんと　立った。");
+	await N(
+		s,
+		"ヒナリー",
+		"フェリスさんが　先に　飛んで　出発。\nヒナリーは　あとから　歩いて　追いかけます",
+	);
+	await N(s, "ヒナリー", "ヒナリーが　追いつくのは、何分後？");
+	await s.say("feris", "……それ、知ってる〜。\n追いつかれません〜");
+	// 門でフェリスが言う「ぶ〜」を、こんどはヒナリーが言う
+	await N(s, "ヒナリー", "……ぶ〜");
+	await s.say("feris", "え〜？");
+	await s.narrate("ヒナリーは　紙を　うらがえした。");
+	await s.narrate("『答え：0分後』");
+	await s.say("feris", "……0分〜？");
+	await s.narrate("ヒナリーは　だまって、\nフェリスの　足もとを　ゆびさした。");
+	await s.narrate("フェリスは、ヒナリーの　すぐ　となりに\n立っていた。");
+	await s.say("feris", "……あ〜");
+	await s.say("feris", "ほんとだ〜。\n……追いつかれちゃった〜");
+	await s.say("roze", "……算数じゃ　ないアル。\nでも、正解アル");
+	await N(s, "ヒナリー", "……避難Jを研究しているヒナリーです。");
+	await s.narrate("さっきより、すこしだけ\n声が　大きかった。");
+	s.set("hinary_q");
+};
+
+/**
+ * ヒナリー（3回目から「言いたそうだ」→ hinary_hint）。
+ * hinary_hint のあと、フェリスが たたかう仲間にいれば お勉強。控えにいると、うしろを気にする。
+ * 回数でなく hinary_hint で分けるのは、validate で hinary_n が 1〜2 にしかならないため。
+ */
 const hinary = npc(
 	"hinary",
 	13,
@@ -408,18 +451,114 @@ const hinary = npc(
 	async (s) => {
 		const n = Number(s.flag("hinary_n") ?? 0) + 1;
 		s.set("hinary_n", n);
+		const benched = s.state.party.some((m) => m.id === "feris" && m.bench);
+		if (
+			s.flag("hinary_hint") &&
+			s.flag("feris_in") &&
+			!benched &&
+			!s.flag("hinary_q")
+		)
+			return obenkyo(s);
 		if (s.flag("feris_in"))
 			await s.say("feris", "ヒナリーちゃん、また　研究？");
-		await N(
-			s,
-			"ヒナリー",
-			n >= 3
-				? "……避難Jを研究しているヒナリーです。\n（なにか　言いたそうだ）"
-				: "避難Jを研究しているヒナリーです。",
-		);
+		if (n >= 3 && !s.flag("hinary_q")) {
+			await N(
+				s,
+				"ヒナリー",
+				benched
+					? "……避難Jを研究しているヒナリーです。\n（うしろの　ほうを　ちらちら　見ている）"
+					: "……避難Jを研究しているヒナリーです。\n（なにか　言いたそうだ）",
+			);
+			s.set("hinary_hint");
+		} else await N(s, "ヒナリー", "避難Jを研究しているヒナリーです。");
 	},
 	{ dir: "down" },
 );
+
+// ───────────────── 名無しの　ログ（隠し。北東の空き部屋の奥の棚） ─────────────────
+// 本棚をどけたあと〜終章。仲間の顔ぶれで3段（フラグだけで分ける）。kako_2015 = 1|2|3。
+// (i) フェリスがまだ → おんJ民が棚の前に立つ。(ii) フェリスが仲間でおんJ民が控え →
+// 読む（おんJ民がてれる）。(iii) 録音のあと → 読む（おんJ民はいない）。
+// 2以上で読んだあとの一言。エンディング（thread.ts）が 2以上を拾う。
+// DIGS には入れない（rec_kako の条件が変わる）。dig_ にもしない（次スレへ持ち越すと (i) が飛ぶ）。
+
+const LOG_SHELF =
+	"ひとつだけ　はなれた　棚。\n名無しの　ログが　はさまっている。";
+
+/** フェリスがログを ひっぱりだし、書いた人の名前を キリコが読むところまで（(ii)(iii) 共通）。 */
+const logOpen = async (s: Story): Promise<void> => {
+	await s.say("feris", "なになに〜？");
+	await s.narrate("フェリスが　ひょいと　飛んで、\nログを　ひっぱりだした。");
+	await s.narrate("1　名前：風吹けば名無し\nフェリスおったよな");
+	await s.narrate(">>2 おった　おった");
+	await s.say("feris", "……これ、私の　スレだ〜");
+	await ks(s, "書いたのは……風吹けば名無し");
+};
+
+/** ログを棚に もどして、だれにともなく礼を言う（(ii)(iii) 共通）。 */
+const logClose = async (s: Story): Promise<void> => {
+	await s.narrate(
+		"フェリスは　ログを　棚に　もどして、\nだれにとも　なく　言った。",
+	);
+	await s.say("feris", "……ありがとね〜");
+};
+
+const nanashiLog: EventDef = {
+	id: "nanashi_log",
+	x: 20,
+	y: 2,
+	trigger: "talk",
+	fixedDir: true,
+	run: async (s) => {
+		const k = Number(s.flag("kako_2015") ?? 0);
+		if (k >= 2) {
+			await s.narrate("「フェリスおったよな」。\n……いまも、ちゃんと　読める。");
+			return;
+		}
+		// (i) フェリスがまだ（B1〜B2）：おんJ民が読ませない
+		if (!s.flag("feris_in")) {
+			if (k === 1) await s.say("nanj", "……ほっとき　言うたやろ");
+			else {
+				await s.narrate(LOG_SHELF);
+				await s.say("nanj", "……古いログなんか　ほっとき。\nほこり　すごいで");
+				await ks(s, "……黒歴史ンゴ？");
+				await s.say("nanj", "ちゃうわ");
+			}
+			await s.narrate("おんJ民が、棚の　前に　立った。");
+			s.set("kako_2015", 1);
+			return;
+		}
+		// (ii) B2〜アク禁（フェリスが仲間、おんJ民は控え）
+		if (s.flag("nanj_in") && !s.flag("akukin")) {
+			if (!k) await s.narrate(LOG_SHELF);
+			await s.say(
+				"nanj",
+				k === 1
+					? "……ほっとき　言うたやろ"
+					: "……古いログなんか　ほっとき。\nほこり　すごいで",
+			);
+			await logOpen(s);
+			await s.narrate("キリコは　おんJ民を\nふりかえった。");
+			await s.say("nanj", "……名無しは　いっぱい　おるやろ");
+			await ks(s, "おんJ民、耳が　赤いンゴ");
+			await s.say("nanj", "……倉庫が　あついんや");
+			// 「過去ログ倉庫は　ひんやりして」（ロゼの「なかまと　はなす」R7）
+			await s.say("roze", "倉庫は　ひんやりアル");
+			await s.say("nanj", "…………");
+			await logClose(s);
+			s.set("kako_2015", 2);
+			return;
+		}
+		// (iii) 録音のあと（おんJ民はいない）
+		await s.narrate(LOG_SHELF);
+		await logOpen(s);
+		await s.say("roze", "名無しは　いっぱい　いるアル");
+		await ks(s, "……「おったよな」");
+		await s.say("feris", "……ふふ〜。だれだろうね〜");
+		await logClose(s);
+		s.set("kako_2015", 3);
+	},
+};
 
 // ───────────────── マップ ─────────────────
 
@@ -485,8 +624,8 @@ export const kakolog: MapDef = {
 	rows: [
 		"######################", // y0
 		"#WWWWWWWWWWWWWWWWWWWW#", // y1
-		"#wwwwwwwww[]wwwwwwwww#", // y2  奥の間の正面に古い掲示板（B2 後: (10,2) に総選挙のはり紙）
-		"#,,,,#..........#,,,,#", // y3  奥の間: フェリス (10,3)、ムッジェ (11,3)（B2 後は mujje_after）
+		"#wwwwwwwww[]wwwwwwwwn#", // y2  奥の間の正面に古い掲示板（B2 後: (10,2) に総選挙のはり紙）。(20,2) に はなれた棚
+		"#,,,,#..........#,,,,#", // y3  奥の間: フェリス (10,3)、ムッジェ (11,3)（B2 後は mujje_after）。棚は (20,3) から調べる
 		"#,,,,#..........#,,,p#", // y4  宝箱 (2,4)。B2 後: ンゴ姉 (7,4)、パン松 (14,4)
 		"#,,,,#..........#,,,,#", // y5
 		"#,,,,wwwww.wwwwww,,,,#", // y6  奥の間の入口 (10,6) = bossfloor
@@ -595,5 +734,7 @@ export const kakolog: MapDef = {
 		...chest("kako2", 19, 12, "candy", 2),
 		// くずれかけた棚（b）を掘る読解パズル
 		...DIGS.map(digEvent),
+		// 北東の空き部屋の奥の棚（n）。見えない。(20,3) から上を向いて調べる
+		nanashiLog,
 	],
 };
