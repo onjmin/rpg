@@ -11,6 +11,7 @@
 //   2周目は、ほかのスクリプトが set した値（"uke"・0〜2 など）をフラグに入れて走らせる
 //   （reply_kako・daida・meigen1〜3・sym_* などで変わる文も通す）。
 //   仲間のレベルもフラグの組で変える（空＝Lv1・すべて＝Lv30・2周目＝Lv5）。覚えたうたで変わる文（knows）も通す。
+//   端末の日付の場面（days.ts の DAYS）は、決め打ちの日時（DAY_TIMES）と仲間の顔ぶれ2通りで走らせる。
 // - 仲間: うた（battle.skills の { id, lv }）の形と順、覚えたときの文・控えの知らせの長さ、benchFirst
 // - 裏ボスの召喚（summon.stock の敵・入れ子・restore の値）と、戦闘の文（召喚・downText）の長さ
 // - 自由度（scratchpad/freedom/spec.md §5-3）
@@ -700,6 +701,76 @@ try {
 	}
 	for (const p of bonds.profiles) {
 		if (!data.cast[p.who]) err(`profile: who "${p.who}" が cast に無い`);
+	}
+
+	// ── 端末の日付の場面（days.ts の DAYS） ──
+	// 蓄音機（story.ts の phonoRun → dayTalk）は 今日の日時でしか分かれないので、決め打ちの日時で
+	// 場面を直接走らせる（jobs に入るので 2周目も走る）。仲間の口出しも通すため、顔ぶれを2通り入れる。
+	// 日付の場面を足したら、その日時を DAY_TIMES に足す。
+	{
+		const D = await server.ssrLoadModule("/src/data/days.ts");
+		const at = (m, d, h, mi) => ({
+			y: 2026,
+			m,
+			d,
+			h,
+			mi,
+			w: new Date(2026, m - 1, d).getDay(),
+		});
+		const DAY_TIMES = [
+			at(8, 17, 22, 51),
+			at(8, 18, 1, 30),
+			at(8, 18, 12, 0),
+			at(12, 29, 12, 0),
+		];
+		const DAY_CREWS = [
+			["roze", "feris", "teto"],
+			["roze", "feris", "nanj"],
+		];
+		const hhmm = (t) =>
+			`${t.m}/${t.d} ${t.h}:${String(t.mi).padStart(2, "0")}`;
+		for (const d of D.DAYS ?? []) {
+			if (!data.cast[d.who]) err(`day ${d.id}: who "${d.who}" が cast に無い`);
+			const times = DAY_TIMES.filter((t) => d.is(t));
+			if (!times.length)
+				warn(
+					`day ${d.id}: validate の日時（DAY_TIMES）の どれにも当たらない（その日時を足す）`,
+				);
+			for (const t of times)
+				for (const crew of DAY_CREWS) {
+					const withCrew = (fn) => (s) => {
+						for (const id of crew)
+							s.join(id, id === "teto" ? { bench: true } : undefined);
+						return fn(s, t);
+					};
+					const where = `day ${d.id} ${hhmm(t)} ${crew.join(",")}`;
+					await run(where, withCrew(d.run), data.start.mapId);
+					if (d.silent)
+						await run(
+							`${where} 沈黙中`,
+							withCrew(d.silent),
+							data.start.mapId,
+						);
+				}
+			if (d.reiLog !== undefined)
+				await run(
+					`day ${d.id} reiLog`,
+					(s) => s.say("rei", d.reiLog),
+					data.start.mapId,
+				);
+		}
+		// J民B（thread.ts の j_b）の その日の ひとこと
+		for (const t of DAY_TIMES) {
+			const day = D.kirikoDay(t);
+			if (day && typeof D.KIRIKO_DAY_J?.[day] !== "string")
+				err(`day J民B: KIRIKO_DAY_J.${day} が無い`);
+			else if (day)
+				await run(
+					`day J民B ${day} ${hhmm(t)}`,
+					(s) => s.say("nanj", D.KIRIKO_DAY_J[day], { name: "J民B" }),
+					data.start.mapId,
+				);
+		}
 	}
 
 	// ── 2周目：1周目にスクリプトが set した値（文字列・数）をフラグに入れて、もう一度走らせる ──

@@ -4,6 +4,9 @@
 // 応援の声を、キリコが蓄音機に録る。
 // 舞台は odekake マップの ④ おんJ民の区画（scratchpad/design/odekake-spots.md）。
 // おんJ民は アク禁（akukin）で離れたあとは戻らないので、それまでの間だけ行ける。
+// 隠しイベント「ふたつめの　おもいで」（次スレの キリコは 前スレを覚えていない）：
+// - promised：エンディングの「ナイターは、次スレで」の約束（keep_nighter。thread.ts が立てる）を果たす
+// - again：前のホームランボールを持っていれば、カバンの中で ボールどうしが鳴る
 import type { DateDef, GameState } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";
@@ -18,6 +21,11 @@ export const date: DateDef | null = {
 	when: (st) => inParty(st, "nanj") && !st.flags.akukin && !silent(st),
 	run: (s) =>
 		dateTrip(s, "nanj", { map: "odekake", ...ODEKAKE.nanj }, async (s) => {
+			// 次スレで、前の周の おもいでの品を持っている／約束がある（give の前に決める）
+			const again = !!s.flag("p2") && s.has("memo_nanj") > 0;
+			const promised =
+				!!s.flag("keep_nighter") ||
+				(!!s.flag("p2") && s.has("memo_nanj") === 0);
 			s.bgm("field2");
 			await s.narrate(
 				"ナイターの　おんJスタジアム。\n外野席の　最前列に　ならんで　すわった。",
@@ -26,7 +34,18 @@ export const date: DateDef | null = {
 			// タモ網（あとでホームランボールをすくう前ふり）
 			s.face("date_nanj", "left");
 			s.face("player", "right");
-			await s.say("nanj", "ええ席やろ？\n……って、なんで　タモ網　持っとんねん");
+			if (promised) {
+				await s.say("nanj", "ええ席やろ？　……前スレから\nとっといたんや");
+				await s.say("kiriko", "……前スレ？");
+				await s.say(
+					"nanj",
+					"なんでも　あらへん。\n……って、なんで　タモ網　持っとんねん",
+				);
+			} else
+				await s.say(
+					"nanj",
+					"ええ席やろ？\n……って、なんで　タモ網　持っとんねん",
+				);
 			await s.say("kiriko", "釣り人の　たしなみ");
 
 			// 外野フライ（外野手がフェンスぎわへ下がる）
@@ -67,6 +86,13 @@ export const date: DateDef | null = {
 			await s.narrate(
 				"キリコは　釣りの　タモ網で\nホームランボールを　すくった！",
 			);
+			if (again) {
+				const n = s.has("memo_nanj");
+				await s.narrate("カバンの　なかで、ボールどうしが\nコツンと　鳴った。");
+				await s.say("nanj", `……なんで　${n}個　あんねん　草`);
+				await s.say("kiriko", "……わからないンゴ");
+				await s.say("nanj", "……ま、ええわ");
+			}
 			await s.move("odk_fielder", "LRLRU");
 
 			s.face("player", "right");
@@ -111,7 +137,14 @@ export const date: DateDef | null = {
 				"蓄音機が　くるくる　まわって、\nその声を　だいじに　ためた。",
 			);
 			s.face("date_nanj", "left");
-			await s.say("nanj", "……なんや　照れるな。\nほな、帰ろか。キリコ");
+			await s.say(
+				"nanj",
+				promised
+					? "……なんや　照れるな。\n次スレ、立てといた　かいが　あったわ"
+					: "……なんや　照れるな。\nほな、帰ろか。キリコ",
+			);
 			await s.say("kiriko", "うん。これからも　いっぱい\n呼んでほしいンゴ");
+			// 約束は果たした（keep_ は次スレへ持ち越すので、ここで消す）
+			if (promised) s.set("keep_nighter", false);
 		}),
 };

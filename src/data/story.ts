@@ -4,6 +4,7 @@ import type { EventDef, GameState, Story } from "../engine/defs";
 import { BENCH_HINT, songsAt } from "../engine/party";
 import type { Dir } from "../engine/types";
 import { cast } from "./cast";
+import { dayTalk } from "./days";
 import { SPR } from "./sprites";
 
 /** 第四章の沈黙期間（キリコの声が出ない・町が静か）。 */
@@ -41,7 +42,7 @@ export const objective = (st: GameState): string => {
 export const resLine = (st: GameState): string =>
 	`【安価】安価でボカロ作ろうぜ　${Number(st.flags.res ?? 0)}/1000`;
 
-/** 蓄音機の本体：回復＋レス数＋いまの目的＋セーブ（レイの2回目以降でも使う）。 */
+/** 蓄音機の本体：回復＋（その日の場面）＋レス数＋いまの目的＋セーブ（レイの2回目以降でも使う）。 */
 export const phonoRun = async (s: Story): Promise<void> => {
 	s.heal();
 	s.se("inn");
@@ -50,6 +51,8 @@ export const phonoRun = async (s: Story): Promise<void> => {
 			? "蓄音機は　音もなく　まわっている……\nHPと　こえが　かいふくした。"
 			: "蓄音機から　なつかしい　レスが　ながれた。\nHPと　こえが　かいふくした！",
 	);
+	// 端末の日付の場面（8月18日・12月29日。days.ts）。あれば1本だけ
+	await dayTalk(s);
 	// まだ見ていない「ひとやすみ会話」があれば、ここで見られる（仲間との親睦）
 	if (!silent(s.state)) await s.restTalk();
 	await s.narrate(`${resLine(s.state)}\nいまの目的：${objective(s.state)}`);

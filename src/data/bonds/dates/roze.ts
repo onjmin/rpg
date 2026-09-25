@@ -1,6 +1,8 @@
 // おでかけ（roze）：夜の屋台で、激辛の麻婆豆腐をいっしょに食べる。
 // 行き先は odekake の①（maps/odekake.ts・odekake-spots.md）。キリコ (7,11)・ロゼ (8,11) に着く。
 // 屋台の丸いす (7,9)(8,9) → 赤い縁台 (11,11)(12,11) へ移って、「覚えてる」話をする。
+// 次スレで 前のレンゲを持っていれば（again）、ロゼが先に「いつもの」を注文する（隠しイベント「ふたつめの　おもいで」）。
+// 次スレの キリコは 前スレを覚えていない。覚えているのは先輩と、カバンの中の品だけ。
 import type { DateDef } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";
@@ -17,6 +19,8 @@ export const date: DateDef | null = {
 			"roze",
 			{ map: "odekake", ...ODEKAKE.roze },
 			async (s) => {
+				// 次スレで、前の周の おもいでの品を持っている（give の前に決める）
+				const again = !!s.flag("p2") && s.has("memo_roze") > 0;
 				s.bgm("town");
 				await s.wait(300);
 				await s.narrate(
@@ -37,14 +41,22 @@ export const date: DateDef | null = {
 				await s.say(null, "(´・ω・｀) いらっしゃい。\nからさは　どうする？", {
 					name: "原住民",
 				});
-				const hot = await s.choose(["激辛で", "ふつうで"]);
-				s.face("date_roze", "left");
-				await s.say(
-					"roze",
-					hot === 0
-						? "さすが　わたしの　後輩アル。\n店主さん、激辛　ふたつアル"
-						: "……この屋台に　ふつうは　ないアル。\n店主さん、激辛　ふたつアル",
-				);
+				if (again) {
+					// ロゼが先に注文する（どちらにしても激辛なのは1周目と同じ）
+					s.face("date_roze", "left");
+					await s.say("roze", "激辛　ふたつアル。\n……いつもの　アル");
+					await s.say("kiriko", "……いつもの？");
+					await s.say("roze", "……そこは　ひみつアル");
+				} else {
+					const hot = await s.choose(["激辛で", "ふつうで"]);
+					s.face("date_roze", "left");
+					await s.say(
+						"roze",
+						hot === 0
+							? "さすが　わたしの　後輩アル。\n店主さん、激辛　ふたつアル"
+							: "……この屋台に　ふつうは　ないアル。\n店主さん、激辛　ふたつアル",
+					);
+				}
 				s.face("date_roze", "up");
 				await s.wait(400);
 				s.set("odk_mabo");
@@ -114,6 +126,11 @@ export const date: DateDef | null = {
 				s.give("memo_roze");
 				s.se("item");
 				await s.narrate("「屋台のレンゲ」を　もらった！");
+				if (again) {
+					await s.say("kiriko", "……レンゲ、もう　ひとつ\nあるンゴ");
+					await s.narrate("ロゼは　カバンの　レンゲと\n見くらべた。");
+					await s.say("roze", "……わたしが　覚えてるアル");
+				}
 				await s.say("kiriko", "今夜の　こと、蓄音機にも\nためておくンゴ");
 				await s.say("roze", "からさまで　録音できたら\nノーベル賞アル");
 				await s.wait(300);

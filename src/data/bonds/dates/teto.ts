@@ -2,6 +2,8 @@
 // 行き先は odekake の③（maps/odekake.ts・odekake-spots.md）。キリコ (63,11)・テト (64,11) に着く。
 // カウンターの前 (59,6)(60,6) → テーブルのいす (58,8)(60,8) → ステージ (67,4)(69,4)。
 // テーブルとステージへは、ふたりの道が重ならない（または2マス離れている）ので同時に歩かせる。
+// 次スレで 前のパンのふくろを持っていれば（again）、テトが約束どおり「1曲だけ」いっしょに歌う
+// （隠しイベント「ふたつめの　おもいで」。次スレの キリコは 前スレを覚えていない）。
 import type { DateDef } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";
@@ -18,6 +20,8 @@ export const date: DateDef | null = {
 			"teto",
 			{ map: "odekake", ...ODEKAKE.teto },
 			async (s) => {
+				// 次スレで、前の周の おもいでの品を持っている（give の前に決める）
+				const again = !!s.flag("p2") && s.has("memo_teto") > 0;
 				s.bgm("town");
 				await s.wait(300);
 				s.face("date_teto", "left");
@@ -85,23 +89,42 @@ export const date: DateDef | null = {
 						: "……ドラゴンの　ほうか。\n本人の　前で　歌うのか",
 				);
 
-				// キリコが歌う
-				s.face("player", "up");
-				s.se("decide");
-				s.bgm("field2");
-				await s.wait(600);
-				await s.narrate(
-					"キリコは　マイクを　にぎって　歌った。\n吐息の多い、ちいさな　歌声で。",
-				);
-				await s.wait(1200);
-				s.bgm("sad");
-				s.face("player", "right");
-				s.face("date_teto", "left");
-				await s.say(
-					"teto",
-					"……音程、半音　ずれてた。\n……でも、ボクの曲が　君の声で　鳴ってた",
-				);
-				await s.say("kiriko", "苦手でも、先輩の歌は\n吾輩の　いちばんンゴ");
+				if (again) {
+					// 前スレの約束（「次は……1曲だけ、いっしょに　歌ってやる」）。ふたりで歌う
+					await s.narrate("テトが、もう　1本の　マイクを\nにぎった。");
+					await s.say("kiriko", "……先輩も？");
+					await s.say("teto", "……1曲だけ、だ");
+					s.face("player", "up");
+					s.face("date_teto", "up");
+					s.se("decide");
+					s.bgm("field2");
+					await s.wait(600);
+					await s.narrate("ふたりで　歌った。\n半音　ずれた　声が、ふたつ。");
+					await s.wait(1200);
+					s.bgm("sad");
+					s.face("player", "right");
+					s.face("date_teto", "left");
+					await s.say("teto", "……ふたりとも、半音\nずれてた");
+					await s.say("kiriko", "……おそろいンゴ");
+				} else {
+					// キリコが歌う
+					s.face("player", "up");
+					s.se("decide");
+					s.bgm("field2");
+					await s.wait(600);
+					await s.narrate(
+						"キリコは　マイクを　にぎって　歌った。\n吐息の多い、ちいさな　歌声で。",
+					);
+					await s.wait(1200);
+					s.bgm("sad");
+					s.face("player", "right");
+					s.face("date_teto", "left");
+					await s.say(
+						"teto",
+						"……音程、半音　ずれてた。\n……でも、ボクの曲が　君の声で　鳴ってた",
+					);
+					await s.say("kiriko", "苦手でも、先輩の歌は\n吾輩の　いちばんンゴ");
+				}
 				await s.say("teto", "……君は　じつに　馬鹿だな");
 				await s.narrate(
 					"あの夜と　おなじ　セリフ。\nでも、いちばん　やさしい　言い方だった。",
@@ -117,10 +140,16 @@ export const date: DateDef | null = {
 				await s.narrate(
 					"「はんぶんこの　パンのふくろ」を\nたいせつに　しまった。",
 				);
+				if (again)
+					await s.narrate(
+						"カバンの　なかで、紙ぶくろが\nかさりと　かさなった。",
+					);
 				s.face("date_teto", "down");
 				await s.say(
 					"teto",
-					"……ただの　紙ぶくろだぞ。\n次は……1曲だけ、いっしょに　歌ってやる",
+					again
+						? "……ただの　紙ぶくろだぞ。\n……次も、1曲だけだ"
+						: "……ただの　紙ぶくろだぞ。\n次は……1曲だけ、いっしょに　歌ってやる",
 				);
 				await s.wait(500);
 				s.set("odk_pan", false);

@@ -2,6 +2,8 @@
 // フェリスは UTAU の声が無いので うたえない。かわりに くしゃみの火花を夜空に上げて見せる。
 // キリコは その笑い声を 蓄音機に録る。おもいでの品は memo_feris（はねのしおり）。
 // 舞台は odekake マップの ② フェリスの区画（scratchpad/design/odekake-spots.md）。
+// 次スレで 前のしおりを持っていれば（again）、フェリスは「また」と言い、しおりを羽で数える
+// （隠しイベント「ふたつめの　おもいで」。次スレの キリコは 前スレを覚えていない）。
 import type { DateDef, GameState } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";
@@ -16,14 +18,21 @@ export const date: DateDef | null = {
 	when: (st) => !!st.flags.feris_in && inParty(st, "feris") && !silent(st),
 	run: (s) =>
 		dateTrip(s, "feris", { map: "odekake", ...ODEKAKE.feris }, async (s) => {
+			// 次スレで、前の周の おもいでの品を持っている（give の前に決める）
+			const again = !!s.flag("p2") && s.has("memo_feris") > 0;
 			s.bgm("field");
 			await s.narrate("町はずれの　丘の上。\n空いっぱいに　星が　出ている。");
 			s.face("date_feris", "left");
 			s.face("player", "right");
-			await s.say(
-				"feris",
-				"ここ、私の　とっておき〜。\nいちばん　空に　近いんだよ〜",
-			);
+			if (again) {
+				await s.say("feris", "……また　来れたね〜");
+				await s.say("kiriko", "……また？");
+				await s.say("feris", "ふふ〜。ここ、私の　とっておき〜");
+			} else
+				await s.say(
+					"feris",
+					"ここ、私の　とっておき〜。\nいちばん　空に　近いんだよ〜",
+				);
 
 			// 丸太のベンチへ（フェリスが先）。2人で夜空を見上げる
 			await s.move("date_feris", "uurr");
@@ -116,9 +125,23 @@ export const date: DateDef | null = {
 				"kiriko",
 				"吾輩の　囲碁の　本に　はさんで、\nずっと　だいじに　するンゴ",
 			);
+			if (again) {
+				const n = s.has("memo_feris");
+				await s.narrate(
+					"囲碁の　本を　ひらくと、\nはねのしおりが　先に　はさまっていた。",
+				);
+				await s.say("feris", `あれ〜？　${n}羽目だね〜`);
+				await s.say("kiriko", "……しおりも、羽で\n数えるンゴ？");
+				await s.say("feris", "うん〜。私の　羽だもん〜");
+			}
 			s.face("player", "up");
 			s.face("date_feris", "up");
-			await s.say("feris", "うん〜。また　いっしょに\n星、見に　来ようね〜");
+			await s.say(
+				"feris",
+				again
+					? "……また　来ようね〜。\n何羽目でも〜"
+					: "うん〜。また　いっしょに\n星、見に　来ようね〜",
+			);
 			await s.wait(400);
 		}),
 };

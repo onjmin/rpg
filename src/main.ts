@@ -96,7 +96,8 @@ window.visualViewport?.addEventListener("resize", resetZoom);
 /**
  * 開発用：URL でタイトルを飛ばして好きな場所から始める（pnpm dev のときだけ）。
  * 例 `?map=town&x=11&y=16&dir=up&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
- * `&bench=nanj` でその仲間を控えにして始める。
+ * `&bench=nanj` でその仲間を控えにして始める。`&items=memo_roze:1` で持ちものを決め打ちする。
+ * 端末の日時は `&date=MMDD&time=HHMM&wday=0〜6`（data/weekday.ts）。
  */
 const devStart = (): GameState | null => {
 	if (!import.meta.env.DEV) return null;
@@ -131,6 +132,18 @@ const devStart = (): GameState | null => {
 	for (const id of q.get("bench")?.split(",") ?? []) {
 		const m = st.party.find((x) => x.id === id);
 		if (m && m !== st.party[0]) m.bench = true;
+	}
+	// 持ちもの（items=memo_roze:1,rec_bmen:1。数を省くと 1、0 で なくす）。次スレの差分を試すときに
+	for (const kv of q.get("items")?.split(",") ?? []) {
+		const [id, n] = kv.split(":");
+		if (!id) continue;
+		if (!data.items[id]) {
+			console.warn(`[dev] どうぐ "${id}" が ありません`);
+			continue;
+		}
+		const k = n === undefined ? 1 : Math.floor(Number(n));
+		if (k > 0) st.items[id] = k;
+		else delete st.items[id];
 	}
 	return st;
 };

@@ -2,12 +2,14 @@
 // 保守ロボの足立レイ（セーブ・修復・恩赦の申請）と、端末のコマンドで開く「アク禁の扉」。
 
 import type { EventDef, MapDef, Story, TileDef } from "../../engine/defs";
+import { dayLog } from "../days";
 import { replyAnka } from "../freedom";
 import { chest, warp } from "../helpers";
 import { reiChat } from "../reichat";
 import { SPR } from "../sprites";
 import { objective, resLine } from "../story";
 import { base, CYBER, PROPS } from "../tiles";
+import { now } from "../weekday";
 
 // `0` データの床だけエンカウントする（`.` `+` `1` は安全）。
 // `T`（レイの横の冷却タンク）は2マスの絵だとレイに重なるので、下半分だけの低いタンクにする。
@@ -20,6 +22,9 @@ const tiles: Record<string, TileDef> = {
 /** レイの修復＋レス数＋いまの目的＋セーブ（蓄音機 phono と同じ流れ。1000レス目の手前でも使う）。 */
 export const reiCare = async (s: Story, ...lines: string[]): Promise<void> => {
 	for (const line of lines) await s.say("rei", line);
+	// 今日、蓄音機で 日付の場面（8月18日・12月29日。days.ts）を見ていれば、その日の ログ
+	const log = dayLog(s.state, now());
+	if (log) await s.say("rei", log);
 	s.heal();
 	s.se("inn");
 	await s.narrate("レイが　修復してくれた。\nHPと　こえが　かいふくした！");

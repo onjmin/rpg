@@ -7,6 +7,7 @@
 //         さとるに勝ったら モニターで 1000の先の5レス（monitorRun）。おんJ民は 控えで もどる（nanjEnd）。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
+import { KIRIKO_DAY_J, kirikoDay } from "../days";
 import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
 import { reiChat } from "../reichat";
@@ -14,6 +15,7 @@ import { SPR } from "../sprites";
 import { knows, resLine } from "../story";
 import { floodLeft, threadSummary, VARIANTS } from "../threadlog";
 import { INDOOR } from "../tiles";
+import { now } from "../weekday";
 
 /** J民系のモブ（黄色の名前欄・読み上げなし）。 */
 const J = (s: Story, text: string, name: string) =>
@@ -575,17 +577,20 @@ const events: EventDef[] = [
 		),
 	),
 	// クリア後は 管理人室（下の扉）の案内もする
-	npc("j_b", 9, 4, SPR.j_tights, async (s) =>
-		J(
+	npc("j_b", 9, 4, SPR.j_tights, async (s) => {
+		// 端末の日付が キリコの誕生日（8/17 22:51〜8/18。days.ts）なら、その話（案内は替えない）
+		const day = kirikoDay(now());
+		const birthday = day ? KIRIKO_DAY_J[day] : null;
+		await J(
 			s,
 			!clear(s.state)
-				? "名付け親は　ワイやで"
+				? (birthday ?? "名付け親は　ワイやで")
 				: s.state.flags.satoru_met
-					? "ええんやで"
+					? (birthday ?? "ええんやで")
 					: "下の扉、いまは　管理人室に\nつながっとるらしいで",
 			"J民B",
-		),
-	),
+		);
+	}),
 	npc("j_c", 6, 3, SPR.j_hikoki, async (s) =>
 		J(
 			s,
