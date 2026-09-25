@@ -79,6 +79,19 @@ type Action =
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 const alive = (fs: Fighter[]) => fs.filter((f) => f.hp > 0);
 
+/**
+ * 戦闘の文を読むのに要る ms（空白は数えない）。長い文ほど長く出す。
+ * 「せってい」の文字の速さで変わる（しゅんかん 25・はやい 35・ふつう 55・おそい 80 ms／字）。
+ * ふつうの雑魚戦の1ターンは、前（450〜650ms の決め打ち）の 1.6 倍くらい。
+ */
+const readMs = (text: string): number => {
+	const ms = settings.textMs;
+	const per = ms === 0 ? 25 : ms <= 15 ? 35 : ms <= 30 ? 55 : 80;
+	return 200 + per * [...text.replace(/[\s　]/g, "")].length;
+};
+/** 文が出てから この ms のあいだは早送りしない（コマンドを決めたタップの続きや2度押しで とばさない）。 */
+const SKIP_GUARD_MS = 250;
+
 /** 敵の見た目（歩行グラなら正面のコマ）を canvas に描く。 */
 const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
 	const c = el("canvas", { class: "enemy-sprite" });
@@ -478,7 +491,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	// ── メッセージ（タップで早送り） ──
 	let fast = false;
 	const pushFast = () =>
-		input.push((k) => {
+		input.push((k, repeat) => {
+			// 押しっぱなし（キーのリピート）では とばさない。1回ずつ押したときだけ
+			if (repeat) return;
 			// オート中の B は「やめる」。早送りにはしない
 			if (k === "b" && auto) {
 				stopAuto();
@@ -488,14 +503,24 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		});
 	let popFast = pushFast();
 	popSkip(); // ここからの入力は早送り
-	const log = async (text: string, wait = 650) => {
+	// スマホ：戦闘の画面のどこをタップしても早送り（戦闘の画面がフィールドのタップを おおうので、ここで受ける）。
+	// コマンドの ボタンは onTap で ここまで 来ない。コマンドを選んでいる間の タップは、次の文の はじめに 消える
+	root.addEventListener("pointerdown", () => {
+		fast = true;
+	});
+	/**
+	 * 文を出して待つ。待ちは wait と 文の長さ（readMs）の長いほう。
+	 * quick は わざと すばやく流す文（裏ボスの「キーの音」など）で、長さで のばさない。
+	 */
+	const log = async (text: string, wait = 650, quick = false) => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
-		while (performance.now() - t0 < wait && !fast) {
+		const until = quick ? wait : Math.max(wait, readMs(text));
+		while (performance.now() - t0 < until && !fast) {
 			await sleep(30);
-			// 効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
-			if (audio.seHeld) fast = false;
+			// 出てすぐの早送りと、効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
+			if (performance.now() - t0 < SKIP_GUARD_MS || audio.seHeld) fast = false;
 		}
 		// 時間で進むときも、効果音の区切りまでは次の文（とその音）を出さない
 		await audio.seSettled();
@@ -563,7 +588,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				getComputedStyle(cmdEl).gridTemplateColumns.split(" ").length,
 			);
 			const pop = input.push(
-				(k) => {
+				(k, repeat) => {
+					// 押しっぱなしで コマンドを決めない（なにを選んだか わからなくなる）。カーソルの移動は そのまま
+					if (repeat && (k === "a" || k === "b")) return;
 					const move = (d: number) => {
 						let n = cur;
 						for (let tries = 0; tries < items.length; tries++) {
@@ -828,8 +855,11 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				await log(line);
 				continue;
 			}
-			audio.se("cursor"); // キーの音（待ちが短いので「一瞬で」作っているように見える）
-			await log(line, 320);
+			// キーの音（カタカタ……ッターン）だけは すばやく（「一瞬で」作っているように見える）。
+			// 「すごい速さで　キーボードを　たたいた！」のような 地の文は ふつうに読ませる
+			const keys = /カタカタ|ッターン/.test(line);
+			audio.se("cursor");
+			await log(line, 320, keys);
 		}
 		const f = spawn(next.enemy, def.name);
 		f.master = m;
