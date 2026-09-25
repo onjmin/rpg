@@ -19,6 +19,61 @@ type ReiChat = {
 
 const CHATS: ReiChat[] = [
 	{
+		// 完走後、「草」の問い（kusa）を 見たあと。保存してあった「のこりの 13％」を 再生する
+		// （完走後 はじめて話したときの end_rei・雑談 87 の「1000レス目の　あとで」の回収）
+		id: "13",
+		with: ["roze", "feris"],
+		when: (st) =>
+			!!st.flags.clear &&
+			!!st.flags.rei_end &&
+			!!st.flags.rei_c_kusa &&
+			!((st.items.rec_bmen ?? 0) > 0),
+		run: async (s) => {
+			await s.say("kiriko", "レイ。……保存した　ログ、\n聞かせて　ほしいンゴ");
+			await s.say("rei", "了解。ログを　再生します");
+			await s.wait(600);
+			await s.narrate("……ザ……ザザ……");
+			await s.narrate(
+				"「角刈りで　草」「100トンは　草」\n「111歳　草」「草」「草生える」",
+			);
+			await s.narrate("わらい声が、いつまでも　つづいている。");
+			await s.say(
+				"rei",
+				"発信元の　のこり、13％。\n当機には、分類　できませんでした",
+			);
+			await s.narrate("フェリスが　ふきだした。");
+			await s.say("feris", "あはは〜。角刈りだって〜");
+			await s.say("roze", "……フェリス先輩、\nわらっちゃ　だめアル");
+			await s.narrate("ロゼの　肩も、ふるえている。");
+			await s.say("kiriko", "…………");
+			await s.narrate("キリコの　口もとが、ゆるんだ。");
+			await s.say("kiriko", "……草、ンゴ");
+			// aku の「対象：キリコさん」と同じ形
+			await s.say("rei", "……「草」を　検知。\n発信元：キリコさん");
+			await s.narrate("キリコは　蓄音機の　ハンドルを　まわした。");
+			await s.narrate(
+				"レコード「ボツの声」を　うらがえす。\nまっしろな　B面に、みぞが　きざまれていく。",
+			);
+			s.give("rec_bmen");
+			s.se("item");
+			await s.narrate("レコード「ボツの声」の　B面を\nろくおんした！");
+			await s.say("rei", "保留中の　解析、1件　完了");
+			await s.say("rei", "……植物では、ありませんでした");
+			await s.say("kiriko", "……ちょっとは、生えてるンゴ");
+		},
+	},
+	{
+		// 誕生スレのモニターで 1000の先に 5レス 書いたあと（thread.ts の monitorRun）
+		id: "1005",
+		when: (st) => !!st.flags.res_over,
+		run: async (s) => {
+			await s.say("rei", "1000を　こえた　書きこみを、\n5件　検知");
+			await s.say("kiriko", "……だめンゴ？");
+			await s.say("rei", "管理人さんの　仕様です。\n保守の　範囲外です");
+			await s.say("rei", "……記録は、しました");
+		},
+	},
+	{
 		// 端末の !aku でキリコが じぶんを アク禁したあと
 		id: "aku",
 		when: (st) => !!st.flags.aku_self,
@@ -194,12 +249,14 @@ const CHATS: ReiChat[] = [
 	},
 ];
 
-/** ぜんぶ見たあとの ひとこと。 */
-const IDLE = [
+/** ぜんぶ見たあとの ひとこと（13％を ろくおんしたあとは「草」の一言が かわる）。 */
+const IDLE = (st: GameState): string[] => [
 	"ログが　ながれています",
 	"保守、継続中です",
 	"……ラ。\n時報では　ありません",
-	"「草」の　解析は、保留中です",
+	st.flags.rei_c_13 || (st.items.rec_bmen ?? 0) > 0
+		? "「草」は、よく　生えます"
+		: "「草」の　解析は、保留中です",
 	"冷却水は　あげられません",
 ];
 
@@ -217,5 +274,6 @@ export const reiChat = async (s: Story): Promise<void> => {
 		await c.run(s);
 		return;
 	}
-	await s.say("rei", IDLE[Math.floor(Math.random() * IDLE.length)]);
+	const idle = IDLE(st);
+	await s.say("rei", idle[Math.floor(Math.random() * idle.length)]);
 };

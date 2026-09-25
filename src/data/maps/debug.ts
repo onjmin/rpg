@@ -108,7 +108,10 @@ const P3: Member[] = [
 	{ id: "feris" },
 	{ id: "nanj", bench: true },
 ];
-const P4: Member[] = [...P3, { id: "teto", bench: true }];
+// 前夜祭の夜（town の night_ev）で おんJ民が抜ける（クリア後に もどるまで）
+const P4: Member[] = [{ id: "kiriko" }, { id: "roze" }, { id: "feris" }];
+// 録音（studio の rec_ev）で テトが控えに入る
+const P5: Member[] = [...P4, { id: "teto", bench: true }];
 
 type Checkpoint = {
 	id: string;
@@ -172,7 +175,7 @@ const CHECKPOINTS: Checkpoint[] = [
 		label: "第四章の後半（スタジオで録音）",
 		sprite: "char:teto",
 		flags: CH4_MID,
-		party: P3,
+		party: P4,
 		lv: 9,
 		items: KEY2,
 		to: { map: "studio", x: 7, y: 6, dir: "up" },
@@ -182,7 +185,7 @@ const CHECKPOINTS: Checkpoint[] = [
 		label: "終章のはじめ（サーバーの底）",
 		sprite: "char:rei",
 		flags: CH4_END,
-		party: P4,
+		party: P5,
 		lv: 9,
 		items: KEY2,
 		to: { map: "server", x: 1, y: 17, dir: "right" },
@@ -192,7 +195,7 @@ const CHECKPOINTS: Checkpoint[] = [
 		label: "1000レス目（最終戦の手前）",
 		sprite: SPR.botsu,
 		flags: CH5_MID,
-		party: P4,
+		party: P5,
 		lv: 10,
 		items: KEY2,
 		to: { map: "last", x: 5, y: 12, dir: "up" },
@@ -202,7 +205,7 @@ const CHECKPOINTS: Checkpoint[] = [
 		label: "クリア後（スレの下の扉）",
 		sprite: "char:kiriko",
 		flags: CLEAR,
-		party: P4,
+		party: P5,
 		lv: 11,
 		items: [...KEY2, "rec_botsu"],
 		to: { map: "thread", x: 6, y: 7, dir: "up" },

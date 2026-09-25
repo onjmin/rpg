@@ -4,14 +4,15 @@
 // 終章: last から (6,6) に着くと ending_ev（みんなが集まる → s.ending()）。
 //       住民の一言とまとめカードは、それまでの安価・返し方で変わる（data/threadlog.ts）。
 // クリア後: エンディングを見たら（ending_seen）下の扉が 管理人室へ（data/maps/admin.ts）。
+//         さとるに勝ったら モニターで 1000の先の5レス（monitorRun）。おんJ民は 控えで もどる（nanjEnd）。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
 import { reiChat } from "../reichat";
 import { SPR } from "../sprites";
-import { knows } from "../story";
-import { threadSummary, VARIANTS } from "../threadlog";
+import { knows, resLine } from "../story";
+import { floodLeft, threadSummary, VARIANTS } from "../threadlog";
 import { INDOOR } from "../tiles";
 
 /** J民系のモブ（黄色の名前欄・読み上げなし）。 */
@@ -21,6 +22,13 @@ const J = (s: Story, text: string, name: string) =>
 const N = (s: Story, text: string, name: string) => s.say(null, text, { name });
 
 const clear = (st: GameState) => !!st.flags.clear;
+
+/** 数のフラグを1つ進め、進める前の値を返す（admin.ts の bump と同じ）。 */
+const bump = (s: Story, flag: string): number => {
+	const n = Number(s.flag(flag) ?? 0);
+	s.set(flag, n + 1);
+	return n;
+};
 
 // ───────────────── 序章 ─────────────────
 
@@ -196,6 +204,11 @@ const ending = async (s: Story): Promise<void> => {
 	await s.narrate("【安価】安価でボカロ作ろうぜ　1000/1000");
 	await J(s, "1000取ったの　キリコ本人やんけ　草", "J民A");
 	await s.say("nanj", "名言、できたやん");
+	// 過去ログ倉庫の 名無しの ログ（kakolog.ts の kako_2015）を 読んでいたら
+	if (Number(s.flag("kako_2015") ?? 0) >= 2) {
+		await s.say("feris", "……やきうくん、おったよな〜");
+		await s.say("nanj", "……おるがな、ここに");
+	}
 	// 名言チャレンジ その3 と >>1000 をくらべる（その3 がないときは出さない）
 	const jb = VARIANTS.meigenJb(st);
 	if (jb) await J(s, jb, "J民B");
@@ -245,6 +258,11 @@ const ending = async (s: Story): Promise<void> => {
 	const B = { name: "ボツの声", noPortrait: true };
 	await s.say("kiriko", "……悪くない　安価だったンゴ", B);
 	await s.say("kiriko", VARIANTS.botsuVoice(st), B);
+	// のこりの 13％（reichat.ts の 13）。B面は 次スレへ 持ち越すので、出るのは 次スレから
+	if (s.has("rec_bmen") > 0)
+		await s.narrate(
+			"蓄音機の　レコードが　うらがえって、\nだれかの　わらい声が　ながれた。",
+		);
 	s.face("player", "right");
 	s.face("follower:teto", "left");
 	await s.say("teto", "……で、「ええもん」って　なんだったのさ");
@@ -257,7 +275,11 @@ const ending = async (s: Story): Promise<void> => {
 	);
 	// 外野席のおでかけを見逃したときだけ
 	const date = VARIANTS.nanjDate(st);
-	if (date) await s.say("nanj", date);
+	if (date) {
+		await s.say("nanj", date);
+		// 次スレへ 持ち越す約束（keep_。次スレの おでかけ dates/nanj.ts で拾う）
+		s.set("keep_nighter");
+	}
 	await s.say("teto", "……じゃあ、一曲いこうか。ボクと、君で");
 	await s.say("kiriko", "吾輩、歌うンゴ！");
 	// クリア後も遊べるように（管理人室のおまけ）。記録は おわりの札で（ui/scenes.ts）
@@ -265,6 +287,245 @@ const ending = async (s: Story): Promise<void> => {
 	s.set("ending_seen");
 	// スタッフロール → まとめカード → おわり → タイトルへ
 	await s.ending({ summary: threadSummary(st) });
+};
+
+// ───────────────── クリア後 ─────────────────
+// ここで立てたフラグが のこるのは、ワープかセーブのときだけ（ふつうは つぎに 管理人室へ ワープして のこる）。
+
+/** 1000の先の5レス：洪水で 流れていったレスへの 返事（キーは flood_* と同じ）と、その場の反応。 */
+const REPLY: Record<
+	string,
+	{ text: (st: GameState) => string; react: (s: Story) => Promise<void> }
+> = {
+	"991": {
+		text: () => "加速、サンガツンゴ",
+		react: async (s) => {
+			await s.say("nanj", "……混ぜたら　あかん");
+			s.face("j_a", "player");
+			await J(s, "ボットに　礼　言うとる　草", "J民A");
+		},
+	},
+	"992": {
+		text: (st) =>
+			st.flags.reply_srv === "neta"
+				? "マーボー、おいしかったンゴ"
+				: st.flags.reply_srv === "chikuon"
+					? "ためそこねたンゴ。……ごめん"
+					: "ソースは、このスレンゴ",
+		react: async (s) => {
+			const v = s.flag("reply_srv");
+			s.face("j_c", "player");
+			await J(
+				s,
+				v === "neta" || v === "chikuon"
+					? "……律儀な　ボカロやな"
+					: "……1000/1000が　ソースか。\nぐうの音も　出んわ",
+				"J民C",
+			);
+		},
+	},
+	"993": {
+		text: () => "ホゲェ",
+		react: async (s) => {
+			s.face("end_mujje", "player");
+			await N(s, "ホゲェ♪", "ムッジェ");
+		},
+	},
+	"994": {
+		// fight・記録なしは「2学期」
+		text: (st) =>
+			st.flags.b1_how === "shukudai"
+				? "花丸、見せてほしいンゴ"
+				: st.flags.b1_how === "neta"
+					? "サイン、いるンゴ？"
+					: st.flags.b1_how === "lose"
+						? "つぎは、勝つンゴ"
+						: "2学期も、がんばるンゴ",
+		react: async (s) => {
+			s.face("end_bancho", "player");
+			await J(s, "……返事、来るとは　思わんかったわ", "夏休みキッズ番長");
+		},
+	},
+	"995": {
+		text: (st) =>
+			st.flags.hinary_q
+				? "つぎの　問題、まってるンゴ"
+				: "研究、おつかれさまンゴ",
+		react: async (s) => {
+			s.face("end_hinary", "player");
+			await N(s, "……避難Jを研究しているヒナリーです。", "ヒナリー");
+			await s.narrate("ヒナリーは　ちいさく　おじぎした。");
+		},
+	},
+	"996": {
+		text: () => "おだいじに、ンゴ",
+		react: async (s) => {
+			await s.say("feris", "ふぇ……ふぇ……");
+			await s.say("teto", "ここで　するな。スレが　燃える");
+			await s.say("feris", "……がまんする〜");
+		},
+	},
+	"997": {
+		text: () => "アル！",
+		react: async (s) => {
+			await s.say("roze", "……ナイ、アル");
+			await s.narrate("ロゼは　だまって、\nキリコの　頭に　手を　のせた。");
+		},
+	},
+	m_onsu: {
+		text: () => "保守、おかえしンゴ",
+		react: async (s) => {
+			await s.narrate("どこかで、ハンカチを　かみしめる\n音が　した。");
+		},
+	},
+	m_onchan: {
+		text: () => "がんばったンゴ",
+		react: async (s) => {
+			await s.narrate("どこかで、まるい　なにかが\nうなずいた　気がした。");
+		},
+	},
+	m_nichie: {
+		text: () => "日曜日、まってるンゴ",
+		react: async (s) => {
+			await s.say("nanj", "……今日、火曜日やぞ");
+		},
+	},
+	m_panmatsu: {
+		text: () => "食べたンゴ。フランスパン",
+		react: async (s) => {
+			await s.say("teto", "……ボクの　だろ、それ");
+		},
+	},
+	m_ngoane: {
+		text: () => "ンゴねぇ……",
+		react: async (s) => {
+			// minors.ts の ンゴ姉と 同じ よび方
+			await s.say("nanj", "……ねえちゃんに　返事　せんでええ");
+		},
+	},
+	m_yayapoji: {
+		text: () => "はんぶんこ、するンゴ",
+		react: async (s) => {
+			await s.narrate("どこかで、だれかが\n5割だけ　わらった。");
+		},
+	},
+};
+
+/**
+ * 誕生スレのモニター（左右）。さとるに はじめて勝ったとき「スレ主だけ 1000の先に 5レスぶん」
+ * （admin.ts）と 言われたあとだけ、洪水で 流れていった5レスに 返事を 書ける（1回だけ）。
+ * res_over は次スレへ 持ち越さないので、次スレでは その周の5レスで もう一度 書ける。
+ */
+const monitorRun = async (s: Story): Promise<void> => {
+	const st = s.state;
+	await s.narrate(`スレの　画面。\n${resLine(st)}`);
+	if (!clear(st)) return;
+	if (s.flag("res_over")) {
+		await s.narrate("書きこみ欄は、もう　とじている。");
+		return;
+	}
+	if (!s.flag("satoru_win")) {
+		// last.ts の 1000ゲットと 同じ文
+		await s.narrate("このスレッドは　1000を　こえました。");
+		return;
+	}
+	await s.narrate(
+		"1000の　下に、ちいさな　書きこみ欄が\nひらいている。『スレ主　専用』",
+	);
+	await s.say("kiriko", "……吾輩で、いいンゴ？");
+	s.face("j_b", "player");
+	await J(s, "ええんやで", "J民B");
+	await s.narrate(
+		"キリコは　画面を　上へ　もどした。\n>>991から　>>997。流れていった　レス。",
+	);
+	await s.narrate(
+		"キリコは　蓄音機の　レコードと、\n画面の　レスを　見くらべた。",
+	);
+	await s.say("kiriko", "……5レスぶん、ンゴ");
+	// 表に無いレスは飛ばす（番号も進めない）
+	let k = 0;
+	for (const { key, no } of floodLeft(st.flags)) {
+		const r = REPLY[key];
+		if (!r) continue;
+		k++;
+		s.se("cursor");
+		await s.narrate(`${1000 + k}　名前：蓄音キリコ\n>>${no}　${r.text(st)}`);
+		await r.react(s);
+		await s.wait(300);
+	}
+	await s.narrate("書きこみ欄が、しずかに　とじた。");
+	s.set("res", 1005);
+	s.set("res_over");
+	await s.narrate(resLine(st));
+	s.face("j_a", "player");
+	await J(s, "1005/1000って　なんやねん　草", "J民A");
+	s.face("j_c", "player");
+	await J(s, "……1000の先まで　書くスレ主、\nはじめて　見たわ", "J民C");
+	// last.ts の 洪水のあとと 同じ文
+	await s.narrate("蓄音機が、すこし　あたたかい。");
+	await s.say("kiriko", "……とっておき、だったンゴ");
+};
+
+/** マッマの おにぎりを 届けないまま 1000レス目へ 行ったとき（town.ts の 届ける場面の 予備）。 */
+const onigiriLate = async (s: Story): Promise<void> => {
+	await s.narrate("キリコは　大きな　おにぎりを\nさしだした。");
+	await s.say("nanj", "……冷めとるやん");
+	await s.narrate("おんJ民は　ひとくちで　半分　食べた。");
+	await s.say("nanj", "……マッマの　おにぎり、\n塩　きつすぎやねん");
+	s.set("onigiri_done");
+};
+
+/** 控えの となり：テトと おんJ民の はじめての 顔あわせ。おんJ民が 控えで もどる。 */
+const nanjBack = async (s: Story): Promise<void> => {
+	await s.say("nanj", "名言、できたやん");
+	await s.say("teto", "……君が、おんJ民か");
+	await s.say("nanj", "せや。キリコの　名付け親や");
+	await s.say("teto", "自称、だろ");
+	await s.say("nanj", "……なんで　知っとんねん");
+	await s.say("kiriko", "吾輩が　言ったンゴ");
+	await s.say("nanj", "ワイが　おらんあいだ、\nキリコが　世話に　なったな");
+	await s.say("nanj", "サンガツや");
+	await s.say("teto", "……今、31って　言ったか");
+	await s.say("nanj", "言うてへん");
+	await s.say("kiriko", "「31」とも　書くンゴ");
+	await s.say("nanj", "……いらんこと　教えてもうたな");
+	await s.say("teto", "……ふん");
+	await s.narrate(
+		"テトは　フランスパンを　ちぎって、\nおんJ民に　つきだした。",
+	);
+	await s.say("nanj", "……なんや");
+	await s.say("teto", "はんぶんこだ。\n……べ、別に　余っただけだ");
+	await s.narrate("おんJ民は　パンを　かじった。");
+	await s.say("nanj", "……固っ");
+	await s.say("teto", "……フランスパンを　なめるな");
+	await s.say("kiriko", "おんJ民。……いっしょに　来る？");
+	await s.say("nanj", "……アク禁　明けの　名無しに、\n席なんか　あらへんやろ");
+	await s.say("teto", "……控えなら、ボクの　となりが\nあいてる");
+	await s.say("nanj", "……ほな、スタンド側で\n見とくわ");
+	s.hide("end_nanj");
+	s.join("nanj", { bench: true });
+	s.set("nanj_back");
+	s.se("item");
+	await s.narrate(
+		"おんJ民が　なかまに　もどった！\nおんJ民は　控えで　見まもっている。",
+	);
+	await s.say("nanj", "……こっち、せまいな");
+	await s.say("teto", "文句　言うな");
+};
+
+/**
+ * クリア後の おんJ民（エンディングの輪の まま）。
+ * 3回目に話すか、テトを 前に出して話すと、控えで 仲間に もどる（本編のあいだは 第四章から もどらない）。
+ */
+const nanjEnd = async (s: Story): Promise<void> => {
+	const n = bump(s, "nanj_end_n");
+	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) return onigiriLate(s);
+	const party = s.state.party;
+	const here = party.some((m) => m.id === "nanj");
+	const tetoFront = party.some((m) => m.id === "teto" && !m.bench);
+	if (!s.flag("nanj_back") && !here && (tetoFront || n >= 2))
+		return nanjBack(s);
+	await s.say("nanj", "名言、できたやん");
 };
 
 // ───────────────── マップ ─────────────────
@@ -299,15 +560,17 @@ const events: EventDef[] = [
 		},
 	),
 
-	// 誕生スレの住民（カウンターの向こう）
+	// 誕生スレの住民（カウンターの向こう）。J民A は 左の モニターの 真下（1000の先の5レスの 手がかり）
 	npc("j_a", 3, 4, SPR.j_yakiu, async (s) =>
 		J(
 			s,
 			!clear(s.state)
 				? "宣伝　たのんだで！"
-				: s.state.flags.satoru_win
-					? "管理人に　勝ったんか！？　草"
-					: "1000取られたァ！",
+				: s.state.flags.res_over
+					? "1005/1000って　なんやねん　草"
+					: s.state.flags.satoru_win
+						? "管理人に　勝ったんか！？　草\n……画面、なんか　変わっとるで"
+						: "1000取られたァ！",
 			"J民A",
 		),
 	),
@@ -331,6 +594,22 @@ const events: EventDef[] = [
 				: "ちくね、な。覚えたで",
 			"J民C",
 		),
+	),
+	// スレの モニター（通れない M のマス）。下から上を向くか、となりから 横を向いて 調べる
+	...(
+		[
+			["mon_l", 2],
+			["mon_r", 10],
+		] as const
+	).map(
+		([id, x]): EventDef => ({
+			id,
+			x,
+			y: 3,
+			trigger: "talk",
+			fixedDir: true,
+			run: monitorRun,
+		}),
 	),
 
 	// kskボット（オープニングの間だけ）
@@ -377,17 +656,10 @@ const events: EventDef[] = [
 	},
 
 	// エンディングに集まる人たち
-	npc(
-		"end_nanj",
-		4,
-		7,
-		"char:nanj",
-		async (s) => s.say("nanj", "名言、できたやん"),
-		{
-			dir: "right",
-			when: clear,
-		},
-	),
+	npc("end_nanj", 4, 7, "char:nanj", nanjEnd, {
+		dir: "right",
+		when: clear,
+	}),
 	npc(
 		"end_bancho",
 		2,
@@ -455,6 +727,9 @@ const events: EventDef[] = [
 				"再解析、完了しました。\n発信元の　音声は、もう　検知されません",
 			);
 			await s.say("rei", "のこりの　13％は、\nログに　保存してあります");
+			// 次スレ：前スレで ろくおんした B面（reichat.ts の 13）。キリコは 覚えていない
+			if (s.has("rec_bmen") > 0)
+				await s.narrate("カバンの　なかで、レコードが\nかたり、と　鳴った。");
 			await s.say("kiriko", "……うん");
 		},
 		{

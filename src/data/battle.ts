@@ -1005,6 +1005,13 @@ export const items: Record<string, ItemDef> = {
 		desc: "角刈りで、100トンで、111歳の　吾輩の声。",
 		key: true,
 	}),
+	// 完走後、レイが 保存していた「のこりの 13％」（reichat.ts の 13）。次スレへ 持ち越す
+	rec_bmen: it({
+		id: "rec_bmen",
+		name: "レコード「ボツの声」B面",
+		desc: "角刈りで草。100トンは草。111歳　草。",
+		key: true,
+	}),
 	// 管理人室で ひろゆきに もらう（見た目だけの だいじなもの）
 	umaibo: it({
 		id: "umaibo",

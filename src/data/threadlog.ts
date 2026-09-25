@@ -242,6 +242,21 @@ const wave2Posts = (f: Flags): (FloodPick & { text: string })[] => {
 	];
 };
 
+/**
+ * 洪水で ひろわなかった レス（番号の若い順・5つまで）。1000の先の5レスで使う（thread.ts）。
+ * 1波目は4つから1つ、2波目は3つから1つ ひろうので、流れるのは いつも ちょうど5つ
+ * （flood_* の無い 古いクリア済みセーブは、7つのうち 先頭の5つ）。
+ */
+export const floodLeft = (f: Flags): { key: string; no: number }[] =>
+	[
+		...["991", "992", "993", "994"]
+			.filter((k) => k !== f.flood_1)
+			.map((k) => ({ key: k, no: Number(k) })),
+		...wave2Posts(f)
+			.map((p, i) => ({ key: p.key, no: 995 + i }))
+			.filter((p) => p.key !== f.flood_2),
+	].slice(0, 5);
+
 /** 2波目（>>995〜>>997）。1行目に1レス、2行目に2レス。 */
 const wave2 = (f: Flags): FloodWave => {
 	const posts = wave2Posts(f);

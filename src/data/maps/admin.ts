@@ -70,6 +70,18 @@ const intro = async (s: Story): Promise<void> => {
 // ───────────────── 矢野さとる ─────────────────
 
 const satoruRun = async (s: Story): Promise<void> => {
+	// 1回だけの ひとこと（控えに もどった おんJ民・1000の先の5レス）。流したら いつもの流れへ
+	if (s.state.party.some((m) => m.id === "nanj") && !s.flag("satoru_onsha")) {
+		s.set("satoru_onsha");
+		await S(s, "お、にぎやかに　なったねえ。\nおかえり。乙。");
+		await s.say("nanj", "……ど、どうも");
+	}
+	if (s.flag("res_over") && !s.flag("satoru_1005")) {
+		s.set("satoru_1005");
+		await S(s, "1000の先の　5レス、読んだよ。\nいい　つかい方やねえ。乙。");
+		s.face("hiro", "player");
+		await H(s, "返事だけで　5レス　使うの、\nなんか　いいですよね、はい。");
+	}
 	if (!s.flag("satoru_win")) {
 		await S(s, "新機能の　テスト、付き合ってくれる？");
 		if ((await s.choose(["いどむ", "やめておく"], { cancel: 1 })) !== 0) {
