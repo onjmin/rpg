@@ -26,7 +26,7 @@ export const SPR = {
 	nichie: "pub:sprites/minors_nichie.png",
 	/** おんすちゃん（おんS のお嬢さま。縦ロール） */
 	onsu: "pub:sprites/minors_onsu.png",
-	/** ンゴ姉 ﾝ´ヮ｀ｺﾞ（やきう民のお姉ちゃん） */
+	/** ンゴ姉 ﾝ´ヮ｀ｺﾞ（やきうのお姉ちゃん） */
 	ngoane: "pub:sprites/minors_ngoane.png",
 	/** パン松 |｀°Ο°´|（パン板の食パン） */
 	panmatsu: "pub:sprites/minors_panmatsu.png",

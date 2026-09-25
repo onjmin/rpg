@@ -308,7 +308,7 @@ const PAN_CHATS: Chat[] = [
 	},
 ];
 
-/** ンゴ姉（やきう民の お姉ちゃん。フェリスの枠を ねらっている）。 */
+/** ンゴ姉（やきうの お姉ちゃん。フェリスの枠を ねらっている）。 */
 export const ngoane = (x: number, y: number): EventDef =>
 	npc(
 		"ngoane",
