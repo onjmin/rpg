@@ -32,6 +32,7 @@ import { settings } from "../engine/settings";
 import { isWalkRef } from "../engine/sprite";
 import { sleep, TILE } from "../engine/types";
 import { viewport } from "../engine/viewport";
+import { battleBackdrop } from "./battleBg";
 import { el, nextFrame } from "./dom";
 import { itemDesc } from "./itemText";
 import { keepInView, onTap } from "./menu";
@@ -312,7 +313,7 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	// 上から 敵 → 文 → なかまの HP → コマンド。
 	// 文は敵のすぐ下（目が行き来しない）、HP はコマンドのすぐ上（選ぶときに見る）
 	root.append(
-		el("div", { class: "battle-bg" }),
+		el("div", { class: "battle-bg" }, [battleBackdrop(groupId, isBoss)]),
 		enemyRow,
 		logEl,
 		partyRow,
