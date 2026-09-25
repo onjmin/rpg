@@ -18,7 +18,7 @@ const FRAME_MS = 33;
 
 type RGB = [number, number, number];
 
-/** 色の組（ぐるっと一周してもとに戻る）。暗めにして 敵と文字を うもれさせない。 */
+/** 色の組（ぐるっと一周してもとに戻る）。実際の色は tone で 暗く・くすませる。 */
 const PALETTES: string[][] = [
 	["#2a1a5e", "#5b3fa8", "#a070e0", "#3a2a80"],
 	["#0e2a4a", "#1f6a8a", "#5ad0c0", "#1a4060"],
@@ -70,9 +70,19 @@ const hex = (s: string): RGB => [
 	Number.parseInt(s.slice(5, 7), 16),
 ];
 
+/** 明るさ・あざやかさ（敵の絵より前に出ないよう、色の組ぜんぶを ここで おさえる）。 */
+const DIM = 0.42;
+const SAT = 0.55;
+
+/** 暗く・くすませる（灰色へ寄せてから暗くする）。 */
+const tone = ([r, g, b]: RGB): RGB => {
+	const l = 0.3 * r + 0.59 * g + 0.11 * b;
+	return [r, g, b].map((v) => (l + (v - l) * SAT) * DIM) as RGB;
+};
+
 /** 色の組を STEPS 段の輪にする（最後の色から最初の色へ つなぐ）。 */
 const ring = (stops: string[]): RGB[] => {
-	const c = stops.map(hex);
+	const c = stops.map((s) => tone(hex(s)));
 	const out: RGB[] = [];
 	for (let i = 0; i < STEPS; i++) {
 		const p = (i / STEPS) * c.length;
@@ -120,17 +130,18 @@ const pick = <T>(r: () => number, xs: T[]): T =>
 
 const makeLayer = (r: () => number, boss: boolean, back: boolean): Layer => {
 	const pal = ring(pick(r, boss ? BOSS_PALETTES : PALETTES));
-	const k = boss ? 1.6 : 1;
+	// 本家ぐらいの ゆっくりした うごき（ボスは 少しだけ速く・大きく）
+	const k = boss ? 1.3 : 1;
 	return {
 		tex: texture(pick(r, PATTERNS)),
 		pal,
 		warp: pick(r, ["wave", "interlace", "squash"] as Warp[]),
-		amp: (back ? 6 : 3 + r() * 5) * k,
+		amp: (back ? 6 : 3 + r() * 5) * (boss ? 1.4 : 1),
 		freq: 0.04 + r() * 0.08,
-		speed: (1.2 + r() * 1.6) * k,
-		cycle: (back ? 3 : 5 + r() * 6) * k,
-		sx: (r() - 0.5) * 12,
-		sy: (r() - 0.5) * 12,
+		speed: (0.6 + r() * 0.6) * k,
+		cycle: (back ? 1.2 : 2 + r() * 2) * k,
+		sx: (r() - 0.5) * 6,
+		sy: (r() - 0.5) * 6,
 	};
 };
 

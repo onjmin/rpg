@@ -9,7 +9,7 @@ import { FIELD } from "../tiles";
 export const sukima: MapDef = {
 	id: "sukima",
 	name: "名無しの　すきま",
-	bgm: "field",
+	bgm: "secret",
 	tiles: FIELD,
 	rows: [
 		"^^^^^^^^^^^^", // y0

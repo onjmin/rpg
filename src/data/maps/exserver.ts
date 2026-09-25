@@ -196,7 +196,7 @@ const events: EventDef[] = [
 export const exserver: MapDef = {
 	id: "exserver",
 	name: "テストサーバー",
-	bgm: "tense",
+	bgm: "extra",
 	tiles,
 	// S・R サーバーラック（R は赤いランプ）  M 壁  D 入口のゲート
 	rows: [
