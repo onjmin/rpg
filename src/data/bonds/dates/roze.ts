@@ -42,10 +42,10 @@ export const date: DateDef | null = {
 					name: "原住民",
 				});
 				if (again) {
-					// ロゼが先に注文する（どちらにしても激辛なのは1周目と同じ）
-					s.face("date_roze", "left");
-					await s.say("roze", "激辛　ふたつアル。\n……いつもの　アル");
+					// ロゼが先に（屋台を向いたまま）注文する。どちらにしても激辛なのは1周目と同じ
+					await s.say("roze", "激辛　ふたつアル。\n……いつものアル");
 					await s.say("kiriko", "……いつもの？");
+					s.face("date_roze", "left");
 					await s.say("roze", "……そこは　ひみつアル");
 				} else {
 					const hot = await s.choose(["激辛で", "ふつうで"]);

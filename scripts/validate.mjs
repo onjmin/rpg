@@ -727,8 +727,7 @@ try {
 			["roze", "feris", "teto"],
 			["roze", "feris", "nanj"],
 		];
-		const hhmm = (t) =>
-			`${t.m}/${t.d} ${t.h}:${String(t.mi).padStart(2, "0")}`;
+		const hhmm = (t) => `${t.m}/${t.d} ${t.h}:${String(t.mi).padStart(2, "0")}`;
 		for (const d of D.DAYS ?? []) {
 			if (!data.cast[d.who]) err(`day ${d.id}: who "${d.who}" が cast に無い`);
 			const times = DAY_TIMES.filter((t) => d.is(t));
@@ -746,11 +745,7 @@ try {
 					const where = `day ${d.id} ${hhmm(t)} ${crew.join(",")}`;
 					await run(where, withCrew(d.run), data.start.mapId);
 					if (d.silent)
-						await run(
-							`${where} 沈黙中`,
-							withCrew(d.silent),
-							data.start.mapId,
-						);
+						await run(`${where} 沈黙中`, withCrew(d.silent), data.start.mapId);
 				}
 			if (d.reiLog !== undefined)
 				await run(
