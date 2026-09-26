@@ -1,6 +1,7 @@
 // ゲームデータをまとめる（設計書 §12-3・§12-4）。
 
 import type { GameData } from "../engine/defs";
+import { asides } from "./asides";
 import { enemies, groups, items, skills } from "./battle";
 import { bgm } from "./bgm";
 import { bonds } from "./bonds";
@@ -45,6 +46,7 @@ export const data: GameData = {
 	items,
 	skills,
 	bonds,
+	asides,
 	bgm,
 	sfx,
 	battleBgm: "battle",

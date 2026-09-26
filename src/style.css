@@ -820,6 +820,50 @@ body.shake #app {
 	}
 }
 
+/* ───────── 歩いているときの ひとこと（ui/aside.ts） ───────── */
+
+.aside {
+	position: absolute;
+	top: calc(52px + var(--safe-t));
+	left: calc(10px + var(--safe-l));
+	right: calc(10px + var(--safe-r));
+	max-width: 520px;
+	margin: 0 auto;
+	padding: 6px 12px;
+	background: rgba(0, 0, 0, 0.62);
+	border-radius: 10px;
+	font-size: 14px;
+	line-height: 1.5;
+	white-space: pre-line;
+	opacity: 0;
+	transform: translateY(-4px);
+	transition:
+		opacity 0.25s ease,
+		transform 0.25s ease;
+	pointer-events: none;
+	z-index: 21;
+}
+
+#ui > .aside {
+	pointer-events: none;
+}
+
+.aside.shown {
+	opacity: 1;
+	transform: none;
+}
+
+.aside-name {
+	font-weight: bold;
+	margin-right: 0.6em;
+	vertical-align: top;
+}
+
+/* 2行のときも、2行目を名前の右にそろえる */
+.aside-text {
+	display: inline-block;
+}
+
 /* ───────── 章タイトル ───────── */
 
 .chapter {

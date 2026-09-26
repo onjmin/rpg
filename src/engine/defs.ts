@@ -344,6 +344,42 @@ export type BondData = {
 	dates?: DateDef[];
 };
 
+// ───────────────── 出来事の直後だけの雑談（ひとこと） ─────────────────
+
+/** ひとことの1行。[話す人の cast id, 文]。 */
+export type AsideLine = [who: string, text: string];
+
+/**
+ * 出来事の直後に、歩いていると仲間がぽろっと話す雑談。止まらない吹き出しで上に流れる。
+ * when が true になったマップで、数歩あるくと流れる。流れる前にそのマップを出たら、もう流れない。
+ * 流れたら（出そびれたら）フラグ aside_<id> が立つ。なかよし度は上げない。
+ */
+export type AsideDef = {
+	id: string;
+	/** 全員がパーティ（控えもふくむ）にいるときだけ（キリコは書かなくてよい）。 */
+	members: string[];
+	when: (s: GameState) => boolean;
+	lines: AsideLine[] | ((s: GameState) => AsideLine[]);
+};
+
+/**
+ * 出来事の直後だけの、町の人の一言。when の間に はじめて話したとき1回だけ、
+ * ふだんの話の代わりに流れる。見たらフラグ fresh_<id> が立つ。
+ */
+export type FreshTalkDef = {
+	id: string;
+	map: string;
+	/** 話しかける人（マップのイベント id）。 */
+	event: string;
+	when: (s: GameState) => boolean;
+	run: Script;
+};
+
+export type AsideData = {
+	walk: AsideDef[];
+	talk: FreshTalkDef[];
+};
+
 // ───────────────── ゲーム全体のデータ ─────────────────
 
 export type GameData = {
@@ -378,6 +414,8 @@ export type GameData = {
 	credits: string[];
 	/** 仲間との親睦（ひとやすみ会話・なかまと話す・プロフィール）。 */
 	bonds?: BondData;
+	/** 出来事の直後だけの雑談（歩いているときの仲間のひとこと・町の人の一言）。 */
+	asides?: AsideData;
 	/** 古いセーブで たたかう仲間が多すぎたとき、先に控えへ回す順（本編で控えに回る順）。無ければ いちばん新しい仲間。 */
 	benchFirst?: string[];
 	/** デバッグルームの入口（開発中か URL に ?debug があるとき、タイトルに「デバッグルーム」を出す）。 */

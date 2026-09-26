@@ -1,7 +1,15 @@
 // ゲーム本体：メインループ・フィールド操作・シナリオ（Story API）の実行。
 
+import { AsideStrip } from "../ui/aside";
 import { el, nextFrame } from "../ui/dom";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "../ui/message";
+import {
+	ASIDE_STEPS,
+	asideLines,
+	freshTalk,
+	nextAside,
+	syncAsides,
+} from "./asides";
 import { preloadImages } from "./assets";
 import type { GameAudio } from "./audio";
 import { availableSkits, markSkitSeen } from "./bonds";
@@ -89,6 +97,15 @@ export class Game {
 	private pathTalk: Actor | null = null;
 	private marker: { x: number; y: number; t: number } | null = null;
 	private stepsSinceBattle = 0;
+	/** 出来事の直後の ひとこと：待っているもの（id → 出せるようになったマップ）・流れているもの。 */
+	private asideArmed = new Map<string, string>();
+	private aside: {
+		lines: { name: string; color?: string; text: string }[];
+		i: number;
+		t: number;
+	} | null = null;
+	private asideSteps = 0;
+	private asideStrip: AsideStrip;
 	private time = 0;
 	private last = 0;
 	private camX = 0;
@@ -123,6 +140,7 @@ export class Game {
 		this.fadeEl = el("div", { class: "fade" });
 		this.toastEl = el("div", { class: "toast" });
 		ui.append(this.fadeEl, this.toastEl);
+		this.asideStrip = new AsideStrip(ui);
 		input.onFieldTap = (x, y) => this.onTap(x, y);
 	}
 
@@ -150,6 +168,7 @@ export class Game {
 		this.running = true;
 		this.notes = [];
 		this.autosavePending = false;
+		this.asideArmed.clear();
 		// 古いセーブ（たたかう仲間が4人）は、本編で控えに回る順に回して知らせる。
 		// 直したら、知らせのあと（runEnter のスクリプトの終わり）に保存して、次に読んだとき また出ないように
 		for (const id of fixParty(state.party, this.data.benchFirst ?? [])) {
@@ -169,6 +188,7 @@ export class Game {
 	stop(): void {
 		this.running = false;
 		this.notes = [];
+		this.stopAside();
 		cancelAnimationFrame(this.rafId);
 		this.msg.close();
 		// エンディングなどで暗転したままタイトルへ戻らないようにする
@@ -233,6 +253,9 @@ export class Game {
 		this.path = [];
 		this.pathTalk = null;
 		this.stepsSinceBattle = 0;
+		// ひとことは マップを出たら おしまい（待っていたものも出そびれ）
+		this.stopAside();
+		syncAsides(this.data.asides, this.state, this.asideArmed);
 		// 地形と人の画像を先に読む（読めなくても進む）
 		const refs = [
 			...field.imageRefs(),
@@ -413,6 +436,7 @@ export class Game {
 			}
 		}
 		if (this.idle && !this.player.moving) this.control();
+		this.updateAside(dt);
 		this.updateCamera();
 	}
 
@@ -559,7 +583,55 @@ export class Game {
 			void this.runScript(async (s) => {
 				await s.battle(g);
 			});
+			return;
 		}
+		this.stepAside();
+	}
+
+	// ───────────────── 出来事の直後の ひとこと ─────────────────
+
+	/** 歩いた1歩を数え、そろったら待っている ひとことを流しはじめる。 */
+	private stepAside(): void {
+		if (this.aside || !this.followersShown) return;
+		if (++this.asideSteps < ASIDE_STEPS) return;
+		const a = nextAside(this.data.asides, this.state, this.asideArmed);
+		if (!a) return;
+		this.asideArmed.delete(a.id);
+		this.state.flags[`aside_${a.id}`] = true;
+		const lines = asideLines(this.state, a).map(([who, text]) => {
+			const c = this.data.cast[who];
+			return { name: c?.name ?? who, color: c?.color, text };
+		});
+		if (lines.length) this.aside = { lines, i: 0, t: 0 };
+	}
+
+	/** 1行を出しておく時間（字数で長く）。 */
+	private asideMs(text: string): number {
+		const n = [...text.replace(/[\s　]/g, "")].length;
+		return Math.min(5200, 1500 + n * 130);
+	}
+
+	/** 流れている ひとことを進める。スクリプトやメニューの間は隠して止める（終わったら続きから）。 */
+	private updateAside(dt: number): void {
+		const a = this.aside;
+		if (!a) return;
+		if (!this.idle) {
+			this.asideStrip.hide();
+			return;
+		}
+		const line = a.lines[a.i];
+		this.asideStrip.show(line.name, line.color, line.text);
+		a.t += dt;
+		if (a.t < this.asideMs(line.text)) return;
+		a.i++;
+		a.t = 0;
+		if (a.i >= a.lines.length) this.stopAside();
+	}
+
+	private stopAside(): void {
+		this.aside = null;
+		this.asideSteps = 0;
+		this.asideStrip.hide();
 	}
 
 	/** 目の前の人に話しかける（カウンター越しも）。 */
@@ -733,7 +805,17 @@ export class Game {
 		const mapId = this.field?.def.id;
 		// ほかのスクリプトが動いている間は始めない（二重起動の防止）
 		if (!e.run || !mapId || this.scriptDepth > 0) return;
+		// 出来事の直後だけの一言があれば、ふだんの話の代わりに（1回だけ）
+		const fresh =
+			e.trigger === "talk"
+				? freshTalk(this.data.asides, this.state, mapId, e.id)
+				: undefined;
 		await this.runScript(async (s) => {
+			if (fresh) {
+				this.state.flags[`fresh_${fresh.id}`] = true;
+				await fresh.run(s);
+				return;
+			}
 			await e.run?.(s);
 			if (e.once) this.state.flags[`done:${mapId}:${e.id}`] = true;
 		});
@@ -762,6 +844,9 @@ export class Game {
 			this.msg.close();
 			this.refreshActors();
 			this.input.clearField();
+			// 話のあとは、また数歩あるいてから ひとことを流す
+			if (!this.aside) this.asideSteps = 0;
+			syncAsides(this.data.asides, this.state, this.asideArmed);
 			// イベントの途中で保存すると続き（仲間加入など）が失われるので、終わってから保存する
 			if (this.autosavePending) {
 				this.autosavePending = false;
