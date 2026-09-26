@@ -91,12 +91,12 @@ const readMs = (text: string, slow = false): number => {
 	const per = ms === 0 ? 20 : ms <= 10 ? 25 : ms <= 20 ? 38 : 55;
 	const chars = [...text.replace(/[\s　]/g, "")].length;
 	const dots = text.match(/…+/g)?.length ?? 0;
-	return (200 + per * (chars + dots * 4)) * (slow ? 1.5 : 1);
+	return (100 + per * (chars + dots * 4)) * (slow ? 1.5 : 1);
 };
 /** 文が出てから この ms のあいだは早送りしない（コマンドを決めたタップの続きや2度押しで とばさない）。 */
-const SKIP_GUARD_MS = 250;
+const SKIP_GUARD_MS = 150;
 /** ボスのせりふは 出てから この ms のあいだ 早送りしない（連打の勢いで とばさない）。 */
-const SLOW_GUARD_MS = 600;
+const SLOW_GUARD_MS = 400;
 
 /** 敵の見た目（歩行グラなら正面のコマ）を canvas に描く。 */
 const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
@@ -522,7 +522,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	 * quick は わざと すばやく流す文（裏ボスの「キーの音」など）で、長さで のばさない。
 	 * slow は ボスのせりふで、長めに出し、出てすぐの早送りを長く受けない。
 	 */
-	const log = async (text: string, wait = 650, pace?: "quick" | "slow") => {
+	const log = async (text: string, wait = 400, pace?: "quick" | "slow") => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
@@ -539,7 +539,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	};
 
 	const names = [...new Set(group.enemies.map((id) => data.enemies[id].name))];
-	await log(group.intro ?? `${names.join("と　")}が　あらわれた！`, 900);
+	await log(group.intro ?? `${names.join("と　")}が　あらわれた！`, 600);
 
 	let result = null as BattleResult | null;
 
@@ -858,7 +858,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				);
 			}
 			renderParty();
-			await log("みんなの　HPと　こえが　すこし　もどった！", 600);
+			await log("みんなの　HPと　こえが　すこし　もどった！", 380);
 		}
 		for (const t of next.text) {
 			const line = fill(t);
@@ -885,7 +885,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		enemies.push(f);
 		renderEnemies();
 		audio.se("warp");
-		await log(fill(next.deploy ?? "{name}を　デプロイした！"), 700);
+		await log(fill(next.deploy ?? "{name}を　デプロイした！"), 450);
 		for (const t of next.after ?? []) await log(fill(t));
 	};
 
@@ -912,7 +912,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		renderEnemies(); // 守りの灰色が消える（もう当たる）
 		audio.se("shock");
 		for (const t of m.enemy?.summon?.exposed ?? [])
-			await log(t.replace("{user}", m.name), 800);
+			await log(t.replace("{user}", m.name), 500);
 	};
 
 	const damage = (
@@ -942,13 +942,13 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			audio.se("critical");
 			await log(
 				(t.enemy?.summon?.finish ?? "いちげき！").replace("{user}", t.name),
-				600,
+				380,
 			);
 		}
 		const { dmg, crit } = hit;
 		if (crit) {
 			audio.se("critical");
-			await log("かいしんの　レス！", 450);
+			await log("かいしんの　レス！", 300);
 		}
 		t.hp = Math.max(0, t.hp - dmg);
 		if (t.side === "enemy") {
@@ -969,7 +969,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 						"{user}",
 						t.name,
 					),
-					500,
+					320,
 				);
 				if (t.master) await minionDown(t.master);
 			}
@@ -978,7 +978,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			await hitParty(t);
 			renderParty();
 			await log(`${t.name}は　${dmg}の　ダメージを　うけた！`);
-			if (t.hp <= 0) await log(`${t.name}は　たおれてしまった！`, 600);
+			if (t.hp <= 0) await log(`${t.name}は　たおれてしまった！`, 380);
 		}
 	};
 
@@ -989,7 +989,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		t.hp += n;
 		renderParty();
 		audio.se("heal");
-		await log(`${t.name}の　HPが　${n}　かいふくした！`, 550);
+		await log(`${t.name}の　HPが　${n}　かいふくした！`, 350);
 	};
 
 	const act = async (a: Fighter, action: Action) => {
@@ -1010,7 +1010,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			a.hp = 0;
 			audio.se("flee");
 			renderEnemies();
-			await log(`${a.name}は　にげだした！`, 600);
+			await log(`${a.name}は　にげだした！`, 380);
 		} else if (action.kind === "attack") {
 			const t = retarget(action.target);
 			if (!t) return;
@@ -1021,7 +1021,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const text = texts?.length
 				? texts[Math.floor(Math.random() * texts.length)]
 				: "{user}の　こうげき！";
-			await log(text.replace("{user}", a.name), 450);
+			await log(text.replace("{user}", a.name), 300);
 			if (t.side === "party" && Math.random() < 0.06) {
 				audio.se("miss");
 				await log(`${t.name}は　ひらりと　みをかわした！`);
@@ -1029,12 +1029,12 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			}
 			await applyDamage(a, t, 1);
 		} else if (action.kind === "idle") {
-			await log(action.text, 600, talk(a, action.text));
+			await log(action.text, 380, talk(a, action.text));
 		} else if (action.kind === "guard") {
 			a.guard = true;
-			await log(`${a.name}は　みを　まもっている。`, 450);
+			await log(`${a.name}は　みを　まもっている。`, 300);
 		} else if (action.kind === "flee") {
-			await log("キリコたちは　にげだした！", 450);
+			await log("キリコたちは　にげだした！", 300);
 			const partySpd =
 				alive(party).reduce((s, f) => s + f.spd, 0) /
 				Math.max(1, alive(party).length);
@@ -1043,7 +1043,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				Math.max(1, alive(enemies).length);
 			if (Math.random() < 0.55 + (partySpd - foeSpd) * 0.03) {
 				audio.se("flee");
-				await log("うまく　にげきれた！", 600);
+				await log("うまく　にげきれた！", 380);
 				result = "escape";
 			} else {
 				await log("しかし　まわりこまれてしまった！");
@@ -1052,7 +1052,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const it = data.items[action.item];
 			if (!game.story.take(action.item)) return;
 			countPlay(state, "play_item");
-			await log(`${a.name}は　${it.name}を　つかった！`, 450);
+			await log(`${a.name}は　${it.name}を　つかった！`, 300);
 			const targets = it.effect?.all ? alive(party) : [action.target];
 			for (const t of targets) {
 				if (it.effect?.revive && t.hp <= 0) {
@@ -1066,7 +1066,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					const n = Math.min(t.maxMp - t.mp, it.effect.mp);
 					t.mp += n;
 					renderParty();
-					await log(`${t.name}の　こえが　${n}　もどった！`, 500);
+					await log(`${t.name}の　こえが　${n}　もどった！`, 320);
 				}
 			}
 		} else if (action.kind === "skill") {
@@ -1107,7 +1107,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			const said = s.text
 				.replace("{user}", a.name)
 				.replace("{target}", targetName);
-			await log(said, 700, talk(a, said));
+			await log(said, 450, talk(a, said));
 			if (s.kind === "attack") {
 				for (const t of targets) {
 					if (result) break;
@@ -1117,10 +1117,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				for (const t of targets) await heal(t, 30 * s.power);
 			} else if (s.kind === "buff") {
 				for (const t of alive(party)) t.buff = 3;
-				await log("みんなの　こうげきりょくが　あがった！", 550);
+				await log("みんなの　こうげきりょくが　あがった！", 350);
 			} else if (s.kind === "guard") {
 				for (const t of alive(party)) t.guard = true;
-				await log("みんなの　まもりが　かたくなった！", 550);
+				await log("みんなの　まもりが　かたくなった！", 350);
 			}
 		}
 		if (!alive(enemies).length) result = "win";
@@ -1223,14 +1223,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			f.guard = false;
 			if (f.buff > 0) f.buff--;
 		}
-		if (auto && !result) await sleep(250);
+		if (auto && !result) await sleep(100);
 	}
 	setAuto(false);
 
 	// ── 決着 ──
 	/** 経験値を なかまに入れ、上がったレベルと覚えたうたを出す。 */
 	const share = async (exp: number): Promise<void> => {
-		if (exp > 0) await log(`${exp}ポイントの　けいけんちを　かくとく！`, 900);
+		if (exp > 0) await log(`${exp}ポイントの　けいけんちを　かくとく！`, 580);
 		// レベルアップの音は1回だけ（何人も上がると音が重なってうるさい）
 		let leveled = false;
 		for (const f of party) {
@@ -1245,10 +1245,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				}
 				leveled = true;
 				renderParty();
-				await log(`${f.name}は　レベル${f.member.lv}に　あがった！`, 1000);
+				await log(`${f.name}は　レベル${f.member.lv}に　あがった！`, 650);
 				// 覚えたうた（音はレベルアップの1回だけ）
 				for (const t of learnTexts(data, f.member.id, from, f.member.lv))
-					await log(t, 1000);
+					await log(t, 650);
 			}
 		}
 	};
@@ -1261,7 +1261,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		);
 		audio.bgm(null);
 		if (data.victoryBgm) void audio.jingle(data.victoryBgm, 21, 5500);
-		await log(group.victory ?? "あらしを　しずめた！", 900);
+		await log(group.victory ?? "あらしを　しずめた！", 580);
 		await share(exp);
 		for (const e of enemies) {
 			const d = e.fled ? undefined : e.enemy?.drop;
@@ -1270,7 +1270,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				audio.se("item");
 				await log(
 					`${e.name}は　${data.items[d.item]?.name ?? d.item}を　おとしていった！`,
-					900,
+					580,
 				);
 			}
 		}
@@ -1284,7 +1284,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		);
 		if (exp > 0) {
 			audio.bgm(null);
-			await log("たおした　ボスの　けいけんちは　のこった！", 900);
+			await log("たおした　ボスの　けいけんちは　のこった！", 580);
 			await share(exp);
 		}
 	}
