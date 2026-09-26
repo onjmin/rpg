@@ -79,19 +79,33 @@ type Action =
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 const alive = (fs: Fighter[]) => fs.filter((f) => f.hp > 0);
 
+/** 一度出した文の形（数字は # に）。同じ形の文は2回目から見て分かるので、速く流す。 */
+const seenShapes = new Set<string>();
+/** 見慣れた形の文の、数字でない字の重み（数字はそのたび読むので 1 のまま）。 */
+const FAMILIAR_RATE = 0.6;
+/** オート中の待ちの倍率（オートは読むより流して見るもの）。 */
+const AUTO_RATE = 0.75;
+
 /**
  * 戦闘の文を読むのに要る ms（空白は数えない）。長い文ほど長く出す。
  * 「せってい」の文字の速さで変わる（しゅんかん 20・はやい 25・ふつう 38・おそい 55 ms／字）。
- * ふつうの雑魚戦の1ターンは、前（450〜650ms の決め打ち）の 1.6 倍くらい。
  * 「……」はひとまとまりごとに 4字ぶん足す（会話の窓と同じく、間で読ませる）。
- * slow（ボスのせりふ）は 1.5 倍。
+ * 前に出した形の文（「〇〇の　こうげき！」「〇〇に　12の　ダメージ！」など）は、
+ * 字を拾わずに形で読めるので、数字のほかは FAMILIAR_RATE 倍。
+ * slow（ボスのせりふ）は 1.5 倍で、見慣れても縮めない。
  */
 const readMs = (text: string, slow = false): number => {
 	const ms = settings.textMs;
 	const per = ms === 0 ? 20 : ms <= 10 ? 25 : ms <= 20 ? 38 : 55;
-	const chars = [...text.replace(/[\s　]/g, "")].length;
+	const body = text.replace(/[\s　]/g, "");
+	const digits = body.match(/\d/g)?.length ?? 0;
+	const chars = [...body].length - digits;
 	const dots = text.match(/…+/g)?.length ?? 0;
-	return (100 + per * (chars + dots * 4)) * (slow ? 1.5 : 1);
+	const shape = body.replace(/\d+/g, "#");
+	const familiar = !slow && seenShapes.has(shape);
+	seenShapes.add(shape);
+	const weight = (chars + dots * 4) * (familiar ? FAMILIAR_RATE : 1) + digits;
+	return (100 + per * weight) * (slow ? 1.5 : 1);
 };
 /** 文が出てから この ms のあいだは早送りしない（コマンドを決めたタップの続きや2度押しで とばさない）。 */
 const SKIP_GUARD_MS = 150;
@@ -521,14 +535,17 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	 * 文を出して待つ。待ちは wait と 文の長さ（readMs）の長いほう。
 	 * quick は わざと すばやく流す文（裏ボスの「キーの音」など）で、長さで のばさない。
 	 * slow は ボスのせりふで、長めに出し、出てすぐの早送りを長く受けない。
+	 * オート中は（ボスのせりふのほかは）AUTO_RATE 倍。
 	 */
 	const log = async (text: string, wait = 400, pace?: "quick" | "slow") => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
+		const slow = pace === "slow";
 		const until =
-			pace === "quick" ? wait : Math.max(wait, readMs(text, pace === "slow"));
-		const guard = pace === "slow" ? SLOW_GUARD_MS : SKIP_GUARD_MS;
+			(pace === "quick" ? wait : Math.max(wait, readMs(text, slow))) *
+			(auto && !slow ? AUTO_RATE : 1);
+		const guard = slow ? SLOW_GUARD_MS : SKIP_GUARD_MS;
 		while (performance.now() - t0 < until && !fast) {
 			await sleep(30);
 			// 出てすぐの早送りと、効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
