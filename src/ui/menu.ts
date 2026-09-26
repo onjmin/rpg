@@ -395,7 +395,7 @@ export const settingsMenu = async (game: Game): Promise<void> => {
 					settings.textMs === 0
 						? 45
 						: settings.textMs > 30
-							? 28
+							? 18
 							: settings.textMs > 15
 								? 12
 								: 0,

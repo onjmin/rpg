@@ -18,7 +18,7 @@ const tiles: Record<string, TileDef> = {
 /** ボツキリコのセリフ（data/cast.ts の botsu。キリコの立ち絵を色反転して右に立つ）。 */
 const botsuSay = (s: Story, text: string) => s.say("botsu", text);
 const balusSay = (s: Story, text: string) =>
-	s.say(null, text, { name: "サイレントバルス" });
+	s.say(null, text, { name: "サイレントバルス", pace: "slow" });
 
 /** 1000レス目の床を踏むと始まる最終戦（F1 → F2 → 1000 → エンディングへ）。 */
 const lastRun = async (s: Story): Promise<void> => {

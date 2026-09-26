@@ -257,7 +257,7 @@ const ending = async (s: Story): Promise<void> => {
 	);
 	await s.say("kiriko", "……また、来てくれたンゴ");
 	await s.narrate("蓄音機から、ちいさな　声が　ながれた。");
-	const B = { name: "ボツの声", noPortrait: true };
+	const B = { name: "ボツの声", noPortrait: true, pace: "slow" } as const;
 	await s.say("kiriko", "……悪くない　安価だったンゴ", B);
 	await s.say("kiriko", VARIANTS.botsuVoice(st), B);
 	// のこりの 13％（reichat.ts の 13）。B面は 次スレへ 持ち越すので、出るのは 次スレから

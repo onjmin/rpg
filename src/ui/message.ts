@@ -24,6 +24,7 @@
 import { publicUrl } from "../engine/assets";
 import type { SpeechStart } from "../engine/audio";
 import type { Input } from "../engine/input";
+import { sleep } from "../engine/types";
 import { el } from "./dom";
 
 type Side = "left" | "right";
@@ -70,9 +71,22 @@ const VOICE_HOLD_MAX_MS = 5000;
 /** 声に合わせて文字送りを遅くするときの上限（設定の1文字あたりの ms の何倍まで）。 */
 const VOICE_PACE_MAX = 2;
 
-/** この文字を出したあとの間（1文字ぶんの何倍か。句読点で少し止める）。 */
-const pauseAfter = (c: string | undefined): number =>
-	c === "、" || c === "。" ? 4 : 1;
+/**
+ * この文字を出したあとの間（1文字ぶんの何倍か）。句読点で少し止め、「……」は出しきったところで
+ * 「。」より長く止める（続いている間は止めない）。独白の「……」が多い文は、印をつけなくても重くなる。
+ */
+const pauseAfter = (c: string | undefined, next: string | undefined): number =>
+	c === "、" || c === "。" ? 4 : c === "…" && next !== "…" ? 7 : 1;
+
+/** pace: "slow" の文で、1文字あたりの ms を何倍にするか。 */
+const SLOW_RATE = 1.8;
+/**
+ * pace: "slow" の文が出てから この ms のあいだは、押しても全文を出さない
+ * （前の文からの連打の勢いで、大事な文を飛ばさないように）。
+ */
+const SLOW_GUARD_MS = 400;
+/** pace: "slow" の文が出きってから この ms は送らない（全文を出した押しの続きで送らない）。 */
+const SLOW_HOLD_MS = 500;
 
 /** 読み込んで測った立ち絵。 */
 type Art = {
@@ -235,6 +249,11 @@ export type MessageParams = {
 	color?: string;
 	text: string;
 	portrait?: PortraitSpec | null;
+	/**
+	 * "slow" は重い文（敵の独白など）。文字送りを遅くし（設定の「しゅんかん」なら一瞬のまま）、
+	 * 出てすぐと出きってすぐの押しを受けない。
+	 */
+	pace?: "slow";
 	/** 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。 */
 	onShow?: () => ShowHook | undefined;
 };
@@ -426,6 +445,7 @@ export class MessageWindow {
 		const stop = hook?.stop;
 		const token = ++this.showToken;
 		const shownAt = performance.now();
+		const slow = p.pace === "slow";
 		return new Promise((resolve) => {
 			let shown = 0;
 			let timer = 0;
@@ -454,7 +474,8 @@ export class MessageWindow {
 				this.textEl.textContent = p.text;
 				// 鳴らしたばかりの効果音の本体が鳴り終わってから ▼ を出して送れるようにする
 				// （すぐ送ると次の効果音が畳みかけて重なる）
-				void this.settled().then(() => {
+				const hold = slow ? sleep(SLOW_HOLD_MS) : Promise.resolve();
+				void Promise.all([this.settled(), hold]).then(() => {
 					if (token !== this.showToken) return;
 					ready = true;
 					this.nextEl.classList.add("shown");
@@ -470,15 +491,15 @@ export class MessageWindow {
 				if (voiceEnd !== null) {
 					let rest = 0;
 					for (let i = shown - 1; i < chars.length - 1; i++)
-						rest += pauseAfter(chars[i]);
+						rest += pauseAfter(chars[i], chars[i + 1]);
 					const left = voiceEnd() - performance.now();
 					if (rest > 0 && left > 0)
 						per = Math.min(ms * VOICE_PACE_MAX, Math.max(ms, left / rest));
 				}
-				return per * pauseAfter(chars[shown - 1]);
+				return per * pauseAfter(chars[shown - 1], chars[shown]);
 			};
 			const tick = () => {
-				const ms = this.msPerChar();
+				const ms = this.msPerChar() * (slow ? SLOW_RATE : 1);
 				if (ms <= 0) {
 					finish();
 					return;
@@ -536,7 +557,8 @@ export class MessageWindow {
 			const pop = this.input.push((key, repeat) => {
 				if (repeat || (key !== "a" && key !== "b")) return;
 				if (!done) {
-					finish(); // 文字送りの飛ばしはいつでも効く
+					// 文字送りの飛ばしはいつでも効く（重い文だけ、出てすぐは受けない）
+					if (!slow || performance.now() - shownAt >= SLOW_GUARD_MS) finish();
 					return;
 				}
 				if (!ready) return; // 区切りまでは押しても送らない

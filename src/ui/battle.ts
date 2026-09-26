@@ -83,14 +83,20 @@ const alive = (fs: Fighter[]) => fs.filter((f) => f.hp > 0);
  * 戦闘の文を読むのに要る ms（空白は数えない）。長い文ほど長く出す。
  * 「せってい」の文字の速さで変わる（しゅんかん 25・はやい 35・ふつう 55・おそい 80 ms／字）。
  * ふつうの雑魚戦の1ターンは、前（450〜650ms の決め打ち）の 1.6 倍くらい。
+ * 「……」はひとまとまりごとに 4字ぶん足す（会話の窓と同じく、間で読ませる）。
+ * slow（ボスのせりふ）は 1.5 倍。
  */
-const readMs = (text: string): number => {
+const readMs = (text: string, slow = false): number => {
 	const ms = settings.textMs;
 	const per = ms === 0 ? 25 : ms <= 15 ? 35 : ms <= 30 ? 55 : 80;
-	return 200 + per * [...text.replace(/[\s　]/g, "")].length;
+	const chars = [...text.replace(/[\s　]/g, "")].length;
+	const dots = text.match(/…+/g)?.length ?? 0;
+	return (200 + per * (chars + dots * 4)) * (slow ? 1.5 : 1);
 };
 /** 文が出てから この ms のあいだは早送りしない（コマンドを決めたタップの続きや2度押しで とばさない）。 */
 const SKIP_GUARD_MS = 250;
+/** ボスのせりふは 出てから この ms のあいだ 早送りしない（連打の勢いで とばさない）。 */
+const SLOW_GUARD_MS = 600;
 
 /** 敵の見た目（歩行グラなら正面のコマ）を canvas に描く。 */
 const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
@@ -308,6 +314,9 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	const { data, audio, input, state } = game;
 	const group = data.groups[groupId];
 	const isBoss = !!group.boss;
+	/** ボス戦で 敵が しゃべる文（「」つき）は 重い文として出す。 */
+	const talk = (a: Fighter, text: string): "slow" | undefined =>
+		isBoss && a.side === "enemy" && text.includes("「") ? "slow" : undefined;
 	// ── エンカウント ──
 	// フィールドの曲を止めて効果音を鳴らし、鳴り終わるまで演出でつなぐ（入力は捨てる）。
 	// 戦闘の画面と曲は音が終わってから（エンカウントの音と戦闘の曲・最初の文が重ならないように）
@@ -511,16 +520,19 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	/**
 	 * 文を出して待つ。待ちは wait と 文の長さ（readMs）の長いほう。
 	 * quick は わざと すばやく流す文（裏ボスの「キーの音」など）で、長さで のばさない。
+	 * slow は ボスのせりふで、長めに出し、出てすぐの早送りを長く受けない。
 	 */
-	const log = async (text: string, wait = 650, quick = false) => {
+	const log = async (text: string, wait = 650, pace?: "quick" | "slow") => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
-		const until = quick ? wait : Math.max(wait, readMs(text));
+		const until =
+			pace === "quick" ? wait : Math.max(wait, readMs(text, pace === "slow"));
+		const guard = pace === "slow" ? SLOW_GUARD_MS : SKIP_GUARD_MS;
 		while (performance.now() - t0 < until && !fast) {
 			await sleep(30);
 			// 出てすぐの早送りと、効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
-			if (performance.now() - t0 < SKIP_GUARD_MS || audio.seHeld) fast = false;
+			if (performance.now() - t0 < guard || audio.seHeld) fast = false;
 		}
 		// 時間で進むときも、効果音の区切りまでは次の文（とその音）を出さない
 		await audio.seSettled();
@@ -859,7 +871,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			// 「すごい速さで　キーボードを　たたいた！」のような 地の文は ふつうに読ませる
 			const keys = /カタカタ|ッターン/.test(line);
 			audio.se("cursor");
-			await log(line, 320, keys);
+			await log(line, 320, keys ? "quick" : undefined);
 		}
 		const f = spawn(next.enemy, def.name);
 		f.master = m;
@@ -1017,7 +1029,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			}
 			await applyDamage(a, t, 1);
 		} else if (action.kind === "idle") {
-			await log(action.text, 600);
+			await log(action.text, 600, talk(a, action.text));
 		} else if (action.kind === "guard") {
 			a.guard = true;
 			await log(`${a.name}は　みを　まもっている。`, 450);
@@ -1092,10 +1104,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 						: alive(party);
 			// 演出は文といっしょに出す（送りの速い人を待たせない）
 			playFx(s.fx, targets);
-			await log(
-				s.text.replace("{user}", a.name).replace("{target}", targetName),
-				700,
-			);
+			const said = s.text
+				.replace("{user}", a.name)
+				.replace("{target}", targetName);
+			await log(said, 700, talk(a, said));
 			if (s.kind === "attack") {
 				for (const t of targets) {
 					if (result) break;

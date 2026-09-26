@@ -28,13 +28,16 @@ const DEFAULTS: Settings = {
 	bgmVolume: 40,
 	seVolume: 60,
 	voiceVolume: 80,
-	textMs: 28,
+	textMs: 18,
 	pad: true,
 	autoAllies: true,
 };
 
-/** 既定値を変えたときに上げる。古い保存値のうち音量だけ新しい既定値に戻す。 */
-const VERSION = 3;
+/**
+ * 既定値を変えたときに上げる。v3 より古い保存値は音量を、v4 より古くて文字の速さが
+ * 前の「ふつう」（28）のままなら文字の速さを、新しい既定値に戻す。
+ */
+const VERSION = 4;
 
 const load = (): Settings => {
 	try {

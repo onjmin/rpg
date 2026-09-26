@@ -96,6 +96,8 @@ export type CharDef = {
 	color: string;
 	/** 読み上げ音源（あれば UtauTTS で読み上げる）。 */
 	voice?: VoiceDef;
+	/** "slow" はセリフをいつも重い文として出す（敵役。SayOptions.pace で1行ずつ変えられる）。 */
+	pace?: "slow";
 	/**
 	 * 立ち絵。透過 PNG を public/portraits/ に置いて `src` を指す。
 	 * ファイルが無い／読めないときはダミー表示になる。
@@ -395,6 +397,8 @@ export type SayOptions = {
 	noVoice?: boolean;
 	/** 読み上げの感情を一時的に変える。 */
 	emotion?: VoiceDef["emotion"];
+	/** 重い文（ゆっくり出し、連打で飛ばさない。ui/message.ts）。キャラの pace より先。 */
+	pace?: "slow" | "normal";
 };
 
 export type BattleResult = "win" | "lose" | "escape";

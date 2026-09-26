@@ -139,6 +139,7 @@ export const cast: Record<string, CharDef> = {
 		walk: "pub:sprites/kiriko_botsu.png",
 		color: "#a0a0a0",
 		voice: { model: "uc" },
+		pace: "slow",
 		portrait: {
 			src: "portraits/kiriko.png",
 			side: "right",
