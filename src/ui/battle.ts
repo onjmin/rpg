@@ -81,14 +81,14 @@ const alive = (fs: Fighter[]) => fs.filter((f) => f.hp > 0);
 
 /**
  * 戦闘の文を読むのに要る ms（空白は数えない）。長い文ほど長く出す。
- * 「せってい」の文字の速さで変わる（しゅんかん 25・はやい 35・ふつう 55・おそい 80 ms／字）。
+ * 「せってい」の文字の速さで変わる（しゅんかん 20・はやい 25・ふつう 38・おそい 55 ms／字）。
  * ふつうの雑魚戦の1ターンは、前（450〜650ms の決め打ち）の 1.6 倍くらい。
  * 「……」はひとまとまりごとに 4字ぶん足す（会話の窓と同じく、間で読ませる）。
  * slow（ボスのせりふ）は 1.5 倍。
  */
 const readMs = (text: string, slow = false): number => {
 	const ms = settings.textMs;
-	const per = ms === 0 ? 25 : ms <= 15 ? 35 : ms <= 30 ? 55 : 80;
+	const per = ms === 0 ? 20 : ms <= 10 ? 25 : ms <= 20 ? 38 : 55;
 	const chars = [...text.replace(/[\s　]/g, "")].length;
 	const dots = text.match(/…+/g)?.length ?? 0;
 	return (200 + per * (chars + dots * 4)) * (slow ? 1.5 : 1);

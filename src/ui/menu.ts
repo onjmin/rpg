@@ -281,9 +281,9 @@ export const settingsMenu = async (game: Game): Promise<void> => {
 		const speed =
 			settings.textMs === 0
 				? "しゅんかん"
-				: settings.textMs <= 15
+				: settings.textMs <= 10
 					? "はやい"
-					: settings.textMs <= 30
+					: settings.textMs <= 20
 						? "ふつう"
 						: "おそい";
 		const v = await listWindow(
@@ -393,11 +393,11 @@ export const settingsMenu = async (game: Game): Promise<void> => {
 			saveSettings({
 				textMs:
 					settings.textMs === 0
-						? 45
-						: settings.textMs > 30
-							? 18
-							: settings.textMs > 15
-								? 12
+						? 28
+						: settings.textMs > 20
+							? 12
+							: settings.textMs > 10
+								? 7
 								: 0,
 			});
 		else if (v === "pad") saveSettings({ pad: !settings.pad });
