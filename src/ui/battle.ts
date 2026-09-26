@@ -919,10 +919,12 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		a: Fighter,
 		t: Fighter,
 		power: number,
+		canCrit: boolean,
 	): { dmg: number; crit: boolean } => {
 		const atk = a.atk * (a.buff > 0 ? 1.4 : 1);
 		let dmg = (atk * power - t.def / 2) * rand(0.85, 1.15);
-		const crit = a.side === "party" && power <= 1 && Math.random() < 1 / 16;
+		// かいしんは「こうげき」だけ（うたには出ない）
+		const crit = canCrit && a.side === "party" && Math.random() < 1 / 16;
 		if (crit) dmg = atk * power * 1.6;
 		if (t.guard) dmg /= 2;
 		// メタル：かいしんでなければ 0か1
@@ -932,10 +934,15 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		return { dmg, crit };
 	};
 
-	const applyDamage = async (a: Fighter, t: Fighter, power: number) => {
+	const applyDamage = async (
+		a: Fighter,
+		t: Fighter,
+		power: number,
+		canCrit = false,
+	) => {
 		// 召喚する敵：守りのあるうちは必ずかわす。とけたら一撃で決まる
 		if (t.stock && shielded(t)) return evade(t);
-		const hit = damage(a, t, power);
+		const hit = damage(a, t, power, canCrit);
 		if (t.stock) {
 			hit.dmg = t.hp;
 			hit.crit = false;
@@ -1027,7 +1034,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 				await log(`${t.name}は　ひらりと　みをかわした！`);
 				return;
 			}
-			await applyDamage(a, t, 1);
+			await applyDamage(a, t, 1, true);
 		} else if (action.kind === "idle") {
 			await log(action.text, 380, talk(a, action.text));
 		} else if (action.kind === "guard") {
