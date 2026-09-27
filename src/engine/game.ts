@@ -694,6 +694,14 @@ export class Game {
 		);
 		for (const a of actors) a.draw(ctx, ox, oy, this.time);
 		field.drawAbove(ctx, ox, oy);
+		// 隊列だけは、本棚や掲示板の裏に回っても薄く見せる（町の人は隠れたまま）
+		field.drawHidden(
+			ctx,
+			actors.filter((a) => a === this.player || this.followers.includes(a)),
+			ox,
+			oy,
+			this.time,
+		);
 	}
 
 	// ───────────────── スクリプト ─────────────────

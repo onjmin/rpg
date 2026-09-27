@@ -6,6 +6,8 @@ import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
 
 const FALLBACK_TILE: TileDef = { layers: [], color: "#000", passable: false };
+/** 上の層に隠れた隊列を透かして見せる濃さ。 */
+const HIDDEN_ALPHA = 0.45;
 
 export class Actor {
 	id: string;
@@ -121,6 +123,8 @@ export class Field {
 	private grid: TileDef[];
 	private below: HTMLCanvasElement;
 	private above: HTMLCanvasElement | null = null;
+	/** drawHidden の下書き用。 */
+	private ghost: HTMLCanvasElement | null = null;
 	private dirty = true;
 	private unsub: () => void;
 	actors: Actor[] = [];
@@ -246,6 +250,60 @@ export class Field {
 	/** 地形の上の層（キャラより手前）。 */
 	drawAbove(ctx: CanvasRenderingContext2D, ox: number, oy: number): void {
 		if (this.above) ctx.drawImage(this.above, -ox, -oy);
+	}
+
+	/**
+	 * 上の層に隠れたキャラを、隠れたところだけ薄く描く（本棚や掲示板の裏に回っても見失わない）。
+	 * actors は奥から順に。まわりだけを別の画用紙に描き、上の層がある画素だけ残して重ねる。
+	 */
+	drawHidden(
+		ctx: CanvasRenderingContext2D,
+		actors: Actor[],
+		ox: number,
+		oy: number,
+		time: number,
+	): void {
+		if (!this.above) return;
+		let x0 = Infinity;
+		let y0 = Infinity;
+		let x1 = -Infinity;
+		let y1 = -Infinity;
+		for (const a of actors) {
+			if (!a.visible || !a.sprite) continue;
+			const px = a.fx * TILE - ox;
+			const py = a.fy * TILE - oy;
+			// 絵がマスより大きくても入るよう、左右1マス・上2マスの余白をとる
+			x0 = Math.min(x0, px - TILE);
+			x1 = Math.max(x1, px + 2 * TILE);
+			y0 = Math.min(y0, py - 2 * TILE);
+			y1 = Math.max(y1, py + TILE);
+		}
+		if (x0 > x1) return;
+		// 画面の実画素で描く（カメラは実画素単位で動くので、上の層とずれない）
+		const m = ctx.getTransform();
+		const dx = Math.floor(m.a * x0 + m.e);
+		const dy = Math.floor(m.d * y0 + m.f);
+		const w = Math.ceil(m.a * (x1 - x0)) + 1;
+		const h = Math.ceil(m.d * (y1 - y0)) + 1;
+		const g = this.ghost ?? document.createElement("canvas");
+		this.ghost = g;
+		if (g.width < w) g.width = w;
+		if (g.height < h) g.height = h;
+		const gx = g.getContext("2d");
+		if (!gx) return;
+		gx.setTransform(1, 0, 0, 1, 0, 0);
+		gx.clearRect(0, 0, w, h);
+		gx.setTransform(m.a, 0, 0, m.d, m.e - dx, m.f - dy);
+		gx.imageSmoothingEnabled = false;
+		for (const a of actors) a.draw(gx, ox, oy, time);
+		gx.globalCompositeOperation = "destination-in";
+		gx.drawImage(this.above, -ox, -oy);
+		gx.globalCompositeOperation = "source-over";
+		ctx.save();
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.globalAlpha = HIDDEN_ALPHA;
+		ctx.drawImage(g, 0, 0, w, h, dx, dy, w, h);
+		ctx.restore();
 	}
 
 	/** マップで使う画像参照を全部集める（先読み用）。 */
