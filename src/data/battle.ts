@@ -138,22 +138,23 @@ const a = (
 const en = (d: EnemyDef) => d;
 
 export const enemies: Record<string, EnemyDef> = {
-	// 雑魚の目安（ふつうに進めた人・オート）：2〜3 ターン、HP が1割〜1割半へる。敵は 2〜3 体（街道は 1〜2 体）で、
+	// 雑魚の目安（ふつうに進めた人・オート。pnpm balance）：2〜3 ターン、HP が2割ほどへる（満タンから 5〜7 戦で全滅するので、
+	// 3〜4 戦ごとに蓄音機へもどる）。敵は 2〜3 体（街道は 1〜2 体）で、
 	// 仲間より少しおそい〜同じぐらいの素早さ（先に動く敵がいる）。何もしない行動は 1〜3 割。
-	// 経験値は 1 レベルに 3〜5 戦（段階2 から）。
+	// 経験値は 1 レベルに 5〜7 戦（段階2 から）。寄り道だけで ボスの目安を追いこさないように（少し稼ぐと楽になる）。
 	// ── 段階1（序章・スレ街道／Lv2〜4） ──
 	// 同じ組み合わせを ロゼ加入前の2人（Lv2）と 3人（Lv3〜4）が戦うので、敵は2体まで・全体攻撃を多めにして
-	// 人数の差を小さくした。2人は 3 ターン・HP 2割、3人は 2 ターン・HP 1割、番長の前は 2 ターン・HP 7分。
+	// 人数の差を小さくした。2人は 3 ターン・HP 3割、3人は 2 ターン・HP 1割半、番長の前（Lv4）は 2 ターン・HP 1割。
 	// 敵を速くして、3人でも先に動かれるようにした
 	kskbot: en({
 		id: "kskbot",
 		name: "kskボット",
 		sprite: SPR.e_tv,
 		hp: 25,
-		atk: 8,
+		atk: 10,
 		def: 2,
 		spd: 13,
-		exp: 6,
+		exp: 5,
 		acts: [
 			a(3, 1.0, "{user}は　{target}に　kskstを　れんとうした！"),
 			a(1, 0, "{user}は「加速」とだけ　かきこんだ。"),
@@ -164,10 +165,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "荒らし",
 		sprite: SPR.e_sand,
 		hp: 50,
-		atk: 14,
+		atk: 18,
 		def: 3,
 		spd: 14,
-		exp: 6,
+		exp: 5,
 		drop: { item: "candy", rate: 0.1 },
 		acts: [
 			a(4, 0.6, "{user}は　すなを　まきちらした！", "all"),
@@ -179,10 +180,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "コピペ荒らし",
 		sprite: SPR.e_mystery,
 		hp: 48,
-		atk: 11,
+		atk: 14,
 		def: 4,
 		spd: 13,
-		exp: 6,
+		exp: 5,
 		// スレ8〜10 に貼りなおされた「生ジャケじゃけじゃけ」を持っている
 		drop: { item: "namajake", rate: 0.15 },
 		acts: [
@@ -197,10 +198,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "夏休みキッズ",
 		sprite: SPR.j_sekimen,
 		hp: 60,
-		atk: 13,
+		atk: 17,
 		def: 4,
 		spd: 18,
-		exp: 8,
+		exp: 6,
 		scale: 1,
 		acts: [
 			a(4, 1.0, "{user}の「ﾌｧｰwww」こうげき！"),
@@ -236,10 +237,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ゾンJ民",
 		sprite: SPR.j_zon,
 		hp: 79,
-		atk: 16,
+		atk: 21,
 		def: 8,
 		spd: 8,
-		exp: 6,
+		exp: 5,
 		drop: { item: "candy", rate: 0.2 },
 		acts: [
 			a(2, 1.1, "{user}「ほ……しゅ……」　{target}に　しがみついた！"),
@@ -251,10 +252,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "文字化け",
 		sprite: SPR.e_unknown,
 		hp: 59,
-		atk: 15,
+		atk: 20,
 		def: 10,
 		spd: 12,
-		exp: 5,
+		exp: 4,
 		drop: { item: "spray", rate: 0.15 },
 		acts: [
 			a(2, 0.7, "{user}は「縺ｧ縺ｯ縺ｭ」と　さけんだ！", "all"),
@@ -267,10 +268,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "過疎",
 		sprite: SPR.e_shin1,
 		hp: 53,
-		atk: 14,
+		atk: 18,
 		def: 6,
 		spd: 14,
-		exp: 5,
+		exp: 4,
 		acts: [
 			a(2, 0.6, "{user}の　しずけさが　みんなを　つつむ……", "all"),
 			a(1, 1.0, "{user}は　{target}を　勢い欄の　下へ　ひっぱった！"),
@@ -282,10 +283,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "忍法帖エラー",
 		sprite: SPR.e_pc,
 		hp: 66,
-		atk: 17,
+		atk: 22,
 		def: 9,
 		spd: 11,
-		exp: 6,
+		exp: 5,
 		acts: [
 			a(2, 1.2, "「要lv3以上：現在lv1」　エラーが　{target}に　ささる！"),
 			a(1, 0, "{user}「もうちょっと　忍法帖の　レベルを　上げてね」"),
@@ -298,7 +299,7 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ヤジJ民",
 		sprite: SPR.j_tights,
 		hp: 66,
-		atk: 21,
+		atk: 26,
 		def: 10,
 		spd: 14,
 		exp: 8,
@@ -313,7 +314,7 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "負けムードJ民",
 		sprite: SPR.j_hakkyo,
 		hp: 73,
-		atk: 24,
+		atk: 30,
 		def: 9,
 		spd: 12,
 		exp: 8,
@@ -327,7 +328,7 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "応援団J民",
 		sprite: SPR.j_sen,
 		hp: 70,
-		atk: 21,
+		atk: 26,
 		def: 12,
 		spd: 11,
 		exp: 8,
@@ -343,7 +344,7 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ピッチャー",
 		sprite: SPR.j_yakiu,
 		hp: 66,
-		atk: 23,
+		atk: 29,
 		def: 11,
 		spd: 15,
 		exp: 9,
@@ -356,16 +357,16 @@ export const enemies: Record<string, EnemyDef> = {
 	}),
 
 	// ── 段階4（サーバーの底／Lv9〜10） ──
-	// テトを入れた3人で 2 ターン・HP 1割ほど、入れない3人（キリコ・ロゼ・フェリス）だと 3 ターン・HP 2割
+	// テトを入れた3人で 2 ターン・HP 1割半、入れない3人（キリコ・ロゼ・フェリス）だと 3 ターン・HP 2割
 	jien: en({
 		id: "jien",
 		name: "自演",
 		sprite: SPR.j_nanashi,
 		hp: 84,
-		atk: 27,
+		atk: 30,
 		def: 12,
 		spd: 16,
-		exp: 9,
+		exp: 7,
 		acts: [
 			a(3, 1.0, "{user}「せやな」　{target}に　レスが　ささる！"),
 			a(1, 0, "{user}は　じぶんに「せやな」と　かえした。"),
@@ -376,10 +377,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "503エラー",
 		sprite: SPR.e_tv,
 		hp: 114,
-		atk: 28,
+		atk: 31,
 		def: 16,
 		spd: 13,
-		exp: 14,
+		exp: 11,
 		drop: { item: "spray", rate: 0.2 },
 		acts: [
 			a(2, 1.1, "{user}の「ただいま　こみあっています」！"),
@@ -392,10 +393,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ニセ警告",
 		sprite: SPR.e_pc,
 		hp: 96,
-		atk: 29,
+		atk: 32,
 		def: 12,
 		spd: 17,
-		exp: 13,
+		exp: 10,
 		acts: [
 			a(2, 1.1, "{user}の　ポップアップが　{target}の　目の前に　ひらいた！"),
 			a(1, 0, "{user}「いますぐ　クリック！」　だれも　クリックしなかった。"),
@@ -406,10 +407,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "レスバトラー",
 		sprite: SPR.e_idiot,
 		hp: 120,
-		atk: 28,
+		atk: 31,
 		def: 14,
 		spd: 14,
-		exp: 14,
+		exp: 11,
 		acts: [
 			a(2, 1.1, "{user}の「ソースは？」が　{target}に　ささる！"),
 			a(1, 0.8, "{user}は　ながい　レスバを　しかけた！", "all"),
@@ -421,10 +422,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "まとめキッズ",
 		sprite: SPR.j_hikoki,
 		hp: 102,
-		atk: 28,
+		atk: 31,
 		def: 13,
 		spd: 16,
-		exp: 13,
+		exp: 10,
 		drop: { item: "mabo", rate: 0.15 },
 		acts: [
 			a(2, 1.1, "{user}は　{target}の　レスを　かってに　ならべかえた！"),
@@ -436,10 +437,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "バルス侵蝕",
 		sprite: SPR.e_shin2,
 		hp: 126,
-		atk: 29,
+		atk: 32,
 		def: 16,
 		spd: 15,
-		exp: 15,
+		exp: 12,
 		acts: [
 			a(2, 1.1, "{user}は　{target}の　まわりを　くろく　ぬりつぶした！"),
 			a(1, 0, "{user}は「!バルス」と　つぶやいた……が、なにも　おきない。"),
@@ -450,10 +451,10 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "バルサン",
 		sprite: SPR.e_sand,
 		hp: 108,
-		atk: 28,
+		atk: 31,
 		def: 15,
 		spd: 12,
-		exp: 14,
+		exp: 11,
 		acts: [
 			a(2, 0.8, "{user}が　たかれた！　けむりが　しみる！", "all"),
 			a(1, 0, "{user}「忍法帖Lv1は　おことわりやで〜」"),
@@ -560,21 +561,21 @@ export const enemies: Record<string, EnemyDef> = {
 	}),
 
 	// ── ボス・イベント戦 ──
-	// ボスの目安（ふつうに進めた人・オート）：B1〜B3 は勝率 6〜7 割・6〜8 ターン（3回負けたら通してもらえる）。
-	// F1・F2 はテトを入れた3人で勝率 6〜7 割（ふつう）。入れない3人（キリコ・ロゼ・フェリス）だと 4 割ほど
-	// （むずかしい。手動で 5〜6 割、道具を使えば 9 割）。急いで来た人（1 レベルほど下）もテト入り・手動なら 4〜5 割。
+	// ボスの目安（オート・道具なし。pnpm balance）：目安のレベルで勝率 4〜6 割、1つ上げると 7〜9 割。
+	// 寄り道だけで来ると五分五分なので、少しレベルを上げてから挑む（B1〜B3 は 3回負けたら通してもらえる）。
+	// F1・F2 はテトを入れた3人の数字。入れない3人（キリコ・ロゼ・フェリス）だと 2〜3 割（1つ上で 5 割）。
 	// B1〜B3 の経験値の合計は freedom.ts の BOSS_EXP と同じにする（負けて通してもらったときと そろえる）。
-	// B1: キリコ／やきう／ロゼ Lv4 前後で 7 ターン前後。50＋キッズ 8 ＝ 58
+	// B1: キリコ／やきう／ロゼ Lv4 前後で 9 ターン前後。52＋キッズ 6 ＝ 58
 	natsuboss: en({
 		id: "natsuboss",
 		name: "夏休みキッズ番長",
 		sprite: SPR.j_kasa,
 		scale: 1.5,
-		hp: 275,
-		atk: 23,
+		hp: 360,
+		atk: 27,
 		def: 5,
 		spd: 10,
-		exp: 50,
+		exp: 52,
 		drop: { item: "mabo", rate: 1 },
 		acts: [
 			a(6, 1.2, "{user}の　虫とりあみ　アタック！　{target}に　ヒット！"),
@@ -588,8 +589,8 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ムッジェ",
 		sprite: SPR.mujje,
 		scale: 1.5,
-		hp: 242,
-		atk: 35,
+		hp: 280,
+		atk: 40,
 		def: 10,
 		spd: 11,
 		exp: 70,
@@ -606,8 +607,8 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "テノヒラ監督",
 		sprite: SPR.j_black,
 		scale: 1.5,
-		hp: 340,
-		atk: 49,
+		hp: 360,
+		atk: 53,
 		def: 14,
 		spd: 12,
 		exp: 113,
@@ -644,8 +645,8 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "サイレントバルス",
 		sprite: SPR.e_shinmax,
 		scale: 2,
-		hp: 810,
-		atk: 58,
+		hp: 940,
+		atk: 60,
 		def: 6,
 		spd: 14,
 		exp: 200,
@@ -661,8 +662,8 @@ export const enemies: Record<string, EnemyDef> = {
 		name: "ボツキリコ",
 		sprite: SPR.botsu,
 		scale: 2,
-		hp: 1100,
-		atk: 59,
+		hp: 1150,
+		atk: 60,
 		def: 8,
 		spd: 13,
 		exp: 0,

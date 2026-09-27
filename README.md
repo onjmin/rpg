@@ -39,6 +39,7 @@ pnpm dev
 - `pnpm build` … 型チェックして `build/` に出力（`GITHUB_PAGES=true` で `/rpg/` 配下向け）
 - `pnpm lint` … Biome
 - `pnpm validate` … ゲームデータの検証（マップの形・ワープ先・話し手・戦闘グループ・セリフの長さなど。イベントを空の Story で走らせて調べる）
+- `pnpm balance` … 戦闘バランスのシミュレーター（`ui/battle.ts` の計算を写して、本物のデータでオート戦を何千回も回す）。雑魚1戦で減る HP・全滅までの戦闘数・1レベルに何戦と、ボスの目安のレベル前後の勝率を出す。敵の数値は `BAL_TWEAK='{"zonj":{"atk":20}}'` で試しに上書きできる
 - `pnpm loudness` … 効果音の大きさを測り直す（下の「効果音の音量（ラウドネス）」）
 - `node scripts/make-sprites.mjs` … 素材が無かったドット絵（ムッジェ・ボツキリコ・蓄音機・おんJマイナーズ）を作り直す
 - 開発中は URL でタイトルを飛ばして好きな場所から始められます（`pnpm dev` のときだけ）:
