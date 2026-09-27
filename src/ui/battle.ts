@@ -796,6 +796,9 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 						true,
 					);
 					if (it === null) break;
+					// どのどうぐの「つかう／しらべる」か、文の欄に出しておく
+					const name = data.items[it].name;
+					logEl.textContent = `${name}を　どうする？`;
 					const act = await menu(
 						[
 							{ label: "つかう", value: "use" },
@@ -804,12 +807,16 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 						true,
 					);
 					if (act === "use") break;
+					logEl.textContent = "";
 					if (act === "look") await itemNoteView(game, data.items[it]);
 				}
 				if (it === null) continue;
-				const t = data.items[it].effect?.all
+				const item = data.items[it];
+				if (!item.effect?.all) logEl.textContent = `${item.name}を　だれに？`;
+				const t = item.effect?.all
 					? party[0]
-					: await pickTarget("party", !!data.items[it].effect?.revive);
+					: await pickTarget("party", !!item.effect?.revive);
+				logEl.textContent = "";
 				if (!t) continue;
 				return { kind: "item", item: it, target: t };
 			}
