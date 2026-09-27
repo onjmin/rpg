@@ -503,7 +503,8 @@ body.shake #app {
 }
 
 /* だれに効くか・だいじなもの の札 */
-.desc .tag {
+.desc .tag,
+.item-note .tag {
 	display: inline-block;
 	font-weight: normal;
 	font-size: 11px;
@@ -579,6 +580,13 @@ body.shake #app {
 	margin: 2px 0;
 	font-size: 14px;
 	line-height: 1.55;
+}
+
+/* どうぐの説明（しらべる）。さいごの1行は ひとこと */
+.item-note .profile-page p.quip {
+	margin-top: 8px;
+	color: var(--muted);
+	font-style: italic;
 }
 
 .status-card {

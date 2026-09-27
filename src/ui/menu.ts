@@ -1,6 +1,7 @@
 // フィールドのメニュー（Bボタン／☰）：つよさ・どうぐ・きろく・せってい。
 
 import { bondOf, hearts } from "../engine/bonds";
+import type { ItemDef } from "../engine/defs";
 import type { Game } from "../engine/game";
 import { countPlay, nextSongLv, songsAt, statsOf } from "../engine/party";
 import { writeSave } from "../engine/save";
@@ -191,6 +192,42 @@ const statusView = (game: Game): Promise<void> =>
 		);
 	});
 
+/** どうぐの説明（しらべる）：ふだんの説明・元ネタ・さいごに ひとこと。 */
+const itemNoteView = (game: Game, it: ItemDef): Promise<void> =>
+	new Promise((resolve) => {
+		const box = el("div", { class: "menu window profile item-note" });
+		box.style.setProperty("--char", "var(--accent)");
+		box.appendChild(el("div", { class: "menu-title", text: it.name }));
+		const sec = el("div", { class: "profile-page" });
+		sec.appendChild(el("div", { class: "profile-head", html: itemDesc(it) }));
+		const note = it.note ?? [];
+		note.forEach((line, i) => {
+			const quip = i === note.length - 1 && note.length > 1;
+			sec.appendChild(el("p", { class: quip ? "quip" : "", text: line }));
+		});
+		box.appendChild(sec);
+		const close = el("button", { class: "menu-close", text: "とじる" });
+		box.appendChild(close);
+		game.ui.appendChild(box);
+		const done = () => {
+			pop();
+			game.audio.se("cancel");
+			box.remove();
+			resolve();
+		};
+		close.addEventListener("pointerdown", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			done();
+		});
+		const pop = game.input.push(
+			(k) => {
+				if (k === "a" || k === "b") done();
+			},
+			{ tap: "b" },
+		);
+	});
+
 const itemMenu = async (game: Game): Promise<void> => {
 	const { data, state } = game;
 	for (;;) {
@@ -213,9 +250,18 @@ const itemMenu = async (game: Game): Promise<void> => {
 		if (v === null) return;
 		const it = data.items[v];
 		if (!it) continue;
+		// だいじなもの（使えない）は そのまま説明へ。使えるものは「つかう／しらべる」
 		if (!it.effect) {
-			await game.say(null, `${it.name}：${it.desc}`);
-			game.msg.hideWindow();
+			await itemNoteView(game, it);
+			continue;
+		}
+		const act = await listWindow(game, it.name, [
+			{ label: "つかう", value: "use" },
+			{ label: "しらべる", value: "look" },
+		]);
+		if (act === null) continue;
+		if (act === "look") {
+			await itemNoteView(game, it);
 			continue;
 		}
 		const who = it.effect.all

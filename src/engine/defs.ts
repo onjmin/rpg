@@ -262,6 +262,11 @@ export type ItemDef = {
 	id: string;
 	name: string;
 	desc: string;
+	/**
+	 * メニューの「しらべる」で出す説明。元ネタの解説と、最後の1行に ひとこと（皮肉など）。
+	 * 1要素が1段落。
+	 */
+	note?: string[];
 	/** 使ったときの効果。 */
 	effect?: { hp?: number; mp?: number; revive?: boolean; all?: boolean };
 	/** 大事なもの（使えない・減らない）。 */
