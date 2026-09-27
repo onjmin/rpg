@@ -582,13 +582,6 @@ body.shake #app {
 	line-height: 1.55;
 }
 
-/* どうぐの説明（しらべる）。さいごの1行は ひとこと */
-.item-note .profile-page p.quip {
-	margin-top: 8px;
-	color: var(--muted);
-	font-style: italic;
-}
-
 .status-card {
 	border-left: 4px solid var(--char);
 	padding: 6px 10px;
@@ -949,6 +942,11 @@ body.shake #app {
 
 .battle.shown {
 	opacity: 1;
+}
+
+/* 戦闘中に出すメッセージ窓（どうぐの「しらべる」）は、戦闘の画面より上に */
+#ui:has(> .battle) > .msg {
+	z-index: 26;
 }
 
 .battle-bg {

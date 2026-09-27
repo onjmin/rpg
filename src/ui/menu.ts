@@ -192,41 +192,15 @@ const statusView = (game: Game): Promise<void> =>
 		);
 	});
 
-/** どうぐの説明（しらべる）：ふだんの説明・元ネタ・さいごに ひとこと。 */
-export const itemNoteView = (game: Game, it: ItemDef): Promise<void> =>
-	new Promise((resolve) => {
-		const box = el("div", { class: "menu window profile item-note" });
-		box.style.setProperty("--char", "var(--accent)");
-		box.appendChild(el("div", { class: "menu-title", text: it.name }));
-		const sec = el("div", { class: "profile-page" });
-		sec.appendChild(el("div", { class: "profile-head", html: itemDesc(it) }));
-		const note = it.note ?? [];
-		note.forEach((line, i) => {
-			const quip = i === note.length - 1 && note.length > 1;
-			sec.appendChild(el("p", { class: quip ? "quip" : "", text: line }));
-		});
-		box.appendChild(sec);
-		const close = el("button", { class: "menu-close", text: "とじる" });
-		box.appendChild(close);
-		game.ui.appendChild(box);
-		const done = () => {
-			pop();
-			game.audio.se("cancel");
-			box.remove();
-			resolve();
-		};
-		close.addEventListener("pointerdown", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			done();
-		});
-		const pop = game.input.push(
-			(k) => {
-				if (k === "a" || k === "b") done();
-			},
-			{ tap: "b" },
-		);
-	});
+/**
+ * どうぐの説明（しらべる）：元ネタを1行ずつ メッセージ窓で読ませる。さいごの1行が ひとこと。
+ * 効き目は一覧の2行目に出ているので、ここでは くり返さない。
+ */
+export const itemNoteView = async (game: Game, it: ItemDef): Promise<void> => {
+	const note = it.note?.length ? it.note : [it.desc];
+	for (const line of note) await game.say(null, line, { name: it.name });
+	game.msg.hideWindow();
+};
 
 const itemMenu = async (game: Game): Promise<void> => {
 	const { data, state } = game;
