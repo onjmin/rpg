@@ -183,11 +183,13 @@ export const enemies: Record<string, EnemyDef> = {
 		def: 4,
 		spd: 13,
 		exp: 6,
-		drop: { item: "candy", rate: 0.15 },
+		// スレ8〜10 に貼りなおされた「生ジャケじゃけじゃけ」を持っている
+		drop: { item: "namajake", rate: 0.15 },
 		acts: [
 			a(4, 0.6, "{user}は　おなじ文を　みんなに　はりつけた！", "all"),
 			a(4, 1.0, "{user}の　コピペが　{target}に　ささる！"),
 			a(1, 0, "{user}は　つぎの　コピペを　さがしている……"),
+			a(1, 0, "{user}は　鮭の　歌詞を　はりつけた。"),
 		],
 	}),
 	natsukids: en({
@@ -951,6 +953,17 @@ export const items: Record<string, ItemDef> = {
 			"回復アイテムに　しては、前科が　ある。",
 		],
 		effect: { hp: 90 },
+	}),
+	namajake: it({
+		id: "namajake",
+		name: "生ジャケ",
+		desc: "HPを　45　かいふく",
+		note: [
+			"キリコの　スレ7で「できたよ　自信作」と　貼られた　歌詞「生ジャケじゃけじゃけ」から。",
+			"はじめから　しまいまで　鮭を　たたえる　歌。スレの　感想は「お腹すいた」。",
+			"そのあと　スレ8・9・10にも　貼りなおされた。持ち歌には　なっていない。食べものには　なった。",
+		],
+		effect: { hp: 45 },
 	}),
 	pan: it({
 		id: "pan",

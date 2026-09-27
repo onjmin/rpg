@@ -75,6 +75,32 @@ export const skits: SkitDef[] = [
 			await s.say("nanj", "草");
 		},
 	},
+	// 2b. 生ジャケ（スレ7 の >>562「できたよ自信作」。鮭の歌詞が、スレ8〜10 にも貼られた）。A〜B
+	{
+		id: "a_namajake",
+		title: "生ジャケじゃけじゃけ",
+		members: ["nanj"],
+		when: (st) => ch(st) >= 1 && !st.flags.b2,
+		run: async (s) => {
+			await s.say(
+				"nanj",
+				"スレに　歌詞　貼られとったで。\n「できたよ　自信作」やて",
+			);
+			await s.say("kiriko", "吾輩の　うたンゴ！？");
+			await s.narrate("題は「生ジャケじゃけじゃけ」。");
+			await s.say("kiriko", "……なまじゃけ？");
+			await s.say("nanj", "鮭や。はじめから　しまいまで\nずっと　鮭や");
+			await s.say("kiriko", "吾輩、ワカサギ派ンゴ");
+			await s.say("nanj", "レスは「ええんちゃうか？」と\n「お腹すいた」や");
+			await s.say("kiriko", "……お腹、すいてきた");
+			await s.say(
+				"nanj",
+				"ほんで　次スレにも、その次にも\nだれかが　貼りなおしとる",
+			);
+			await s.say("kiriko", "鮭　持ってこーい！");
+			await s.say("nanj", "うたうんかい！");
+		},
+	},
 	// 3. やきうは UTAU の声がナイ（うたえない）→ 応援を蓄音機にためる。B〜D
 	{
 		id: "a_koe_aru_nai",
