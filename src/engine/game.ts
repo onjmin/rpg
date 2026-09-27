@@ -580,6 +580,13 @@ export class Game {
 			);
 		}
 		if (!target?.def?.run) return;
+		// 本棚や掲示板は、裏（北どなりから下を向いて）からは調べられない
+		if (
+			target.x === this.player.x &&
+			target.y === this.player.y + 1 &&
+			field.hasBack(target)
+		)
+			return;
 		if (!target.def.fixedDir && !target.still)
 			target.dir = OPPOSITE[this.player.dir];
 		void this.runEvent(target.def);
@@ -616,9 +623,13 @@ export class Game {
 				}
 			}
 		}
+		// 本棚や掲示板の裏からタップしたときは、表へ回りこむ
+		const noBack =
+			!!talk && goalX === tx && goalY === ty && field.hasBack(talk);
 		if (
 			talk &&
-			Math.abs(tx - this.player.x) + Math.abs(ty - this.player.y) === 1
+			Math.abs(tx - this.player.x) + Math.abs(ty - this.player.y) === 1 &&
+			!(noBack && this.player.y === ty - 1)
 		) {
 			this.faceTo(this.player, tx, ty);
 			this.talkFront();
@@ -630,6 +641,7 @@ export class Game {
 			goalX,
 			goalY,
 			this.player,
+			noBack,
 		);
 		if (!path) return;
 		this.path = path;

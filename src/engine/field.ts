@@ -201,6 +201,18 @@ export class Field {
 	}
 
 	/**
+	 * 裏から調べられない物か。人ではなく、地形かイベントの絵が上のマスへはみ出す物
+	 * （本棚・掲示板など）は、北どなりが裏側になる。
+	 */
+	hasBack(a: Actor): boolean {
+		if (a.sprite && !a.still) return false;
+		const t = this.tileAt(a.x, a.y);
+		return [...t.layers, ...(t.above ?? []), a.sprite].some(
+			(r) => !!r && overflowsCell(r, TILE),
+		);
+	}
+
+	/**
 	 * 地形を2枚に描く。layers はマスの中だけを奥（below）へ、上のマスへはみ出した部分は
 	 * 手前（above）へ回す（本棚・掲示板の裏に立つと体が隠れる）。above はまるごと手前。
 	 * キャラは 16px のマスに収まるので、はみ出しを手前に描いても前に立つキャラは隠れない。
@@ -375,6 +387,7 @@ export class Field {
 	/**
 	 * (sx,sy) から (tx,ty) への最短経路（幅優先）。
 	 * 目的地そのものに入れないとき（人・カウンター等）は、隣まで行く経路を返す。
+	 * noBack なら北どなり（背の高い物の裏）には着かない。
 	 */
 	findPath(
 		sx: number,
@@ -382,6 +395,7 @@ export class Field {
 		tx: number,
 		ty: number,
 		self: Actor,
+		noBack = false,
 		maxNodes = 4000,
 	): Dir[] | null {
 		if (!this.inBounds(tx, ty)) return null;
@@ -397,7 +411,8 @@ export class Field {
 			const [x, y] = queue[head++];
 			const reached = goalEnterable
 				? x === tx && y === ty
-				: Math.abs(x - tx) + Math.abs(y - ty) === 1;
+				: Math.abs(x - tx) + Math.abs(y - ty) === 1 &&
+					!(noBack && x === tx && y === ty - 1);
 			if (reached) {
 				found = key(x, y);
 				break;
