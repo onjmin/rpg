@@ -8,6 +8,11 @@ import { DIR_VEC, type Dir, TILE } from "./types";
 const FALLBACK_TILE: TileDef = { layers: [], color: "#000", passable: false };
 /** 上の層に隠れた隊列を透かして見せる濃さ。 */
 const HIDDEN_ALPHA = 0.45;
+/** 体の画素のうち、これだけ上の層に覆われたら「隠れた」とみなして透かす。 */
+const HIDDEN_RATIO = 0.9;
+/** 隠れぐあいを測る画用紙（マスの左右1マス・上2マスまで入る）。 */
+const PROBE_W = 3 * TILE;
+const PROBE_H = 3 * TILE;
 
 export class Actor {
 	id: string;
@@ -125,6 +130,10 @@ export class Field {
 	private above: HTMLCanvasElement | null = null;
 	/** drawHidden の下書き用。 */
 	private ghost: HTMLCanvasElement | null = null;
+	/** 隠れぐあいを測る用（キャラ1人ぶん）。 */
+	private probe: HTMLCanvasElement | null = null;
+	/** 上の層の各画素の濃さ（alpha）。隠れぐあいを測るのに使う。 */
+	private cover: Uint8Array | null = null;
 	private dirty = true;
 	private unsub: () => void;
 	actors: Actor[] = [];
@@ -239,6 +248,50 @@ export class Field {
 					drawRefInCell(ctx, ref, px, py, TILE, "over");
 				for (const ref of t.above ?? []) drawRefInCell(ctx, ref, px, py);
 			});
+		this.cover = null;
+		const actx = this.above?.getContext("2d");
+		if (actx) {
+			try {
+				const { data } = actx.getImageData(0, 0, this.w * TILE, this.h * TILE);
+				const cover = new Uint8Array(data.length / 4);
+				for (let i = 0; i < cover.length; i++) cover[i] = data[i * 4 + 3];
+				this.cover = cover;
+			} catch {
+				// 読めない（よその画像で汚れた画用紙）ときは透かしをあきらめる
+			}
+		}
+	}
+
+	/** キャラの絵が上の層にほとんど隠れているか（見えている画素が HIDDEN_RATIO ぶん以下）。 */
+	private hidden(a: Actor, time: number): boolean {
+		const cover = this.cover;
+		if (!cover || !a.visible || !a.sprite) return false;
+		const s = this.probe ?? document.createElement("canvas");
+		this.probe = s;
+		s.width = PROBE_W;
+		s.height = PROBE_H;
+		const sx = s.getContext("2d", { willReadFrequently: true });
+		if (!sx) return false;
+		// マスの左上が (TILE, PROBE_H - TILE) に来るように描く
+		const bx = Math.round(a.fx * TILE) - TILE;
+		const by = Math.round(a.fy * TILE) - (PROBE_H - TILE);
+		a.draw(sx, bx, by, time);
+		const { data } = sx.getImageData(0, 0, PROBE_W, PROBE_H);
+		const mw = this.w * TILE;
+		const mh = this.h * TILE;
+		let body = 0;
+		let covered = 0;
+		for (let y = 0; y < PROBE_H; y++) {
+			for (let x = 0; x < PROBE_W; x++) {
+				if (data[(y * PROBE_W + x) * 4 + 3] < 128) continue;
+				body++;
+				const X = bx + x;
+				const Y = by + y;
+				if (X >= 0 && Y >= 0 && X < mw && Y < mh && cover[Y * mw + X] >= 128)
+					covered++;
+			}
+		}
+		return body > 0 && covered >= body * HIDDEN_RATIO;
 	}
 
 	/** 地形の下の層（キャラより奥）。 */
@@ -253,17 +306,20 @@ export class Field {
 	}
 
 	/**
-	 * 上の層に隠れたキャラを、隠れたところだけ薄く描く（本棚や掲示板の裏に回っても見失わない）。
+	 * 上の層にほとんど隠れたキャラを、隠れたところだけ薄く描く（本棚の裏に回っても見失わない）。
+	 * 体が少しでも見えているキャラ（木の葉が肩にかかる等）は透かさない。
 	 * actors は奥から順に。まわりだけを別の画用紙に描き、上の層がある画素だけ残して重ねる。
 	 */
 	drawHidden(
 		ctx: CanvasRenderingContext2D,
-		actors: Actor[],
+		party: Actor[],
 		ox: number,
 		oy: number,
 		time: number,
 	): void {
 		if (!this.above) return;
+		const actors = party.filter((a) => this.hidden(a, time));
+		if (!actors.length) return;
 		let x0 = Infinity;
 		let y0 = Infinity;
 		let x1 = -Infinity;
