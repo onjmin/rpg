@@ -219,6 +219,7 @@ const SUPPLY: Record<string, number> = {
 	mabo: 5,
 	pan: 3,
 	hane: 3,
+	namajake: 3,
 };
 
 /** その場面の手前まで進めた状態に作りなおす（いまの状態は捨てる）。 */

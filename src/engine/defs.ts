@@ -271,7 +271,14 @@ export type ItemDef = {
 	 */
 	note?: string[];
 	/** 使ったときの効果。 */
-	effect?: { hp?: number; mp?: number; revive?: boolean; all?: boolean };
+	effect?: {
+		hp?: number;
+		mp?: number;
+		revive?: boolean;
+		all?: boolean;
+		/** 食中毒（生ジャケ）：戦闘ではその戦闘のあいだ毎ターン HP が 1割へる。メニューでは回復のあとすぐ 2割へる。どちらも HP 1 は残す。 */
+		sick?: boolean;
+	};
 	/** 大事なもの（使えない・減らない）。 */
 	key?: boolean;
 };

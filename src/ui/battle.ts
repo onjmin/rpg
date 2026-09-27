@@ -59,6 +59,8 @@ type Fighter = {
 	guard: boolean;
 	/** 攻撃力アップの残りターン */
 	buff: number;
+	/** 食中毒（生ジャケ）。その戦闘のあいだ、ターンの終わりに HP が 1割へる */
+	sick?: boolean;
 	view: HTMLElement;
 	bar?: HTMLElement;
 	/** 召喚する敵のみ：まだ出していない手下（EnemyDef.summon.stock の写し。data は書きかえない） */
@@ -1113,6 +1115,10 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					renderParty();
 					await log(`${t.name}の　こえが　${n}　もどった！`, 320);
 				}
+				if (it.effect?.sick && t.hp > 0 && !t.sick) {
+					t.sick = true;
+					await log(`${t.name}は　おなかを　こわした！`);
+				}
 			}
 		} else if (action.kind === "skill") {
 			const s = action.skill;
@@ -1264,6 +1270,17 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		if (!result)
 			for (const e of alive(enemies))
 				if (e.stock?.length && !hasMinion(e)) await summonNext(e, true);
+		// 食中毒：ターンの終わりに HP が 1割へる（HP 1 は残す）
+		if (!result)
+			for (const f of alive(party)) {
+				if (!f.sick || f.hp <= 1) continue;
+				const n = Math.min(f.hp - 1, Math.max(1, Math.round(f.maxHp * 0.1)));
+				f.hp -= n;
+				renderParty();
+				audio.se("damage");
+				await hitParty(f);
+				await log(`${f.name}は　おなかが　いたい！　${n}の　ダメージ！`);
+			}
 		for (const f of [...party, ...enemies]) {
 			f.guard = false;
 			if (f.buff > 0) f.buff--;

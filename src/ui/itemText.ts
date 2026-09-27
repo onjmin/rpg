@@ -29,6 +29,7 @@ const effectText = (e: Effect): string =>
 		e.revive ? "いきかえる" : "",
 		e.hp ? `HPを　${e.hp}　かいふく` : "",
 		e.mp ? `こえを　${e.mp}　かいふく` : "",
+		e.sick ? "おなかを　こわす" : "",
 	]
 		.filter(Boolean)
 		.join("・") || "つかえる";
@@ -44,6 +45,7 @@ const descMatches = (desc: string, e: Effect): boolean => {
 	if (e.mp && !((s.includes("こえ") || s.includes("声")) && hasNumber(s, e.mp)))
 		return false;
 	if (e.revive && !s.includes("いきかえ")) return false;
+	if (e.sick && !s.includes("おなか")) return false;
 	return true;
 };
 

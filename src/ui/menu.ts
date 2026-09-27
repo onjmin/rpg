@@ -283,6 +283,7 @@ const itemMenu = async (game: Game): Promise<void> => {
 		const targets =
 			who === "all" ? state.party : state.party.filter((m) => m.id === who);
 		let used = false;
+		const sick: string[] = [];
 		for (const m of targets) {
 			const st = statsOf(data.cast[m.id], m.lv);
 			if (it.effect.revive && m.hp <= 0) {
@@ -297,12 +298,21 @@ const itemMenu = async (game: Game): Promise<void> => {
 				m.mp = Math.min(st.maxMp, m.mp + it.effect.mp);
 				used = true;
 			}
+			// 食中毒：回復のあと すぐ 2割へる（HP 1 は残す）
+			if (used && it.effect.sick && m.hp > 1) {
+				m.hp -= Math.min(m.hp - 1, Math.round(st.maxHp * 0.2));
+				sick.push(data.cast[m.id].name);
+			}
 		}
 		if (used) {
 			game.story.take(v);
 			countPlay(game.state, "play_item");
 			game.audio.se("heal");
 			await game.say(null, `${it.name}を　つかった！`);
+			for (const name of sick) {
+				game.audio.se("damage");
+				await game.say(null, `${name}は　おなかを　こわした……`);
+			}
 		} else {
 			await game.say(null, "いまは　つかっても　いみが　なさそうだ。");
 		}
