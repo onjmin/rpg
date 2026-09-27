@@ -1,6 +1,6 @@
 // フィールド（マップ1枚ぶんの実行時状態）：地形の描画キャッシュ・通行判定・キャラの移動。
 
-import { drawRefInCell, onImageLoaded } from "./assets";
+import { drawRefInCell, onImageLoaded, overflowsCell } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
@@ -146,11 +146,6 @@ export class Field {
 		this.below = document.createElement("canvas");
 		this.below.width = this.w * TILE;
 		this.below.height = this.h * TILE;
-		if (this.grid.some((t) => t.above?.length)) {
-			this.above = document.createElement("canvas");
-			this.above.width = this.w * TILE;
-			this.above.height = this.h * TILE;
-		}
 		// 素材の読み込みが進むたびに描き直す
 		this.unsub = onImageLoaded(() => {
 			this.dirty = true;
@@ -192,12 +187,32 @@ export class Field {
 		return this.actors.find((a) => a.id === id);
 	}
 
+	/**
+	 * 地形を2枚に描く。layers はマスの中だけを奥（below）へ、上のマスへはみ出した部分は
+	 * 手前（above）へ回す（本棚・掲示板の裏に立つと体が隠れる）。above はまるごと手前。
+	 * キャラは 16px のマスに収まるので、はみ出しを手前に描いても前に立つキャラは隠れない。
+	 */
 	private redraw(): void {
 		this.dirty = false;
+		const tiles = [...new Set(this.grid)];
+		if (
+			!this.above &&
+			tiles.some(
+				(t) => t.above?.length || t.layers.some((r) => overflowsCell(r, TILE)),
+			)
+		) {
+			this.above = document.createElement("canvas");
+			this.above.width = this.w * TILE;
+			this.above.height = this.h * TILE;
+		}
 		const draw = (
 			canvas: HTMLCanvasElement,
-			pick: (t: TileDef) => string[] | undefined,
-			fill: boolean,
+			paint: (
+				ctx: CanvasRenderingContext2D,
+				t: TileDef,
+				px: number,
+				py: number,
+			) => void,
 		) => {
 			const ctx = canvas.getContext("2d");
 			if (!ctx) return;
@@ -205,19 +220,21 @@ export class Field {
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			for (let y = 0; y < this.h; y++) {
 				for (let x = 0; x < this.w; x++) {
-					const t = this.grid[y * this.w + x];
-					const px = x * TILE;
-					const py = y * TILE;
-					if (fill) {
-						ctx.fillStyle = t.color;
-						ctx.fillRect(px, py, TILE, TILE);
-					}
-					for (const ref of pick(t) ?? []) drawRefInCell(ctx, ref, px, py);
+					paint(ctx, this.grid[y * this.w + x], x * TILE, y * TILE);
 				}
 			}
 		};
-		draw(this.below, (t) => t.layers, true);
-		if (this.above) draw(this.above, (t) => t.above, false);
+		draw(this.below, (ctx, t, px, py) => {
+			ctx.fillStyle = t.color;
+			ctx.fillRect(px, py, TILE, TILE);
+			for (const ref of t.layers) drawRefInCell(ctx, ref, px, py, TILE, "cell");
+		});
+		if (this.above)
+			draw(this.above, (ctx, t, px, py) => {
+				for (const ref of t.layers)
+					drawRefInCell(ctx, ref, px, py, TILE, "over");
+				for (const ref of t.above ?? []) drawRefInCell(ctx, ref, px, py);
+			});
 	}
 
 	/** 地形の下の層（キャラより奥）。 */
