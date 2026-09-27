@@ -3,6 +3,7 @@
 // 中身は src/data/bonds/ に分けて書く（章のフラグ ch・b1・b2… を when に使う）。
 
 import type { BondData } from "../engine/defs";
+import { asideChats } from "./asides";
 import * as chatsRozeFeris from "./bonds/chats-roze-feris";
 import * as chatsTetoNanj from "./bonds/chats-teto-nanj";
 import { dates } from "./bonds/dates";
@@ -13,7 +14,8 @@ const parts = [skitsA, skitsB, chatsRozeFeris, chatsTetoNanj];
 
 export const bonds: BondData = {
 	skits: parts.flatMap((p) => p.skits),
-	chats: parts.flatMap((p) => p.chats),
+	// 出来事の直後だけの分（期間限定・1回）を ふだんの話より先に
+	chats: [...asideChats, ...parts.flatMap((p) => p.chats)],
 	profiles: parts.flatMap((p) => p.profiles),
 	dates,
 };

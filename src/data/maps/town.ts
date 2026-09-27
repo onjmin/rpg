@@ -13,6 +13,7 @@ import type {
 	TileDef,
 } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { freshTalk } from "../asides";
 import { chest, npc, sign, warp } from "../helpers";
 import { nichie, onchan } from "../minors";
 import { SPR } from "../sprites";
@@ -352,6 +353,7 @@ const mamma = async (s: Story): Promise<void> => {
 
 /** ボイス案内（§9）。 */
 const voice = async (s: Story): Promise<void> => {
+	if (await freshTalk(s, "voice")) return;
 	if (s.flag("voice_told")) {
 		await J(
 			s,
@@ -390,6 +392,7 @@ const kosan = async (s: Story): Promise<void> => {
 
 /** 詰碁（任意。正解は「真下」）。 */
 const igo = async (s: Story): Promise<void> => {
+	if (await freshTalk(s, "igo")) return;
 	await J(s, "詰碁、やってくか？", "囲碁J民");
 	if ((await s.choose(["やる", "やめとく"], { cancel: 1 })) === 1) return;
 	await s.narrate("●○●　（盤の　いちばん上）\n＋＋＋");
@@ -765,6 +768,7 @@ const events: EventDef[] = [
 		6,
 		SPR.j_hikoki,
 		async (s) => {
+			if (await freshTalk(s, "oekaki")) return;
 			if (s.flag("rec")) {
 				await J(
 					s,
@@ -789,6 +793,7 @@ const events: EventDef[] = [
 		10,
 		SPR.senju,
 		async (s) => {
+			if (await freshTalk(s, "senju")) return;
 			await N(s, "あ！今日土曜日ど！", "先住民");
 			if (!s.flag("nanj_in") || s.flag("akukin")) return;
 			// 遊んでいる端末が ほんとうに土曜日なら、言いかけて やめる（data/weekday.ts）

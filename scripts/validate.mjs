@@ -180,6 +180,7 @@ try {
 	// 仲間のレベル・うた・控えの文（engine/party.ts）
 	const P = await server.ssrLoadModule("/src/engine/party.ts");
 	const maps = data.maps;
+	const { freshTalks } = await server.ssrLoadModule("/src/data/asides.ts");
 
 	// ── マップの形 ──
 	const grids = {};
@@ -703,41 +704,15 @@ try {
 		if (!data.cast[p.who]) err(`profile: who "${p.who}" が cast に無い`);
 	}
 
-	// ── 出来事の直後だけの雑談（asides.ts） ──
-	// 歩いているときの ひとことは、行をセリフとして流して 長さ・話し手を調べる（行が関数なら jobs の2周目で分かれる）
-	const asides = data.asides ?? { walk: [], talk: [] };
-	const asideIds = new Set();
-	for (const a of asides.walk) {
-		if (asideIds.has(a.id)) err(`aside ${a.id}: id が重複`);
-		asideIds.add(a.id);
-		for (const m of a.members)
-			if (!data.cast[m]) err(`aside ${a.id}: members の "${m}" が cast に無い`);
-		await run(
-			`aside ${a.id}`,
-			async (s) => {
-				const lines =
-					typeof a.lines === "function" ? a.lines(s.state) : a.lines;
-				if (!lines.length) err(`aside ${a.id}: 行が無い`);
-				for (const [who, text] of lines) {
-					if (who !== "kiriko" && !a.members.includes(who))
-						err(`aside ${a.id}: "${who}" が members に無い`);
-					await s.say(who, text);
-				}
-			},
-			data.start.mapId,
-		);
-	}
+	// ── 出来事の直後だけの町の人の一言（asides.ts の freshTalks） ──
+	// 「なかまと　はなす」の分は bonds.chats に入っているので、上の chat で調べ済み
 	const freshIds = new Set();
-	for (const t of asides.talk) {
+	for (const t of freshTalks) {
 		if (freshIds.has(t.id)) err(`fresh ${t.id}: id が重複`);
 		freshIds.add(t.id);
-		const m = maps[t.map];
-		if (!m) err(`fresh ${t.id}: マップ "${t.map}" が無い`);
-		else if (
-			!(m.events ?? []).some((e) => e.id === t.event && e.trigger === "talk")
-		)
-			err(`fresh ${t.id}: ${t.map} に 話しかけるイベント "${t.event}" が無い`);
-		await run(`fresh ${t.id}`, t.run, t.map);
+		if (!(maps.town?.events ?? []).some((e) => e.id === t.event && e.trigger === "talk"))
+			err(`fresh ${t.id}: town に 話しかけるイベント "${t.event}" が無い`);
+		await run(`fresh ${t.id}`, t.run, "town");
 	}
 
 	// ── 端末の日付の場面（days.ts の DAYS） ──
@@ -820,10 +795,8 @@ try {
 				if (e.when) checkWhen(`map ${id} ${e.id}`, e.when, id, flags);
 		for (const k of bonds.skits)
 			if (k.when) checkWhen(`skit ${k.id}`, k.when, data.start.mapId, flags);
-		for (const a of asides.walk)
-			checkWhen(`aside ${a.id}`, a.when, data.start.mapId, flags);
-		for (const t of asides.talk)
-			checkWhen(`fresh ${t.id}`, t.when, t.map, flags);
+		for (const t of freshTalks)
+			checkWhen(`fresh ${t.id}`, t.when, "town", flags);
 		for (const [j, c] of bonds.chats.entries())
 			if (c.when)
 				checkWhen(`chat ${c.who} #${j}`, c.when, data.start.mapId, flags);
