@@ -853,11 +853,12 @@ export class Game {
 			pace: (opt.pace ?? c?.pace) === "slow" ? "slow" : undefined,
 			onShow:
 				voice && settings.voice && !opt.noVoice
-					? () =>
-							this.audio.speak(text, {
-								...voice,
-								emotion: opt.emotion ?? voice.emotion,
-							})
+					? (leadMs) =>
+							this.audio.speak(
+								text,
+								{ ...voice, emotion: opt.emotion ?? voice.emotion },
+								leadMs,
+							)
 					: undefined,
 		});
 	}

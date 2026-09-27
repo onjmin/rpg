@@ -19,6 +19,8 @@
 // （設定の VOICE_PACE_MAX＝2倍まで）。声は1文字あたり設定よりずっと遅いので、短いセリフは声の
 // 終わりごろに出きるが、ふつうの長さのセリフは声の半分ほどで出きる（読む速さはプレイヤーの設定が先）。
 // 声の終わりの見込みは、合成待ちで声が後ろへずれたり止まったりすると延びる（SpeechStart.endAt）。
+// 「……」で始まる文は、読み上げでは「……」が落ちて声がすぐ言葉から始まるので、声を「……」を
+// 出しきって間を置くまで遅らせ（onShow の leadMs）、文字送りはそのぶん声より先に出し始める。
 // 読み上げが OFF のとき（GameAudio.speak が started を返さないとき）は待たずにすぐ出し始める。
 
 import { publicUrl } from "../engine/assets";
@@ -77,6 +79,12 @@ const VOICE_PACE_MAX = 2;
  */
 const pauseAfter = (c: string | undefined, next: string | undefined): number =>
 	c === "、" || c === "。" ? 4 : c === "…" && next !== "…" ? 7 : 1;
+
+/**
+ * 出だしで声にならない文字（読み上げでは「……」などを落とすので、声はすぐ言葉から始まる）。
+ * 文がこれで始まるときは、出しきって間を置いてから声を鳴らす。
+ */
+const SILENT_LEAD = /^[…‥・.．、。\s]+/u;
 
 /** pace: "slow" の文で、1文字あたりの ms を何倍にするか。 */
 const SLOW_RATE = 1.8;
@@ -254,8 +262,11 @@ export type MessageParams = {
 	 * 出てすぐと出きってすぐの押しを受けない。
 	 */
 	pace?: "slow";
-	/** 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。 */
-	onShow?: () => ShowHook | undefined;
+	/**
+	 * 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。
+	 * leadMs は、声にならない出だし（「……」など）を出しきるまでの ms。声はそのぶん遅らせて鳴らす。
+	 */
+	onShow?: (leadMs: number) => ShowHook | undefined;
 };
 
 /** {@link MessageParams.onShow} の戻り値。 */
@@ -441,11 +452,18 @@ export class MessageWindow {
 		const chars = [...p.text];
 		this.textEl.textContent = "";
 		this.nextEl.classList.remove("shown");
-		const hook = p.onShow?.();
+		const slow = p.pace === "slow";
+		// 声にならない出だしの文字数と、それを出しきって間を置くまでの ms（最初の文字は声の頭と同時に出す）
+		const silent = [...(p.text.match(SILENT_LEAD)?.[0] ?? "")].length;
+		const leadChars = silent < chars.length ? silent : 0;
+		const leadPer = Math.max(0, this.msPerChar() * (slow ? SLOW_RATE : 1));
+		let leadMs = 0;
+		for (let i = 0; i < leadChars; i++)
+			leadMs += leadPer * pauseAfter(chars[i], chars[i + 1]);
+		const hook = p.onShow?.(leadMs);
 		const stop = hook?.stop;
 		const token = ++this.showToken;
 		const shownAt = performance.now();
-		const slow = p.pace === "slow";
 		return new Promise((resolve) => {
 			let shown = 0;
 			let timer = 0;
@@ -488,7 +506,8 @@ export class MessageWindow {
 			 */
 			const stepMs = (ms: number): number => {
 				let per = ms;
-				if (voiceEnd !== null) {
+				// 声にならない出だしは設定の速さのまま出す（声はそのぶん遅らせてある）
+				if (voiceEnd !== null && shown >= leadChars) {
 					let rest = 0;
 					for (let i = shown - 1; i < chars.length - 1; i++)
 						rest += pauseAfter(chars[i], chars[i + 1]);
@@ -547,7 +566,8 @@ export class MessageWindow {
 						return;
 					}
 					window.clearTimeout(timer);
-					const at = Math.min(cue.at, shownAt + VOICE_WAIT_MAX_MS);
+					// 声にならない出だしを出しきったところで声が聞こえるように、そのぶん先に出し始める
+					const at = Math.min(cue.at - leadMs, shownAt + VOICE_WAIT_MAX_MS);
 					timer = window.setTimeout(
 						startTyping,
 						Math.max(0, at - performance.now()),

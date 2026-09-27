@@ -694,12 +694,14 @@ export class GameAudio {
 	 * セリフを読み上げる。stop を呼ぶと止まる（準備中なら準備ごと中断）。
 	 * 合成が終わる前に次のセリフへ進んだときは、遅れて届いた声を捨てる。
 	 * started で鳴り始める時刻が分かる（文字送りを声の頭に合わせる用）。
+	 * leadMs を渡すと、今からそのぶんより前には鳴らさない（「……」で始まる文の間）。
 	 */
-	speak(text: string, voice: VoiceDef): Speaking {
+	speak(text: string, voice: VoiceDef, leadMs = 0): Speaking {
 		this.stopSpeech();
 		const body = speechText(text);
 		const ctx = this.ctx;
 		if (!settings.voice || !ctx || !body) return { stop: () => {} };
+		const at = leadMs > 0 ? ctx.currentTime + leadMs / 1000 : undefined;
 		const entry = {
 			abort: new AbortController(),
 			handle: null as SpeechHandle | null,
@@ -722,6 +724,7 @@ export class GameAudio {
 					// 最初のかたまり（＋貯め）が出来たら頭から鳴らす。後続の合成が遅れたら
 					// 飛ばさずに後ろをずらす（lateChunks の既定 "shift"）
 					awaitRender: "first-chunk",
+					at,
 					minBufferSec:
 						SPEECH_BUFFER_SEC[voice.model] ?? SPEECH_BUFFER_DEFAULT_SEC,
 					signal: entry.abort.signal,
