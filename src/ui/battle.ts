@@ -35,7 +35,7 @@ import { viewport } from "../engine/viewport";
 import { battleBackdrop } from "./battleBg";
 import { el, nextFrame } from "./dom";
 import { itemDesc } from "./itemText";
-import { keepInView, onTap } from "./menu";
+import { itemNoteView, keepInView, onTap } from "./menu";
 
 type Side = "party" | "enemy";
 
@@ -783,15 +783,29 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					([id, n]) => n > 0 && data.items[id]?.effect,
 				);
 				// 効果は2行目に出しておく（タップだとすぐ決まって、選ぶ前に説明を読めないので）
-				const it = await menu(
-					owned.map(([id, n]) => ({
-						label: data.items[id].name,
-						sub: `×${n}`,
-						desc: itemDesc(data.items[id]),
-						value: id,
-					})),
-					true,
-				);
+				// 「しらべる」で説明を読んだら、どうぐの一覧へもどる
+				let it: string | null = null;
+				for (;;) {
+					it = await menu(
+						owned.map(([id, n]) => ({
+							label: data.items[id].name,
+							sub: `×${n}`,
+							desc: itemDesc(data.items[id]),
+							value: id,
+						})),
+						true,
+					);
+					if (it === null) break;
+					const act = await menu(
+						[
+							{ label: "つかう", value: "use" },
+							{ label: "しらべる", value: "look" },
+						],
+						true,
+					);
+					if (act === "use") break;
+					if (act === "look") await itemNoteView(game, data.items[it]);
+				}
 				if (it === null) continue;
 				const t = data.items[it].effect?.all
 					? party[0]

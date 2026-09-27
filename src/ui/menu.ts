@@ -193,7 +193,7 @@ const statusView = (game: Game): Promise<void> =>
 	});
 
 /** どうぐの説明（しらべる）：ふだんの説明・元ネタ・さいごに ひとこと。 */
-const itemNoteView = (game: Game, it: ItemDef): Promise<void> =>
+export const itemNoteView = (game: Game, it: ItemDef): Promise<void> =>
 	new Promise((resolve) => {
 		const box = el("div", { class: "menu window profile item-note" });
 		box.style.setProperty("--char", "var(--accent)");
