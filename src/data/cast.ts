@@ -15,7 +15,7 @@ export const cast: Record<string, CharDef> = {
 	kiriko: c({
 		id: "kiriko",
 		name: "キリコ",
-		walk: "pub:sprites/kiriko.png",
+		walk: "sa:vHsmy5",
 		color: "#7be0a0",
 		voice: { model: "uc" },
 		portrait: { src: "portraits/kiriko.png", side: "left" },

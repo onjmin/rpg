@@ -697,7 +697,12 @@ walkSheet(
 // キリコの歩行グラを「色を抜いて、冷たい灰色に沈めた」差分。
 // 若草色の髪（ポニテ）は黒っぽい鉄色にして、角刈りっぽい重さを出す。
 
-const src = decodePng(readFileSync(join(OUT, "kiriko.png")));
+// 元の絵は RPGEN「蓄音キリコ」（src/data/cast.ts の sa:vHsmy5）。
+const src = decodePng(
+	Buffer.from(
+		await (await fetch("https://rpgen-search.pages.dev/data/images/sAnims/vHsmy5.png")).arrayBuffer(),
+	),
+);
 const botsu = Buffer.from(src.rgba);
 for (let i = 0; i < botsu.length; i += 4) {
 	const [r, g, b, a] = botsu.subarray(i, i + 4);
