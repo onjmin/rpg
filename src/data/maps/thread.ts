@@ -214,7 +214,9 @@ const ending = async (s: Story): Promise<void> => {
 	if (jb) await J(s, jb, "J民B");
 	await s.say("roze", "わたしにあって　キリコにないもの……\nもう、ないアル");
 	await s.say("feris", "34キロなのに、中身　ぎっしりだね〜");
-	await s.say("hinary", "……おめでとう。\n避難Jを研究している　ヒナリーです");
+	// 倉庫で「キリコさんの　レスを　数えています」と言っていた ヒナリーの、最後の 発表
+	await s.say("hinary", "本日の　レス数は、\n1000の　模様です");
+	await s.say("hinary", "……おめでとう、ございます");
 	await N(s, "ホゲェ！", "ムッジェ");
 	// ぷゆゆ（町の小花のそばでの こたえ方。記録なしは既定の一言）
 	await J(s, VARIANTS.puyu(st), "ぷゆゆ");
@@ -693,6 +695,10 @@ const events: EventDef[] = [
 		SPR.hinary,
 		async (s) => {
 			await s.say("hinary", "避難Jを研究しているヒナリーです。");
+			// いつもの 締めを 言いかけて、やめる
+			await s.say("hinary", "これで　研究を　終わりたいと……");
+			await s.narrate("ヒナリーは　ことばを　とめて、\nスレを　見あげた。");
+			await s.say("hinary", "……もうすこし、つづけます");
 			// 倉庫の「ヒナリーの　お勉強」（kakolog.ts の obenkyo）を見ていたら
 			if (s.flag("hinary_q"))
 				await s.narrate("白衣の　ポケットに、\n新しい　紙が　入っている。");

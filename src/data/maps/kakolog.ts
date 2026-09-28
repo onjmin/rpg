@@ -437,10 +437,109 @@ const obenkyo = async (s: Story): Promise<void> => {
 	s.set("hinary_q");
 };
 
+/** 控えでなく、いっしょに 歩いている 仲間か。 */
+const front = (s: Story, id: string): boolean =>
+	s.state.party.some((m) => m.id === id && !m.bench);
+
+// ヒナリーは 避難J（なんJの 避難所）の 生まれ。スレを 立てて あいさつだけして 帰る「研究者」で、
+// たまに わかりきった ことを 報告書の 口調で 発表しては きちんと 締める。
+// ほんとうに 役に立つと「サンキューヒッナ」。白衣・青い髪・フェリスの 相方は おんJの フェリススレから。
+
+/** 1回目：あいさつだけ（立て逃げ）。 */
+const hinaryHello = async (s: Story): Promise<void> => {
+	await s.say("hinary", "私は　避難Jを研究している\nヒナリーです");
+	await s.say("hinary", "以後、お見知りおきを。");
+	if (!front(s, "nanj")) return;
+	await s.say("nanj", "おう、研究成果　発表せえや");
+	await s.narrate("ヒナリーは　ぺこりと　おじぎして、\nうしろを　むいた。");
+	s.face("hinary", "up");
+	await s.say("nanj", "……立て逃げかい");
+};
+
+/** 2回目：はじめての 発表。 */
+const hinaryCount = async (s: Story): Promise<void> => {
+	await s.say(
+		"hinary",
+		"本日は　この倉庫の　スレを\n数えてきましたので、発表します",
+	);
+	await s.say("hinary", "……ぜんぶ、落ちている　模様です");
+	if (front(s, "nanj")) await s.say("nanj", "倉庫やからな");
+	await s.say("hinary", "これで　発表を　終わりたいと\n思います");
+};
+
 /**
- * ヒナリー（3回目から「言いたそうだ」→ hinary_hint）。
+ * お勉強（hinary_q）の あとの 研究発表。話すたびに、いまの 顔ぶれで 出せるものを 順に ひとつ。
+ * 宝箱が 残っていれば 数えて くれる（ほんとうに 役に立つ ほう）。
+ */
+const HINARY_TALKS: {
+	when: (s: Story) => boolean;
+	run: (s: Story) => Promise<void>;
+}[] = [
+	{
+		when: (s) => !s.flag("chest_kako1") || !s.flag("chest_kako2"),
+		run: async (s) => {
+			const left = [s.flag("chest_kako1"), s.flag("chest_kako2")].filter(
+				(f) => !f,
+			).length;
+			await s.say("hinary", "この倉庫の　宝箱を\n数えてきました");
+			await s.say(
+				"hinary",
+				`まだ　${left === 1 ? "ひとつ" : "ふたつ"}、\nあいていない　模様です`,
+			);
+			if (front(s, "nanj")) await s.say("nanj", "……サンキューヒッナ");
+			else await s.narrate("ヒナリーは　すこしだけ　胸を　はった。");
+		},
+	},
+	{
+		when: () => true,
+		run: async (s) => {
+			await s.say("hinary", "試合の　ない日は、\nレスが　少ない　模様です");
+			if (front(s, "nanj")) await s.say("nanj", "……それは　ほんまや");
+			await s.say("hinary", "これで　発表を　終わりたいと\n思います");
+		},
+	},
+	{
+		when: (s) => front(s, "feris"),
+		run: async (s) => {
+			await s.say("hinary", "フェリスさんの　くしゃみの\n温度を　しらべました");
+			await s.say("feris", "え〜？　いつ〜？");
+			await s.say("hinary", "白衣が　一着、\nだめに　なりました");
+			await s.narrate("白衣の　すそが、すこし　こげている。");
+		},
+	},
+	{
+		when: () => true,
+		run: async (s) => {
+			await s.say("hinary", "キリコさんの　レスを\n数えています");
+			await ks(s, "……何レス　ンゴ？");
+			await s.say("hinary", "まだ、とちゅうです");
+		},
+	},
+	{
+		when: (s) => front(s, "feris"),
+		run: async (s) => {
+			await s.narrate(
+				"フェリスが　ヒナリーの　髪を\nふたつに　むすびはじめた。",
+			);
+			await s.say("hinary", "……研究中です");
+			await s.say("feris", "できた〜。かわいい〜");
+			await s.narrate("ヒナリーは、ほどかなかった。");
+		},
+	},
+];
+
+const hinaryTalk = async (s: Story): Promise<void> => {
+	const list = HINARY_TALKS.filter((t) => t.when(s));
+	const p = Number(s.flag("hinary_p") ?? 0);
+	s.set("hinary_p", p + 1);
+	await list[p % list.length].run(s);
+};
+
+/**
+ * ヒナリー（1回目は あいさつ、2回目は 発表、3回目から「言いたそうだ」→ hinary_hint）。
  * hinary_hint のあと、フェリスが たたかう仲間にいれば お勉強。控えにいると、うしろを気にする。
  * 回数でなく hinary_hint で分けるのは、validate で hinary_n が 1〜2 にしかならないため。
+ * お勉強（hinary_q）の あとは 研究発表（HINARY_TALKS）。
  */
 const hinary = npc(
 	"hinary",
@@ -451,24 +550,20 @@ const hinary = npc(
 		const n = Number(s.flag("hinary_n") ?? 0) + 1;
 		s.set("hinary_n", n);
 		const benched = s.state.party.some((m) => m.id === "feris" && m.bench);
-		if (
-			s.flag("hinary_hint") &&
-			s.flag("feris_in") &&
-			!benched &&
-			!s.flag("hinary_q")
-		)
+		if (s.flag("hinary_q")) return hinaryTalk(s);
+		if (s.flag("hinary_hint") && s.flag("feris_in") && !benched)
 			return obenkyo(s);
+		if (n === 1) return hinaryHello(s);
+		if (n === 2) return hinaryCount(s);
 		if (s.flag("feris_in"))
 			await s.say("feris", "ヒナリーちゃん、また　研究？");
-		if (n >= 3 && !s.flag("hinary_q")) {
-			await s.say(
-				"hinary",
-				benched
-					? "……避難Jを研究しているヒナリーです。\n（うしろの　ほうを　ちらちら　見ている）"
-					: "……避難Jを研究しているヒナリーです。\n（なにか　言いたそうだ）",
-			);
-			s.set("hinary_hint");
-		} else await s.say("hinary", "避難Jを研究しているヒナリーです。");
+		await s.say(
+			"hinary",
+			benched
+				? "……避難Jを研究しているヒナリーです。\n（うしろの　ほうを　ちらちら　見ている）"
+				: "……避難Jを研究しているヒナリーです。\n（なにか　言いたそうだ）",
+		);
+		s.set("hinary_hint");
 	},
 	{ dir: "down" },
 );
