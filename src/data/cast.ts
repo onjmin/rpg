@@ -35,7 +35,7 @@ export const cast: Record<string, CharDef> = {
 	nanj: c({
 		id: "nanj",
 		name: "やきう",
-		walk: "sa:29aYeF", // 彡(●)(●)
+		walk: "sa:4rSOzo", // 野球民
 		color: "#f5d142",
 		// UTAU の声が無いので こえ は 0 固定（うたえない）。持ち技は通常攻撃の演出で出す
 		// 早熟：はじめから強く、伸びは小さい（ロゼ加入前の2人旅を支える。Lv8 からは いちばん下）

@@ -58,7 +58,6 @@ export const SPR = {
 	puyu: "sa:DszPWT", // ぷゆゆ🥺（rpgen「PIEN」の歩行シート。sp:4IFEOzI は由来の都合で使わない）
 
 	// ── 住民（同梱の RPGEN DQ 風キャラ） ──
-	townsfolk: "pub:assets/rpgen/char/14-man-a.png", // 原住民の代わり（先住民は senju）
 	elder: "pub:assets/rpgen/char/03-elderly-a.png",
 	shopkeeper: "pub:assets/rpgen/char/02-merchant.png",
 	child: "pub:assets/rpgen/char/04-child.png",

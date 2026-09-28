@@ -336,7 +336,7 @@ const yatai = npc(
 	"yatai",
 	4,
 	12,
-	SPR.townsfolk,
+	SPR.j_nanashi, // 原住民（´・ω・｀）
 	async (s) => {
 		await N(s, "原住民", "(´・ω・｀) マーボー、たべてく？");
 		if ((await s.choose(["たべる", "いまは　いい"], { cancel: 1 })) === 1) {

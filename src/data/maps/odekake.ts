@@ -385,7 +385,7 @@ const events: EventDef[] = [
 		"odk_yatai",
 		7,
 		7,
-		SPR.townsfolk,
+		SPR.j_nanashi, // 原住民（´・ω・｀）
 		"down",
 		"原住民",
 		"(´・ω・｀) いらっしゃい。マーボー、あるよ",
