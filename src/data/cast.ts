@@ -131,6 +131,14 @@ export const cast: Record<string, CharDef> = {
 		voice: { model: "rei" },
 		portrait: { src: "portraits/rei.png", side: "right" },
 	}),
+	// 避難Jを研究している子（倉庫・1000の先）。仲間には入らない。声は無い
+	hinary: c({
+		id: "hinary",
+		name: "ヒナリー",
+		walk: "sa:mV6xaq",
+		color: "#7ab8e8",
+		portrait: { src: "portraits/hinary.png", side: "right" },
+	}),
 	// 終章のボス。声はキリコのまま。立ち絵はキリコの絵の色を反転したもの（キリコと見分ける）。
 	// いつも右に立ち、左のキリコと向かい合う
 	botsu: c({

@@ -63,7 +63,7 @@ export const SPR = {
 	shopkeeper: "pub:assets/rpgen/char/02-merchant.png",
 	child: "pub:assets/rpgen/char/04-child.png",
 	woman: "pub:assets/rpgen/char/09-woman-a.png",
-	hinary: "pub:assets/rpgen/char/10-elderly-c.png", // 白衣っぽい研究者の代わり
+	hinary: "char:hinary",
 	cat: "sa:q103Qa", // 虎猫
 
 	// ── 敵 ──

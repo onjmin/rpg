@@ -409,21 +409,20 @@ const bossfloor: EventDef = {
  */
 const obenkyo = async (s: Story): Promise<void> => {
 	await s.say("feris", "ヒナリーちゃん、また　研究？");
-	await N(s, "ヒナリー", "……避難Jを研究しているヒナリーです。");
+	await s.say("hinary", "……避難Jを研究しているヒナリーです。");
 	await s.narrate(
 		"ヒナリーは　白衣の　ポケットから、\nおりたたんだ　紙を　出した。",
 	);
-	await N(s, "ヒナリー", "……お勉強の、時間です");
+	await s.say("hinary", "……お勉強の、時間です");
 	await s.narrate("フェリスの　羽が、ぴんと　立った。");
-	await N(
-		s,
-		"ヒナリー",
+	await s.say(
+		"hinary",
 		"フェリスさんが　先に　飛んで　出発。\nヒナリーは　あとから　歩いて　追いかけます",
 	);
-	await N(s, "ヒナリー", "ヒナリーが　追いつくのは、何分後？");
+	await s.say("hinary", "ヒナリーが　追いつくのは、何分後？");
 	await s.say("feris", "……それ、知ってる〜。\n追いつかれません〜");
 	// 門でフェリスが言う「ぶ〜」を、こんどはヒナリーが言う
-	await N(s, "ヒナリー", "……ぶ〜");
+	await s.say("hinary", "……ぶ〜");
 	await s.say("feris", "え〜？");
 	await s.narrate("ヒナリーは　紙を　うらがえした。");
 	await s.narrate("『答え：0分後』");
@@ -433,7 +432,7 @@ const obenkyo = async (s: Story): Promise<void> => {
 	await s.say("feris", "……あ〜");
 	await s.say("feris", "ほんとだ〜。\n……追いつかれちゃった〜");
 	await s.say("roze", "……算数じゃ　ないアル。\nでも、正解アル");
-	await N(s, "ヒナリー", "……避難Jを研究しているヒナリーです。");
+	await s.say("hinary", "……避難Jを研究しているヒナリーです。");
 	await s.narrate("さっきより、すこしだけ\n声が　大きかった。");
 	s.set("hinary_q");
 };
@@ -462,15 +461,14 @@ const hinary = npc(
 		if (s.flag("feris_in"))
 			await s.say("feris", "ヒナリーちゃん、また　研究？");
 		if (n >= 3 && !s.flag("hinary_q")) {
-			await N(
-				s,
-				"ヒナリー",
+			await s.say(
+				"hinary",
 				benched
 					? "……避難Jを研究しているヒナリーです。\n（うしろの　ほうを　ちらちら　見ている）"
 					: "……避難Jを研究しているヒナリーです。\n（なにか　言いたそうだ）",
 			);
 			s.set("hinary_hint");
-		} else await N(s, "ヒナリー", "避難Jを研究しているヒナリーです。");
+		} else await s.say("hinary", "避難Jを研究しているヒナリーです。");
 	},
 	{ dir: "down" },
 );
