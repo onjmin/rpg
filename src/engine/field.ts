@@ -278,6 +278,19 @@ export class Field {
 	private hidden(a: Actor, time: number): boolean {
 		const cover = this.cover;
 		if (!cover || !a.visible || !a.sprite) return false;
+		// 足もとのマスに上の層が1画素もかかっていなければ隠れてはいない（絵を読まずにすます）
+		const mw = this.w * TILE;
+		const mh = this.h * TILE;
+		const cx = Math.round(a.fx * TILE);
+		const cy = Math.round(a.fy * TILE);
+		let near = false;
+		for (let y = Math.max(0, cy); y < Math.min(mh, cy + TILE) && !near; y++)
+			for (let x = Math.max(0, cx); x < Math.min(mw, cx + TILE); x++)
+				if (cover[y * mw + x] >= 128) {
+					near = true;
+					break;
+				}
+		if (!near) return false;
 		const s = this.probe ?? document.createElement("canvas");
 		this.probe = s;
 		s.width = PROBE_W;
@@ -289,8 +302,6 @@ export class Field {
 		const by = Math.round(a.fy * TILE) - (PROBE_H - TILE);
 		a.draw(sx, bx, by, time);
 		const { data } = sx.getImageData(0, 0, PROBE_W, PROBE_H);
-		const mw = this.w * TILE;
-		const mh = this.h * TILE;
 		let body = 0;
 		let covered = 0;
 		for (let y = 0; y < PROBE_H; y++) {
