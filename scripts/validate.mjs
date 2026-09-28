@@ -8,10 +8,10 @@
 //   さらに、読んだフラグを1つずつ反転させて走らせ直し、分岐の先もなるべく通す。
 //   選択肢は、固定の pick のほかに、選び方の組み合わせを幅優先でたどる（1組 MAX_PATHS 本まで。
 //   「メニュー → レスで返す → >>1」のような入れ子の選択や、釣りの「つる → まつ → いまだ！」も通す）。
+//   期間限定（minors.ts の *_LIMITED）は、ストーリーの区間ごとに そのフラグで走らせる（その子が いるかも見る）。
 //   2周目は、ほかのスクリプトが set した値（"uke"・0〜2 など）をフラグに入れて走らせる
 //   （reply_kako・daida・meigen1〜3・sym_* などで変わる文も通す）。
 //   仲間のレベルもフラグの組で変える（空＝Lv1・すべて＝Lv30・2周目＝Lv5）。覚えたうたで変わる文（knows）も通す。
-//   端末の日付の場面（days.ts の DAYS）は、決め打ちの日時（DAY_TIMES）と仲間の顔ぶれ2通りで走らせる。
 // - 仲間: うた（battle.skills の { id, lv }）の形と順、覚えたときの文・控えの知らせの長さ、benchFirst
 // - 裏ボスの召喚（summon.stock の敵・入れ子・restore の値）と、戦闘の文（召喚・downText）の長さ
 // - 自由度（scratchpad/freedom/spec.md §5-3）
@@ -710,73 +710,63 @@ try {
 	for (const t of freshTalks) {
 		if (freshIds.has(t.id)) err(`fresh ${t.id}: id が重複`);
 		freshIds.add(t.id);
-		if (!(maps.town?.events ?? []).some((e) => e.id === t.event && e.trigger === "talk"))
+		if (
+			!(maps.town?.events ?? []).some(
+				(e) => e.id === t.event && e.trigger === "talk",
+			)
+		)
 			err(`fresh ${t.id}: town に 話しかけるイベント "${t.event}" が無い`);
 		await run(`fresh ${t.id}`, t.run, "town");
 	}
 
-	// ── 端末の日付の場面（days.ts の DAYS） ──
-	// 蓄音機（story.ts の phonoRun → dayTalk）は 今日の日時でしか分かれないので、決め打ちの日時で
-	// 場面を直接走らせる（jobs に入るので 2周目も走る）。仲間の口出しも通すため、顔ぶれを2通り入れる。
-	// 日付の場面を足したら、その日時を DAY_TIMES に足す。
+	// ── 期間限定（ストーリー区間）の ひとこと（minors.ts の *_LIMITED） ──
+	// その区間に いる あいだだけ言うので、フラグ2通り（空・すべて）では ほとんど通らない。区間ごとに直接走らせ、
+	// その区間の フラグで その子が マップに いるか（イベントの when）も調べる。
+	// 区間 i の フラグは、それより前の区間を ぬけるフラグ（story.ts の SECTIONS）が ぜんぶ立っている形。
 	{
-		const D = await server.ssrLoadModule("/src/data/days.ts");
-		const at = (m, d, h, mi) => ({
-			y: 2026,
-			m,
-			d,
-			h,
-			mi,
-			w: new Date(2026, m - 1, d).getDay(),
+		const S = await server.ssrLoadModule("/src/data/story.ts");
+		const M = await server.ssrLoadModule("/src/data/minors.ts");
+		const ids = [...S.SECTIONS.map(([id]) => id), "after"];
+		const stateAt = (i, mapId) => ({
+			flags: Object.fromEntries(
+				S.SECTIONS.slice(0, i).map(([, f]) => [f, true]),
+			),
+			party: [],
+			items: {},
+			mapId,
+			x: 0,
+			y: 0,
+			dir: "down",
+			playMs: 0,
 		});
-		const DAY_TIMES = [
-			at(8, 17, 22, 51),
-			at(8, 18, 1, 30),
-			at(8, 18, 12, 0),
-			at(12, 29, 12, 0),
-		];
-		const DAY_CREWS = [
-			["roze", "feris", "teto"],
-			["roze", "feris", "nanj"],
-		];
-		const hhmm = (t) => `${t.m}/${t.d} ${t.h}:${String(t.mi).padStart(2, "0")}`;
-		for (const d of D.DAYS ?? []) {
-			if (!data.cast[d.who]) err(`day ${d.id}: who "${d.who}" が cast に無い`);
-			const times = DAY_TIMES.filter((t) => d.is(t));
-			if (!times.length)
-				warn(
-					`day ${d.id}: validate の日時（DAY_TIMES）の どれにも当たらない（その日時を足す）`,
-				);
-			for (const t of times)
-				for (const crew of DAY_CREWS) {
-					const withCrew = (fn) => (s) => {
-						for (const id of crew)
-							s.join(id, id === "teto" ? { bench: true } : undefined);
-						return fn(s, t);
-					};
-					const where = `day ${d.id} ${hhmm(t)} ${crew.join(",")}`;
-					await run(where, withCrew(d.run), data.start.mapId);
-					if (d.silent)
-						await run(`${where} 沈黙中`, withCrew(d.silent), data.start.mapId);
-				}
-			if (d.reiLog !== undefined)
-				await run(
-					`day ${d.id} reiLog`,
-					(s) => s.say("rei", d.reiLog),
-					data.start.mapId,
-				);
+		for (const [i, id] of ids.entries()) {
+			const got = S.section(stateAt(i, data.start.mapId));
+			if (got !== id)
+				err(`section: 区間 ${id} の フラグで section が ${got} になる`);
 		}
-		// J民B（thread.ts の j_b）の その日の ひとこと
-		for (const t of DAY_TIMES) {
-			const day = D.kirikoDay(t);
-			if (day && typeof D.KIRIKO_DAY_J?.[day] !== "string")
-				err(`day J民B: KIRIKO_DAY_J.${day} が無い`);
-			else if (day)
-				await run(
-					`day J民B ${day} ${hhmm(t)}`,
-					(s) => s.say("nanj", D.KIRIKO_DAY_J[day], { name: "J民B" }),
-					data.start.mapId,
-				);
+		if (!M.LIMITED) err("limited: minors.ts の LIMITED が無い");
+		for (const [who, table] of Object.entries(M.LIMITED ?? {})) {
+			const at = Object.entries(maps).flatMap(([mapId, m]) =>
+				(m.events ?? []).filter((e) => e.id === who).map((e) => [mapId, e]),
+			);
+			if (!at.length) err(`limited ${who}: マップに イベント "${who}" が無い`);
+			for (const [sec, fn] of Object.entries(table)) {
+				const i = ids.indexOf(sec);
+				if (i < 0) {
+					err(`limited ${who}: 区間 "${sec}" が無い（story.ts の SECTIONS）`);
+					continue;
+				}
+				if (M.LIMITED_UNREACHABLE?.includes(sec))
+					err(
+						`limited ${who} ${sec}: その区間には 話しかけに 行けない（minors.ts の LIMITED_UNREACHABLE）`,
+					);
+				for (const [mapId, e] of at)
+					if (e.when && !e.when(stateAt(i, mapId)))
+						err(
+							`limited ${who} ${sec}: その区間では ${mapId} に いない（when）`,
+						);
+				await run(`limited ${who} ${sec}`, fn, at[0]?.[0] ?? data.start.mapId);
+			}
 		}
 	}
 

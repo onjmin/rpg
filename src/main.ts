@@ -97,7 +97,7 @@ window.visualViewport?.addEventListener("resize", resetZoom);
  * 開発用：URL でタイトルを飛ばして好きな場所から始める（pnpm dev のときだけ）。
  * 例 `?map=town&x=11&y=16&dir=up&flags={"p_tut":true}&party=kiriko,nanj&lv=5`
  * `&bench=nanj` でその仲間を控えにして始める。`&items=memo_roze:1` で持ちものを決め打ちする。
- * 端末の日時は `&date=MMDD&time=HHMM&wday=0〜6`（data/weekday.ts）。
+ * 端末の曜日は `&wday=0〜6`（data/weekday.ts）。
  */
 const devStart = (): GameState | null => {
 	if (!import.meta.env.DEV) return null;

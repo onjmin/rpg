@@ -9,15 +9,15 @@
 // - 話の進み（沈黙のあいだ・声がもどったあと・完走のあと）で、1回だけの ひとことが出る（stageOnce）
 // - たたかう仲間（ロゼ・フェリス・テト・やきう）が いると、口をはさむ
 // - 2回目からは、その子の 雑談（仲間の口出しつき）を1本ずつ（chat）。ぜんぶ見たら いつもの ひとこと
-// - 遊んでいる端末の日付（正月・クリスマスなど）で、期間限定の ひとことに変わる（weekday.ts の season）
+// - 期間限定：ストーリーの区間（story.ts の section）に いる あいだは、話しかけるたびに その区間の ひとことを言う（limited）
 // - 会った子は 終章の レスの洪水（>>995〜>>997）に 書きこむ（threadlog.ts の MINOR_POSTS）
 // 設定は おんJwiki から、健全な ところだけ借りる（顔文字は フォントに無いので 文には出さない）。
 
 import type { EventDef, GameState, Story } from "../engine/defs";
 import { npc } from "./helpers";
 import { SPR } from "./sprites";
-import { ks, silent } from "./story";
-import { bySeason, type Season, weekday } from "./weekday";
+import { ks, type Section, section, silent } from "./story";
+import { weekday } from "./weekday";
 
 /** 名前欄だけの話し手（J民ではないので 白い名前欄・読み上げなし）。 */
 const N = (s: Story, name: string, text: string) => s.say(null, text, { name });
@@ -90,16 +90,134 @@ const chat = async (s: Story, id: string, list: Chat[]): Promise<boolean> => {
 	return true;
 };
 
-/** 期間限定の ひとこと（あれば言って true）。 */
-const seasonal = async (
-	s: Story,
-	name: string,
-	table: Partial<Record<Season, string>>,
-): Promise<boolean> => {
-	const t = bySeason(table);
-	if (!t) return false;
-	await N(s, name, t);
+/** 期間限定の ひとこと（ストーリーの区間ごと。validate が区間ごとに走らせるので export する）。 */
+export type Limited = Partial<Record<Section, (s: Story) => Promise<void>>>;
+
+/**
+ * 期間限定（ストーリー区間の ひとこと）。その区間に いる あいだは、話しかけるたびに言う（確率は使わない）。
+ * 区間を過ぎたら もう言わない。流したら true。雑談（chat）より先なので、その区間の あいだ 雑談は待つ。
+ */
+const limited = async (s: Story, table: Limited): Promise<boolean> => {
+	const run = table[section(s.state)];
+	if (!run) return false;
+	await run(s);
 	return true;
+};
+
+// ───────────────── 期間限定（ストーリー区間の ひとこと） ─────────────────
+// 1人 1〜2区間だけ（その区間の あいだは 雑談が待つので）。話しかけるたびに言うので短く、仲間の口出しは つけない。
+// ほかに 行けない所：おんすちゃんは 橋（b1）より北、ヤヤポジ・ポジハメは クイズ（quiz_ok）のあと。
+
+/**
+ * マイナーズに 話しかけられない区間（validate が *_LIMITED に使っていないか見る）。
+ * rest・studio は すぐ自動の場面に進む。mamma（沈黙）は 町の外へ出られず、町の子は いない。
+ * after（完走のあと）は スレから町へ もどれない。
+ */
+export const LIMITED_UNREACHABLE: readonly Section[] = [
+	"rest",
+	"studio",
+	"mamma",
+	"after",
+];
+
+const NICHIE_LIMITED: Limited = {
+	bridge: async (s) => {
+		await N(
+			s,
+			"にぃちぇ",
+			"橋の　子たちは、日曜日まで\nかぞえなくて　いいニィ",
+		);
+		await s.narrate("にぃちぇは　おりかけた　ゆびを\nそっと　かくした。");
+	},
+	stadium: (s) =>
+		N(s, "にぃちぇ", "東門の　むこうから、\n日曜日の　音が　するニィ"),
+};
+
+const ONCHAN_LIMITED: Limited = {
+	kakolog: async (s) => {
+		await N(s, "おんちゃん", "過去ログ倉庫に　行くおん？");
+		await s.narrate(
+			"おんちゃんは　なにか　言いかけて、\nいつもより　まるく　なった。",
+		);
+	},
+	server: async (s) => {
+		await s.narrate("おんちゃんは　勢い欄の　ほうを\nちらりと　見た。");
+		await N(s, "おんちゃん", "……やきうの　ぶんも、\nまるく　しておくおん");
+	},
+};
+
+const ONSU_LIMITED: Limited = {
+	stadium: async (s) => {
+		await s.narrate(
+			"遠くで　ナイターの　歓声が　する。\nそのたびに　ハンカチが　のびる。",
+		);
+		await N(s, "おんすちゃん", "……こ、こっちの　ほうが\n通好み　なのよぉ");
+	},
+	gate: async (s) => {
+		await s.narrate(
+			"おんすちゃんが　なにか　書きかけて、\nあわてて　かくした。",
+		);
+		await N(
+			s,
+			"おんすちゃん",
+			"お、おんSの　下書きよぉ！\n……ほかの　スレじゃ　ないわよぉ",
+		);
+	},
+};
+
+const NGOANE_LIMITED: Limited = {
+	gate: async (s) => {
+		await N(
+			s,
+			"ンゴ姉",
+			"フェリスちゃんの　となり……\nいまは　あずけておくンゴねぇ……",
+		);
+		await s.narrate("ンゴ姉は　キリコの　せなかを\nそっと　おした。");
+	},
+};
+
+const PAN_LIMITED: Limited = {
+	gate: async (s) => {
+		await N(
+			s,
+			"パン松",
+			"1000に　なったら、おんJは\n侵略しがいの　ある　土地だ",
+		);
+		await N(s, "パン松", "……はやく　行け。\nパンが　かたくなる");
+	},
+};
+
+const YAYA_LIMITED: Limited = {
+	server: async (s) => {
+		await s.narrate(
+			"スコアボードは、まだ\n「ひきわけ　おめでとう」の　ままだ。",
+		);
+		await N(s, "ヤヤポジ", "……消すと、\nあの　試合が　おわるんだ");
+	},
+};
+
+const POSI_LIMITED: Limited = {
+	server: async (s) => {
+		await N(
+			s,
+			"ポジハメ",
+			"0レスから　やりなおしなんだ！\nのびしろしか　ないんだ！",
+		);
+		await s.narrate(
+			"となりで　ヤヤポジが、ゆびで\nちいさな　まるを　つくった。",
+		);
+	},
+};
+
+/** 期間限定の表（マップの イベント id → 区間ごとの ひとこと）。validate が区間ごとに走らせる。 */
+export const LIMITED: Record<string, Limited> = {
+	nichie: NICHIE_LIMITED,
+	onchan: ONCHAN_LIMITED,
+	onsu: ONSU_LIMITED,
+	ngoane: NGOANE_LIMITED,
+	panmatsu: PAN_LIMITED,
+	yayapoji: YAYA_LIMITED,
+	posihame: POSI_LIMITED,
 };
 
 // ───────────────── 総選挙 ─────────────────
@@ -358,15 +476,7 @@ export const ngoane = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
-			if (
-				await seasonal(s, "ンゴ姉", {
-					newyear: "ことしこそ　フェリスちゃんの\nとなりンゴねぇ……！",
-					valentine:
-						"チョコ、つくったンゴねぇ……\nわたす　相手は　ひみつンゴねぇ",
-					xmas: "フェリスちゃんと　ケーキ……\nゆめで　見たンゴねぇ……",
-				})
-			)
-				return;
+			if (await limited(s, NGOANE_LIMITED)) return;
 			if (await chat(s, "ngoane", NGOANE_CHATS)) return;
 			await G("フェリスちゃんの　となりに　いれば\n……ふふ、ンゴねぇ……");
 		},
@@ -422,14 +532,7 @@ export const panmatsu = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
-			if (
-				await seasonal(s, "パン松", {
-					newyear: "正月か。\n……もちより　パンだ",
-					april: "侵略は　やめた。\n……うそだ",
-					xmas: "クリスマスは　シュトーレンだ。\n……パンだ",
-				})
-			)
-				return;
+			if (await limited(s, PAN_LIMITED)) return;
 			if (await chat(s, "pan", PAN_CHATS)) return;
 			await P("パンの　すばらしさを\n知ったか");
 		},
@@ -496,10 +599,12 @@ export const nichie = (x: number, y: number): EventDef =>
 			const C = (t: string) => N(s, "にぃちぇ", t);
 			const again = !!s.flag("nichie_met");
 			s.set("nichie_met");
+			// 土日は 曜日の ひとことで おわる。期間限定は 区間に いる あいだ ずっとなので、そのあとに言う
 			const w = weekday();
 			if (w === 6) {
 				await C("あ！あした　日曜日だニィ！");
 				await s.narrate("にぃちぇの　目が、いつもより\nひらいている。");
+				await limited(s, NICHIE_LIMITED);
 				return;
 			}
 			if (w === 0) {
@@ -508,6 +613,7 @@ export const nichie = (x: number, y: number): EventDef =>
 					await s.say("nanj", "火曜日やぞ");
 					await C("日曜日だニィ");
 				}
+				await limited(s, NICHIE_LIMITED);
 				return;
 			}
 			if (!again) {
@@ -538,15 +644,7 @@ export const nichie = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
-			if (
-				await seasonal(s, "にぃちぇ", {
-					newyear: "お正月は、ずっと\n日曜日みたいだニィ",
-					april: "あ！今日　日曜日だニィ！\n……うそだニィ",
-					xmas: "クリスマスが　日曜日なら\n得なのか　損なのか　ニィ",
-					omisoka: "あしたが　日曜日なら\nいいのにニィ",
-				})
-			)
-				return;
+			if (await limited(s, NICHIE_LIMITED)) return;
 			if (await chat(s, "nichie", NICHIE_CHATS)) return;
 			await C("深淵を　のぞくとき……\n深淵も　日曜日を　まっているニィ");
 		},
@@ -563,17 +661,6 @@ const ONCHAN_TODAY = [
 	"金曜日だおん！\nあしたは　お休みだおん！",
 	"土曜日だおん！\n先住民が　今日は　正しいおん",
 ] as const;
-
-/** 期間限定のおんちゃん（その日は「今日のおんちゃん」の かわりに言う）。 */
-const ONCHAN_SEASON: Partial<Record<Season, string>> = {
-	newyear: "あけおめだおん。\nことしも　一軍だおん",
-	valentine: "チョコ、もらったおん。\n……じぶんで　買ったおん",
-	april: "きょうから　二軍だおん。\n……うそだおん",
-	tanabata: "たんざくに　『ずっと一軍』って\n書いたおん",
-	halloween: "おばけの　かっこうだおん。\n……いつもと　同じだおん？",
-	xmas: "サンタさん、おんJにも\n来るおん？",
-	omisoka: "ことしの　スレも、\nそろそろ　1000だおん",
-};
 
 const ONCHAN_CHATS: Chat[] = [
 	{
@@ -645,7 +732,7 @@ export const onchan = (x: number, y: number): EventDef =>
 					await O("まだ　なにも　きいてないおん");
 				}
 			}
-			await O(bySeason(ONCHAN_SEASON) ?? ONCHAN_TODAY[weekday()]);
+			await O(ONCHAN_TODAY[weekday()]);
 			// ムッジェに会ったあと（B2）。いちどだけ
 			if (s.flag("b2") && once(s, "onchan_mujje")) {
 				await O("……ムッジェ、元気に\nしてるおん？");
@@ -672,7 +759,8 @@ export const onchan = (x: number, y: number): EventDef =>
 					await s.narrate("おんちゃんは　小石を\nひとつ　キリコに　わたした。");
 				},
 			});
-			if (!staged) await chat(s, "onchan", ONCHAN_CHATS);
+			if (staged || (await limited(s, ONCHAN_LIMITED))) return;
+			await chat(s, "onchan", ONCHAN_CHATS);
 		},
 		{ dir: "down", when: day },
 	);
@@ -761,15 +849,8 @@ export const onsu = (x: number, y: number): EventDef =>
 					})
 				)
 					return;
-				if (
-					await seasonal(s, "おんすちゃん", {
-						newyear: "あけまして……。\n今年も　おんSを　よろしくてよ",
-						valentine: "チョ、チョコなんて\n用意して　ないわよぉ",
-						xmas: "クリスマスも　おんSは\n……いつもどおりよぉ",
-					})
-				)
-					return;
 				if (s.flag("onsu_2")) {
+					if (await limited(s, ONSU_LIMITED)) return;
 					if (await chat(s, "onsu", ONSU_CHATS)) return;
 					await O("……また　来たのぉ？\nふ、ふん");
 					await s.narrate("ハンカチが、すこし\nかわいている。");
@@ -938,13 +1019,7 @@ export const yayapoji = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
-			if (
-				await seasonal(s, "ヤヤポジ", {
-					newyear: "今年は　5割で　いいんだ。\n……毎年　言ってるんだ",
-					april: "……うそでも、\n勝つとは　言えないんだ",
-				})
-			)
-				return;
+			if (await limited(s, YAYA_LIMITED)) return;
 			if (await chat(s, "yaya", YAYA_CHATS)) return;
 			if (s.flag("b3")) {
 				await Y("はんぶんこ。\n……ちょうど　5割なんだ");
@@ -990,14 +1065,7 @@ export const posihame = (x: number, y: number): EventDef =>
 				})
 			)
 				return;
-			if (
-				await seasonal(s, "ポジハメ", {
-					newyear: "今年は　優勝なんだ！\n毎年　言ってるんだ！",
-					april: "今年は　全勝なんだ！\n……これは　ほんとなんだ！",
-					xmas: "サンタさんは　優勝旗を\nくれるんだ！",
-				})
-			)
-				return;
+			if (await limited(s, POSI_LIMITED)) return;
 			if (await chat(s, "posi", POSI_CHATS)) return;
 			if (s.flag("b3")) {
 				await P("はんぶんこ！　つまり\nマスコットが　2倍なんだ！");

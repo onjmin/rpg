@@ -4,45 +4,80 @@ import type { EventDef, GameState, Story } from "../engine/defs";
 import { BENCH_HINT, songsAt } from "../engine/party";
 import type { Dir } from "../engine/types";
 import { cast } from "./cast";
-import { dayTalk } from "./days";
 import { SPR } from "./sprites";
 
 /** 第四章の沈黙期間（キリコの声が出ない・町が静か）。 */
 export const silent = (st: GameState): boolean =>
 	!!st.flags.balus_lost && !st.flags.rec;
 
+/**
+ * ストーリーの区間（いまの目的の区切り）と、その区間を ぬけると立つフラグ。話の順。
+ * 期間限定の場面（その区間に いる あいだは ずっと起きて、過ぎたら もう起きない）は、この区間で決める。
+ * 現実の日付では決めない（現実の時間とつなぐのは 曜日まで。weekday.ts）。
+ */
+export const SECTIONS = [
+	["ikioi", "ikioi_seen"], // 広場の勢い欄を見る
+	["road", "roze_in"], // 北のスレ街道へ
+	["bridge", "b1"], // 橋の夏休みキッズ番長
+	["kakolog", "b2"], // 過去ログ倉庫のおく
+	["stadium", "b3"], // おんJスタジアム
+	["rest", "balus_lost"], // 町でひと休み
+	["mamma", "teto_met"], // 沈黙：マッマのところへ
+	["studio", "rec"], // 沈黙：スタジオのマイクの前へ
+	["server", "door_open"], // サーバーのアク禁の扉
+	["gate", "clear"], // ゲートの奥の1000レス目へ
+] as const;
+
+/** ストーリーの区間。"after" は完走のあと。 */
+export type Section = (typeof SECTIONS)[number][0] | "after";
+
+/** いまの区間（ぬけるフラグが まだ立っていない最初の区間。完走していれば "after"）。 */
+export const section = (st: GameState): Section =>
+	st.flags.clear
+		? "after"
+		: (SECTIONS.find(([, flag]) => !st.flags[flag])?.[0] ?? "after");
+
 /** いまの目的（蓄音機で表示）。 */
 export const objective = (st: GameState): string => {
 	const f = st.flags;
-	// クリア後（管理人室のおまけ）
-	if (f.clear) {
-		if (!f.satoru_met) return "スレの　下の扉の　むこうへ";
-		if (!f.satoru_win) return "管理人の　テストに　付き合う";
-		return "スレは　完走！　おつかれさま";
+	switch (section(st)) {
+		case "ikioi":
+			return "広場の　勢い欄を　見る";
+		case "road":
+			return "北の　スレ街道へ";
+		case "bridge":
+			return f.hw_help
+				? "魚を　つって　番長に　見せる"
+				: "橋の　夏休みキッズ番長を　どかす";
+		case "kakolog":
+			return "過去ログ倉庫の　おくを　しらべる";
+		case "stadium":
+			return f.quiz_ok
+				? "マウンドの　テノヒラ監督と　勝負"
+				: "町の東門から　おんJスタジアムへ";
+		case "rest":
+			return "町で　ひと休み";
+		case "mamma":
+			return "……マッマの　ところへ";
+		case "studio":
+			return "スタジオの　マイクの前へ";
+		case "server":
+			return "サーバーの　アク禁の扉を　ひらく";
+		case "gate":
+			return "ゲートの　奥の　1000レス目へ";
+		case "after":
+			// クリア後（管理人室のおまけ）
+			if (!f.satoru_met) return "スレの　下の扉の　むこうへ";
+			if (!f.satoru_win) return "管理人の　テストに　付き合う";
+			return "スレは　完走！　おつかれさま";
 	}
-	if (!f.ikioi_seen) return "広場の　勢い欄を　見る";
-	if (!f.roze_in) return "北の　スレ街道へ";
-	if (!f.b1)
-		return f.hw_help
-			? "魚を　つって　番長に　見せる"
-			: "橋の　夏休みキッズ番長を　どかす";
-	if (!f.b2) return "過去ログ倉庫の　おくを　しらべる";
-	if (!f.b3)
-		return f.quiz_ok
-			? "マウンドの　テノヒラ監督と　勝負"
-			: "町の東門から　おんJスタジアムへ";
-	if (!f.balus_lost) return "町で　ひと休み";
-	if (!f.teto_met) return "……マッマの　ところへ";
-	if (!f.rec) return "スタジオの　マイクの前へ";
-	if (!f.door_open) return "サーバーの　アク禁の扉を　ひらく";
-	return "ゲートの　奥の　1000レス目へ";
 };
 
 /** 蓄音機にたまったレス数の表示。 */
 export const resLine = (st: GameState): string =>
 	`【安価】安価でボカロ作ろうぜ　${Number(st.flags.res ?? 0)}/1000`;
 
-/** 蓄音機の本体：回復＋（その日の場面）＋レス数＋いまの目的＋セーブ（レイの2回目以降でも使う）。 */
+/** 蓄音機の本体：回復＋レス数＋いまの目的＋セーブ（レイの2回目以降でも使う）。 */
 export const phonoRun = async (s: Story): Promise<void> => {
 	s.heal();
 	s.se("inn");
@@ -51,8 +86,6 @@ export const phonoRun = async (s: Story): Promise<void> => {
 			? "蓄音機は　音もなく　まわっている……\nHPと　こえが　かいふくした。"
 			: "蓄音機から　なつかしい　レスが　ながれた。\nHPと　こえが　かいふくした！",
 	);
-	// 端末の日付の場面（8月18日・12月29日。days.ts）。あれば1本だけ
-	await dayTalk(s);
 	// まだ見ていない「ひとやすみ会話」があれば、ここで見られる（仲間との親睦）
 	if (!silent(s.state)) await s.restTalk();
 	await s.narrate(`${resLine(s.state)}\nいまの目的：${objective(s.state)}`);

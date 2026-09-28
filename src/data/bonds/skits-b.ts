@@ -282,12 +282,6 @@ export const skits: SkitDef[] = [
 				"私の　絵を描く　スレ、\n1羽目、2羽目って　数えるんだ〜",
 			);
 			await s.say("kiriko", "鳥だから　羽ンゴ！");
-			await s.say(
-				"kiriko",
-				"12月29日は、吾輩が　蓄音機で\n「おめでとう」を　鳴らす",
-			);
-			await s.say("feris", "じゃあ　私は　8月18日に\nくしゃみ　するね〜");
-			await s.say("kiriko", "……火が　出るンゴ");
 		},
 	},
 	{
