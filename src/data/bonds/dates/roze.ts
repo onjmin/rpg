@@ -2,7 +2,8 @@
 // 行き先は odekake の①（maps/odekake.ts・odekake-spots.md）。キリコ (7,11)・ロゼ (8,11) に着く。
 // 屋台の丸いす (7,9)(8,9) → 赤い縁台 (11,11)(12,11) へ移って、「覚えてる」話をする。
 // 次スレで 前のレンゲを持っていれば（again）、ロゼが先に「いつもの」を注文する（隠しイベント「ふたつめの　おもいで」）。
-// 次スレの キリコは 前スレを覚えていない。覚えているのは先輩と、カバンの中の品だけ。
+// 次スレ＝同じ夜への 時間遡行（同じ キリコ。別人では ない）。キリコは 前の周を 覚えていない。
+// 覚えているのは 先輩と、カバンの中の品だけ（engine/newgame.ts）。
 import type { DateDef } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";

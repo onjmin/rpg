@@ -3,7 +3,7 @@
 // キリコは その笑い声を 蓄音機に録る。おもいでの品は memo_feris（はねのしおり）。
 // 舞台は odekake マップの ② フェリスの区画（scratchpad/design/odekake-spots.md）。
 // 次スレで 前のしおりを持っていれば（again）、フェリスは「また」と言い、しおりを羽で数える
-// （隠しイベント「ふたつめの　おもいで」。次スレの キリコは 前スレを覚えていない）。
+// （隠しイベント「ふたつめの　おもいで」。次スレ＝同じ夜への 時間遡行。同じ キリコが 前の周を 覚えていない）。
 import type { DateDef, GameState } from "../../../engine/defs";
 import { ODEKAKE } from "../../maps/odekake";
 import { dateTrip, silent } from "../../story";
