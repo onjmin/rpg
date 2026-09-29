@@ -1,6 +1,6 @@
 // 素材が見つからなかったドット絵を作る（node scripts/make-sprites.mjs）。
 //
-// - public/sprites/mujje.png        … ムッジェ ΣΩΩ>（赤い毛むくじゃら）。RPGEN 歩行グラ規格 32x64
+// - public/sprites/mujje.png        … ムッジェ ΣΩΩ>（赤い 毛の 柱・柄の 先の 目玉・横に つき出た 口・白い 手袋）。RPGEN 歩行グラ規格 32x64
 // - public/sprites/kiriko_botsu.png … ボツキリコ。キリコの歩行グラを灰色に沈めた差分 32x64
 // - public/sprites/phono.png        … ちいさな蓄音機（置物）16x16
 // - public/sprites/minors_*.png     … おんJマイナーズ（にぃちぇ・おんすちゃん・ンゴ姉・パン松・ヤヤポジ）32x64
@@ -133,150 +133,6 @@ const paint = (sheet, sheetW, cx, cy, art, pal) => {
 
 const mirror = (art) => art.map((r) => [...r].reverse().join(""));
 
-// ───────────────── ムッジェ ΣΩΩ> ─────────────────
-// 板のバナーに出る赤い毛むくじゃら（ムック＋J民）。大きな口「>」と、頭のプロペラ。
-
-const MUJJE_PAL = {
-	K: hex("#3a0d0a"), // 輪郭
-	R: hex("#d8352a"), // 毛
-	r: hex("#9e1f17"), // 毛の影
-	P: hex("#f27a5e"), // 毛のつや
-	W: hex("#ffffff"),
-	B: hex("#141414"),
-	M: hex("#5a0f12"), // 口の中
-	T: hex("#ff9aa2"), // 舌
-	Y: hex("#f6c945"), // プロペラ
-	y: hex("#b98a1a"),
-};
-
-const mujjeDown = [
-	[
-		".....YYKYY......",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRPRRRRPRK...",
-		"..KRRRRRRRRRRK..",
-		"..KRWWRRRRWWRK..",
-		".KRRWBRRRRWBRRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRRKKKKKKKKRRK.",
-		".KRRKMMMMMMKRRK.",
-		".KRRKMTTTTMKRRK.",
-		"..KRRKKKKKKRRK..",
-		"..KRrRRrRRrRRK..",
-		"...KRrKRRKrRK...",
-		"...KKK.KK.KKK...",
-		"................",
-	],
-	[
-		"......YKYYY.....",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRPRRRRPRK...",
-		"..KRRRRRRRRRRK..",
-		"..KRWWRRRRWWRK..",
-		".KRRWBRRRRWBRRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRRKKKKKKKKRRK.",
-		".KRRKMMMMMMKRRK.",
-		".KRRKMTTTTMKRRK.",
-		"..KRRKKKKKKRRK..",
-		"..KRrRRrRRrRRK..",
-		"...KRrKRRKrRK...",
-		"....KK.KK.KK....",
-		"....KK....KK....",
-	],
-];
-
-const mujjeUp = [
-	[
-		".....YYKYY......",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRRRRRRRRK...",
-		"..KRrRRrRRrRRK..",
-		"..KRRRRRRRRRRK..",
-		".KRRrRRrRRrRRRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRrRRrRRrRRrRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRRrRRrRRrRRRK.",
-		"..KRRRRRRRRRRK..",
-		"..KRrRRrRRrRRK..",
-		"...KRrKRRKrRK...",
-		"...KKK.KK.KKK...",
-		"................",
-	],
-	[
-		"......YKYYY.....",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRRRRRRRRK...",
-		"..KRrRRrRRrRRK..",
-		"..KRRRRRRRRRRK..",
-		".KRRrRRrRRrRRRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRrRRrRRrRRrRK.",
-		".KRRRRRRRRRRRRK.",
-		".KRRrRRrRRrRRRK.",
-		"..KRRRRRRRRRRK..",
-		"..KRrRRrRRrRRK..",
-		"...KRrKRRKrRK...",
-		"....KK.KK.KK....",
-		"....KK....KK....",
-	],
-];
-
-// 右向き：顔が右に寄り、口「>」が右を向く
-const mujjeRight = [
-	[
-		".....YYKYY......",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRRRRRPRRK...",
-		"..KRRRRRRRRRRK..",
-		"..KRRRRRWWRRRK..",
-		".KRRrRRRWBRRRK..",
-		".KRRRRRRRRRRRKK.",
-		".KRrRRRRKKKKKKK.",
-		".KRRRRRRKMMMMK..",
-		".KRRrRRRKMTTK...",
-		"..KRRRRRKKKK....",
-		"..KRrRRrRRRK....",
-		"...KRrKRRKK.....",
-		"...KKK.KKK......",
-		"................",
-	],
-	[
-		"......YKYYY.....",
-		".......K........",
-		"....KKKKKKKK....",
-		"...KRRRRRPRRK...",
-		"..KRRRRRRRRRRK..",
-		"..KRRRRRWWRRRK..",
-		".KRRrRRRWBRRRK..",
-		".KRRRRRRRRRRRKK.",
-		".KRrRRRRKKKKKKK.",
-		".KRRRRRRKMMMMK..",
-		".KRRrRRRKMTTK...",
-		"..KRRRRRKKKK....",
-		"..KRrRRrRRRK....",
-		"...KRrKRRKK.....",
-		"....KKKK.KK.....",
-		"....KK....K.....",
-	],
-];
-
-// RPGEN 規格の行順: 後(上)・右・前(下)・左
-const mujje = Buffer.alloc(32 * 64 * 4);
-for (let f = 0; f < 2; f++) {
-	paint(mujje, 32, f, 0, mujjeUp[f], MUJJE_PAL);
-	paint(mujje, 32, f, 1, mujjeRight[f], MUJJE_PAL);
-	paint(mujje, 32, f, 2, mujjeDown[f], MUJJE_PAL);
-	paint(mujje, 32, f, 3, mirror(mujjeRight[f]), MUJJE_PAL);
-}
-writeFileSync(join(OUT, "mujje.png"), encodePng(32, 64, mujje));
-
 // ───────────────── おんJマイナーズ ─────────────────
 // おんJwiki の「おんJマイナーズ」まわりの顔文字キャラ。顔文字の特徴だけを 16x16 に落とす。
 // 1コマ目の絵を描き、2コマ目は足もと（下の2行）だけ差し替える。左向きは右向きの反転。
@@ -297,6 +153,80 @@ const walkSheet = (file, pal, { up, right, down }, feet) => {
 
 const FEET = [".....SS..SS.....", "................"];
 const FEET_B = ["....SS....SS....", "................"];
+
+// ───────────────── ムッジェ ΣΩΩ> ─────────────────
+// おんJ 初期の お絵かきスレ「(´・ω・`)ここはぼくたちのあたらしい縄張りだからね」（2014）生まれ。板の バナーにも いる。
+// 元絵：頭と 胴が ひとつづきの 赤い 柱（首は ない）に、ムックの ような まばらな 毛（短い 黒い 毛が ぴんぴん）。
+// てっぺんから 目玉が 2つ 柄で 生え（ΩΩ）、横へ つき出た くちばしの ような 大きな 口（>。よく 開いている）。
+// 手は 小さな 白い 手袋。足は ほとんど 見えない。roguelike の scripts/make-minors.mjs と 同じ 絵。
+walkSheet(
+	"mujje.png",
+	{
+		K: hex("#3a0d0a"),
+		k: hex("#1a0604"),
+		R: hex("#e0301f"),
+		r: hex("#9e1f17"),
+		W: hex("#ffffff"),
+		B: hex("#141414"),
+		M: hex("#5a0f12"),
+		G: hex("#ffffff"),
+		S: hex("#7a1a12"),
+	},
+	{
+		down: [
+			"....KK...KK.....",
+			"...KWBK.KBWK....",
+			"....KK...KK.....",
+			"....KRK.KRK.....",
+			"...KRRRRRRRRK...",
+			"..kKRrRRRRrRK...",
+			"...KRKMMMMKRK...",
+			"...KRKMMMMKRKk..",
+			"...KRRKKKKRRK...",
+			"..GKRrRRRRrRKG..",
+			".GGKRRRRrRRRKGG.",
+			"..kKRRrRRRRRK...",
+			"...KRRRRRrRRKk..",
+			"..kKrRRRRRRrK...",
+			...FEET,
+		],
+		up: [
+			"....KK...KK.....",
+			"...KWWK.KWWK....",
+			"....KK...KK.....",
+			"....KRK.KRK.....",
+			"...KRRRRRRRRK...",
+			"..kKRrRRRRrRK...",
+			"...KRRRrRRRRK...",
+			"...KRRRRRRrRKk..",
+			"...KrRRRRRRRK...",
+			"..GKRRRrRRRRKG..",
+			".GGKRRRRRRrRKGG.",
+			"..kKRrRRRRRRK...",
+			"...KRRRRrRRRKk..",
+			"..kKrRRRRRRrK...",
+			...FEET,
+		],
+		right: [
+			".......KK.KK....",
+			"......KWBKWBK...",
+			".......KK.KK....",
+			".......KRKRK....",
+			"....KRRRRRRK....",
+			"...kKRRRRRRRKK..",
+			"....KRrRRRRRRRK.",
+			"....KRRRRKMMMMK.",
+			"...kKRRRRRRRRK..",
+			"....KRRrRRKK....",
+			"....KRRRGGK.....",
+			"...kKRrRGGK.....",
+			"....KRRRRRKk....",
+			"...kKrRRRrK.....",
+			...FEET,
+		],
+	},
+	FEET_B,
+);
 
 // にぃちぇ ξ◉ω◉)ξ … 両わきの ξ のドリル、見ひらいた目、ω の口。日曜日の子。
 walkSheet(
