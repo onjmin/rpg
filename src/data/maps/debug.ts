@@ -214,7 +214,7 @@ const CHECKPOINTS: Checkpoint[] = [
 		// 裏シナリオ「避難J」（maps/hinan.ts）。倉庫で 避難Jのログを 掘ってある（dig_hinan）
 		id: "cp9",
 		label: "避難J（となりの板のサーバーの前）",
-		sprite: SPR.j_nanashi,
+		sprite: SPR.j_so,
 		flags: { ...CH5_MID, door_open: false, dig_hinan: true },
 		party: P5,
 		lv: 10,

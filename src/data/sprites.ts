@@ -53,6 +53,7 @@ export const SPR = {
 	j_nanashi: "sa:lcBiHO", // 風吹けば名無し
 	j_cyclo: "sa:DUfPo9", // サイクロJ民
 	j_yosuko: "sa:C2hS8U", // 陽すこ民
+	j_so: "sa:S2mIOT", // 僧住民（避難Jの ホームニキ）
 	mamma: "sa:rzXCtC", // J( ´ー`)し マッマ
 	senju: "sa:PLsNO9", // ( ‘ｊ’ ) 先住民（rpgen no.937「あ！今日土曜日ど！」。no.944 の sa:HJDVki は上向きにも顔があるので使わない）
 	puyu: "sa:DszPWT", // ぷゆゆ🥺（rpgen「PIEN」の歩行シート。sp:4IFEOzI は由来の都合で使わない）

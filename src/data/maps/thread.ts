@@ -796,7 +796,7 @@ const events: EventDef[] = [
 		"end_home",
 		9,
 		8,
-		SPR.j_nanashi,
+		SPR.j_so,
 		async (s) => {
 			const n = bump(s, "home_end_n");
 			if (n === 0) {

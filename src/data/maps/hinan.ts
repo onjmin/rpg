@@ -328,7 +328,7 @@ const events: EventDef[] = [
 	// 勢い欄（(10,4)(11,4) から 上を向いて 調べる）
 	{ id: "ikioi_l", x: 10, y: 3, trigger: "talk", run: ikioiH },
 	{ id: "ikioi_r", x: 11, y: 3, trigger: "talk", run: ikioiH },
-	npc("home", 12, 4, SPR.j_nanashi, homeRun, { dir: "left" }),
+	npc("home", 12, 4, SPR.j_so, homeRun, { dir: "left" }),
 	npc(
 		"cat",
 		8,
