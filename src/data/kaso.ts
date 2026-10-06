@@ -4,12 +4,12 @@
 // 「人が増えると信じてレスし続けた開拓者」）から。
 // 入口は 過去ログ倉庫の 北東の 階段（避難Jのログを 掘ってから。dig_hinan）と、サーバーの底の となりのラック。
 //
-// 流れ: 過疎板の底（kaso）→ ねこ板（neko）→ あいさつ板（aisatsu）→ 保守板（hoshu。第三章のあと）
-//       → 1000取り板（sentori。第四章の 音が消えた夜から）→ 避難J（hinan）→ ホームの家（hinan_home）
+// 流れ: 過疎板の底（kaso）→ 犬猫大好き板（neko）→ 料理板（aisatsu）→ 天文・気象板（hoshu。第三章のあと）
+//       → 実験板（sentori。第四章の 音が消えた夜から）→ 避難J（hinan）→ ホームの家（hinan_home）
 // 板を ひとつ 終えるたび、過疎板の底の モニターが ひとつ 点き、避難Jの 板の 位置の 手がかりが ひとつ ふえる。
 //
 // 裏返し（2段）：
-//   1. 1000取り板の奥：1000ゲッターの 作成ログ「作：風吹けば名無し　回線：避難J」。bot は ホームニキが 自分で 置いた。
+//   1. 実験板の奥：1000ゲッターの 作成ログ「作：風吹けば名無し　回線：避難J」。bot は ホームニキが 自分で 置いた。
 //   2. ホームの家の >>998（1000日前）：「ネタはネタのまま終わるんやろな。……どうせ忘れられる」。
 //      本編の サイレントバルスの ことば。沈黙は、だれにも 返事を もらえなかった 千日から しみだしていた。
 //
@@ -155,7 +155,10 @@ export const pushBlocks = (p: PushPuzzle): EventDef[] => {
 					fixedDir: true,
 					when: (st) => blockAt(st, p, b) === posKey(x, y),
 					run: async (s) => {
-						const [dx, dy] = DIR_VEC[s.state.dir];
+						// 押す向きは、プレイヤーから 見た ブロックの 方向（タップで 話しかけると state.dir が 向かないことがある）
+						let dx = Math.sign(x - s.state.x);
+						let dy = Math.sign(y - s.state.y);
+						if ((dx !== 0) === (dy !== 0)) [dx, dy] = DIR_VEC[s.state.dir];
 						const nx = x + dx;
 						const ny = y + dy;
 						const others = p.blocks
@@ -191,7 +194,7 @@ export const pushReset = (s: Story, p: PushPuzzle): void => {
 
 /**
  * モニターの 並び（6列×3段）。板を 終えると その板の モニターが 点く。
- * 避難Jは 暗いまま。手がかり：ねこ板と 同じ段・あいさつ板と 同じ列・保守板の 右上。
+ * 避難Jは 暗いまま。手がかり：犬猫大好き板と 同じ段・料理板と 同じ列・天文・気象板の 右上。
  */
 export const MONITOR_COLS = 6;
 export const MONITOR_ROWS = 3;

@@ -1,17 +1,17 @@
 // 避難J（裏シナリオ「過疎板探検」の 終点。data/kaso.ts に 全体の 流れ）。
-// 過疎板の底で 避難Jの モニターを 当てて（1000取り板で 回線を つないだ あと）来る。
+// 過疎板の底で 避難Jの モニターを 当てて（実験板で 回線を つないだ あと）来る。
 //
 // 住民は ホームニキ（避難Jの >>2「ここが ほんまの ホームや」。みんな 帰ったのに ひとり 残った 名無し）と 板猫。
-// ホームニキの スレは 998 で 止まっている（1000日前）。1000ゲッターは 自分で 置いた bot（1000取り板の 作成ログ）。
+// ホームニキの スレは 998 で 止まっている（1000日前）。1000ゲッターは 自分で 置いた bot（実験板の 作成ログ）。
 // 完走したら スレが 勢い欄から 消える。スレの ない 板は 板やない。……ホームが なくなる。
 //
-// 流れ: 到着 → ホームニキ（999 は 書かせん。帰れ）→ 保守板の カギで 家へ（hinan_home）→ 棚の ログ → 机の >>998
+// 流れ: 到着 → ホームニキ（999 は 書かせん。帰れ）→ 天文・気象板の カギで 家へ（hinan_home）→ 棚の ログ → 机の >>998
 //       （裏返し その2：サイレントバルスの ことば。home_998）→ 勢い欄で キリコが >>999 → 1000ゲッター →
 //       ホームニキの 告白 →「完走した スレは 倉庫で 眠る。消えない」→ ホームニキが 1000「おそいわ。……おかえり」
 //       → レコード「避難Jの声」（hinan_1000）→ ルート分岐「スレを うつす」（避難ルート。保守の 日々 → 静かな 完走）
 //       　　　　　　　　　　　　　　　　　　　　　／「もどって 完走する」（本編へ。hinan_back）
 // 避難Jの 時間は 外と ちがう（「むこうは まだ 同じ夜や」）ので、避難ルートの あとも 本編は つづけられる。
-// フラグ: home_met・home_key（kaso.ts。保守板）・home_998・hinan_1000・hinan_back・hinan_end・hinan_undo・
+// フラグ: home_met・home_key（kaso.ts。天文・気象板）・home_998・hinan_1000・hinan_back・hinan_end・hinan_undo・
 //         home_trace・home_n・hd_write/hd_cat/hd_look/hd_rest（保守の 日々で えらんだ 回数）
 
 import type { EventDef, MapDef, Story } from "../../engine/defs";
@@ -177,15 +177,15 @@ const before = async (s: Story): Promise<void> => {
 		await s.narrate("声が、すこし　ふるえていた。");
 		return;
 	}
-	if (s.flag("home_key")) {
+	if (s.has("home_key") > 0) {
 		await H(s, "……そのカギ。どこで");
-		await K(s, "保守板の、いちばん　おくンゴ");
+		await K(s, "天文・気象板の、いちばん　おくンゴ");
 		await H(s, "……返せ、とは　言わん。\n読むなら、読め。ワイは　知らん");
 		return;
 	}
 	await H(s, "帰れ、言うとるやろ");
 	await K(s, "……あの家、ホームニキの？");
-	await H(s, "カギは　なくした。\n……保守板の　どこかや。知らん");
+	await H(s, "カギは　なくした。\n……天文・気象板の　どこかや。知らん");
 };
 
 // ───────────────── ルート分岐：スレを うつす ─────────────────
@@ -471,13 +471,15 @@ const events: EventDef[] = [
 			await C(s, s.flag("hinan_1000") ? "にゃあ♪" : "にゃあ");
 			if (s.flag("neko_done") && !s.flag("cat_suzu")) {
 				s.set("cat_suzu");
-				await s.narrate("首に、すずの　あとが　ある。\n……ねこ板の、あの猫だ。");
+				await s.narrate(
+					"首に、すずの　あとが　ある。\n……犬猫大好き板の、あの猫だ。",
+				);
 				await K(s, "通ってるンゴ？　900の　板を");
 			}
 		},
 		{ wander: true },
 	),
-	// 家（カギは 保守板）
+	// 家（カギは 天文・気象板）
 	{
 		id: "home_door",
 		x: 3,
@@ -485,7 +487,7 @@ const events: EventDef[] = [
 		trigger: "touch",
 		through: true,
 		run: async (s) => {
-			if (!s.flag("home_key")) {
+			if (!(s.has("home_key") > 0)) {
 				await s.narrate("表札に『ホーム』。\nカギが　かかっている。");
 				await s.move("player", "d");
 				return;

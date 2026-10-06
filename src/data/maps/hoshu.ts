@@ -1,5 +1,6 @@
-// 保守板（裏シナリオ「過疎板探検」の 3枚目。過疎板の底の 右から2番目の 扉。第三章の ナイターの あと）。
-// 沈んだ スレを 上げる（保守する）板。
+// 天文・気象板（裏シナリオ「過疎板探検」の 3枚目。過疎板の底の 右から2番目の 扉。第三章の ナイターの あと）。
+// おーぷんに 実在する 板（sky）。「空を見た」が 2015年から 毎日 その日の 空の 写真、「台風総合スレ」は 2012年から
+// （おんJ の「1ヶ月間過疎板巡り」スレ >>64・>>128）。毎日 ひとつ 書く＝保守の 板。
 // 手前の 部屋：沈んだ スレ（3つの 箱）を 押して 勢い欄の 上段（光る 床）に そろえると、おくへの 道が ひらく（hos_age）。
 // おく：ホームニキが 千日の あいだ 書いて 回った 保守レスの 足あと。日付が 新しい ほうへ 進むと、
 // いちばん おくの 部屋に ホームの カギ。カギを 取ると「しずけさ」が しみだしてくる（中ボス）。
@@ -33,7 +34,7 @@ const rows = [
 	"#wwwwww......wwwwww#", // y10 箱の 部屋（箱は x7..12・y9..12 を 動く）
 	"#wwwwww......wwwwww#", // y11
 	"#wwwwww......wwwwww#", // y12
-	"#wwwwww......wwwwww#", // y13 端末 (13,13)
+	"#wwwwww......wwwwww#", // y13 端末 (13,13) は 壁の 前
 	"#wwwwwwwww.wwwwwwww#", // y14 到着 (10,14)
 	"#########.##########", // y15 出口 (10,15) → kaso
 ];
@@ -48,6 +49,13 @@ const tiles = {
 };
 
 // ───────────────── 沈んだ スレを 上げる ─────────────────
+
+/** 3つの 箱＝沈んだ スレ（実在の スレと、ホームニキの 保守スレ）。 */
+const BOX_NAME: Record<string, string> = {
+	a: "空を見た",
+	b: "台風総合スレ",
+	c: "保守",
+};
 
 const PUZZLE: PushPuzzle = {
 	prefix: "hos",
@@ -68,7 +76,9 @@ const PUZZLE: PushPuzzle = {
 	onSolved: async (s) => {
 		s.se("levelup");
 		await s.narrate("3つの　スレが、いっせいに\n浮かびあがった。（age）");
-		await s.narrate("勢い欄の　上段に、スレタイが　ならんだ。");
+		await s.narrate(
+			`勢い欄の　上段に、スレタイが　ならんだ。\n${BOX_NAME.a}・${BOX_NAME.b}・${BOX_NAME.c}`,
+		);
 		await K(s, "……保守、ンゴ");
 		if (front(s, "roze"))
 			await s.say("roze", "沈んだ　スレを　上げる。\nそれだけの　板アル");
@@ -94,6 +104,21 @@ const reset: EventDef = {
 		s.se("cursor");
 		pushReset(s, PUZZLE);
 		await s.narrate("沈んだ　スレが、もとの　場所に　もどった。");
+	},
+};
+
+/** おくへの 道（hos_age まで 岩が ふさぐ。踏むと 1歩 もどる）。 */
+const gate: EventDef = {
+	id: "hos_gate",
+	x: 10,
+	y: 8,
+	trigger: "touch",
+	through: true,
+	when: (st) => !st.flags.hos_age,
+	run: async (s: Story) => {
+		await s.narrate("大きな　岩が　道を　ふさいでいる。");
+		await s.narrate("岩に、ほりこんである。\n『スレを　上げた者だけ　通れ』");
+		await s.move("player", "d");
 	},
 };
 
@@ -168,21 +193,6 @@ const keyChest: EventDef[] = [
 	},
 ];
 
-/** おくへの 道（hos_age まで 岩が ふさぐ。踏むと 1歩 もどる）。 */
-const gate: EventDef = {
-	id: "hos_gate",
-	x: 10,
-	y: 8,
-	trigger: "touch",
-	through: true,
-	when: (st) => !st.flags.hos_age,
-	run: async (s: Story) => {
-		await s.narrate("大きな　岩が　道を　ふさいでいる。");
-		await s.narrate("岩に、ほりこんである。\n『スレを　上げた者だけ　通れ』");
-		await s.move("player", "d");
-	},
-};
-
 const events: EventDef[] = [
 	{
 		id: "arrive",
@@ -191,7 +201,7 @@ const events: EventDef[] = [
 		trigger: "auto",
 		once: true,
 		run: async (s) => {
-			await s.narrate("保守板。\n最後の　レスは、3日前。");
+			await s.narrate("天文・気象板。\n最後の　レスは、3日前。");
 			await K(s, "……3日前？\nここ、だれか　いるンゴ？");
 			if (front(s, "roze"))
 				await s.say("roze", "沈んだ　スレが、床に　ころがってるアル");
@@ -209,7 +219,13 @@ const events: EventDef[] = [
 	),
 	...pushBlocks(PUZZLE),
 	reset,
-	look("ikioi_hos", 8, 8, "勢い欄。\n沈んだ　スレは、ここに　上げる。"),
+	look(
+		"ikioi_hos",
+		8,
+		8,
+		"勢い欄。沈んだ　スレは、ここに　上げる。",
+		"『空を見た』：毎日、その日の　空の　写真。\n2015年から。……沈んでいる。",
+	),
 	gate,
 	// 通路の 足あと（日付が 新しい ほうへ）
 	post(
@@ -248,7 +264,7 @@ const events: EventDef[] = [
 		2,
 		"岩に、あとから　ほりこんである。\n『昔は　遊びで　侵略しとった　だけやのにな』",
 	),
-	// まんなかの 部屋：100日前
+	// まんなかの 部屋：100日前と、空の 写真
 	post(
 		"post4",
 		10,
@@ -256,7 +272,12 @@ const events: EventDef[] = [
 		"貼り紙。\n『保守　100日前　名前：風吹けば名無し』",
 		"『保守』",
 	),
-	look("bench_m", 12, 4, "すわった　あとの　ある　岩。\n……ねこの　毛。"),
+	look(
+		"sky_photo",
+		12,
+		4,
+		"岩の　すきまに、空の　写真が　1枚。\n……くもり空。日付は　ない。",
+	),
 	// 右の 部屋：3日前と カギ
 	post(
 		"post5",
@@ -271,7 +292,7 @@ const events: EventDef[] = [
 
 export const hoshu: MapDef = {
 	id: "hoshu",
-	name: "保守板",
+	name: "天文・気象板",
 	bgm: "dungeon",
 	tiles,
 	rows,

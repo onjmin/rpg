@@ -2,11 +2,12 @@
 // 過去ログ倉庫の 北東の 階段（避難Jの ログを 掘ってから）と、サーバーの底の となりの ラックから 来る。
 // おーぷんの 約900の 専門板の サーバー室。モニターが ずらりと ならんで、ほとんど 消えている。
 //
-// 上の壁に 4つの 板の 扉：ねこ板（いつでも）・あいさつ板（あいさつで ひらく）・
-// 保守板（第三章の あと。それまでは 503）・1000取り板（第四章の 音が 消えた夜から。それまでは 音声認証）。
+// 上の壁に 4つの 板の 扉（どれも おーぷんに 実在する 板。おんJ の「1ヶ月間過疎板巡り」スレから）：
+// 犬猫大好き板（いつでも）・料理板（のれんの 声に 返事を して ひらく）・
+// 天文・気象板（第三章の あと。それまでは 503）・実験板（第四章の 音が 消えた夜から。それまでは 音声認証）。
 // まんなかの モニター 6列×3段（data/kaso.ts の MONITORS）。板を 終えると その板の モニターが 点く。
 // 避難Jの モニターは 暗いまま。3つの 手がかり（同じ段・同じ列・右上）で 当てる。
-// 当てても、1000取り板で 回線（sen_line）を つなぐまでは 行けない。
+// 当てても、実験板で 回線（sen_line）を つなぐまでは 行けない。
 // ヒナリーが 研究中（倉庫の ヒナリーと 同じ人。立て逃げの 研究者）。手がかりを 発表してくれる。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
@@ -48,28 +49,30 @@ const door = (
 	},
 });
 
-/** あいさつ板の 扉：あいさつしないと ひらかない。 */
+/** 料理板の のれん：「いらっしゃい」に 返事を しないと 通れない。 */
 const aisGate = async (s: Story): Promise<boolean> => {
 	if (s.flag("ais_open")) return true;
-	await s.narrate("扉に『入るときは　あいさつを』。");
+	await s.narrate("のれんの　むこうから、声がした。\n『……いらっしゃい』");
 	const c = await s.choose(
-		["こんにちは", "以後、お見知りおきを", "ちーっす", "やめる"],
+		["おじゃまします", "こんにちは", "だまって　入る", "やめる"],
 		{ cancel: 3 },
 	);
 	if (c === 3) return false;
-	if (c !== 1) {
+	if (c === 2) {
 		s.se("miss");
-		await s.narrate("……返事が　ない。");
-		if (c === 2 && front(s, "feris")) await s.say("feris", "軽すぎたかな〜？");
+		await s.narrate("のれんが、ふわりと　下りて\n道を　ふさいだ。");
+		if (front(s, "roze"))
+			await s.say("roze", "……お店アル。あいさつは　するアル");
 		return false;
 	}
 	s.se("decide");
-	await s.narrate("扉の　むこうで、だれかが\nぺこりと　おじぎした　気がした。");
+	await K(s, c === 0 ? "おじゃまします、ンゴ" : "こんにちは、ンゴ");
+	await s.narrate("『お客さんだ』\nのれんが、すっと　上がった。");
 	s.set("ais_open");
 	return true;
 };
 
-/** 保守板の 扉：第三章の ナイターが 終わるまで こみあっている。 */
+/** 天文・気象板の 扉：第三章の ナイターが 終わるまで こみあっている。 */
 const hosGate = async (s: Story): Promise<boolean> => {
 	if (s.flag("b3")) {
 		if (!s.flag("hos_open")) {
@@ -85,7 +88,7 @@ const hosGate = async (s: Story): Promise<boolean> => {
 	return false;
 };
 
-/** 1000取り板の 扉：音の あるうちは ひらかない。 */
+/** 実験板の 扉：音の あるうちは ひらかない。 */
 const senGate = async (s: Story): Promise<boolean> => {
 	if (s.flag("balus_lost")) {
 		if (!s.flag("sen_open")) {
@@ -112,10 +115,10 @@ const plate = (id: string, x: number, text: string): EventDef =>
 // ───────────────── モニター（900の板） ─────────────────
 
 const BOARD_NAME: Record<string, string> = {
-	neko: "ねこ板",
-	ais: "あいさつ板",
-	hos: "保守板",
-	sen: "1000取り板",
+	neko: "犬猫大好き板",
+	ais: "料理板",
+	hos: "天文・気象板",
+	sen: "実験板",
 };
 
 const monitor = (col: number, row: number): EventDef[] => {
@@ -196,9 +199,9 @@ const monitor = (col: number, row: number): EventDef[] => {
 
 /** 手がかり。板を 終えた 順に ひとつずつ ふえる。 */
 const CLUES: [flag: string, text: string][] = [
-	["neko_done", "避難Jは、ねこ板と　同じ　段に\nならんでいる　模様です"],
-	["ais_done", "避難Jは、あいさつ板と　同じ　列に\nならんでいる　模様です"],
-	["hos_done", "避難Jは、保守板の　右上に\nある　模様です"],
+	["neko_done", "避難Jは、犬猫大好き板と　同じ　段に\nならんでいる　模様です"],
+	["ais_done", "避難Jは、料理板と　同じ　列に\nならんでいる　模様です"],
+	["hos_done", "避難Jは、天文・気象板の　右上に\nある　模様です"],
 ];
 
 const hinaryRun = async (s: Story): Promise<void> => {
@@ -223,7 +226,7 @@ const hinaryRun = async (s: Story): Promise<void> => {
 		);
 		await s.say(
 			"hinary",
-			"まずは　ねこ板が　安全の　模様です。\n以後、お見知りおきを。",
+			"まずは　犬猫大好き板が　安全の　模様です。\n以後、お見知りおきを。",
 		);
 		return;
 	}
@@ -235,7 +238,7 @@ const hinaryRun = async (s: Story): Promise<void> => {
 	const clues = CLUES.filter(([f]) => s.flag(f));
 	if (!clues.length) {
 		await s.say("hinary", "本日の　研究成果：\n点いた　モニター、0こ");
-		await s.say("hinary", "ねこ板から　どうぞ。\n以後、お見知りおきを。");
+		await s.say("hinary", "犬猫大好き板から　どうぞ。\n以後、お見知りおきを。");
 		return;
 	}
 	await s.say("hinary", `本日の　研究成果：\n点いた　モニター、${n}こ`);
@@ -246,7 +249,7 @@ const hinaryRun = async (s: Story): Promise<void> => {
 			"モニターを　当てても、回線が　ないと\nつながらない　模様です",
 		);
 	if (n >= 3 && !s.flag("sen_done"))
-		await s.say("hinary", "回線は、1000取り板の　おくに\nある　模様です");
+		await s.say("hinary", "回線は、実験板の　おくに\nある　模様です");
 	await s.say("hinary", "これで　発表を　終わりたいと\n思います");
 };
 
@@ -306,13 +309,17 @@ const events: EventDef[] = [
 	),
 	// 板の 扉と 札
 	door("d_neko", 4, { map: "neko", x: 8, y: 12 }),
-	plate("p_neko", 5, "『ねこ板』\n人口：0（ねこを　のぞく）"),
+	plate(
+		"p_neko",
+		5,
+		"『犬猫大好き板』\n人口：0（ねこを　のぞく。犬は　いない）",
+	),
 	door("d_ais", 8, { map: "aisatsu", x: 8, y: 12 }, aisGate),
-	plate("p_ais", 9, "『あいさつ板』\nルール：あいさつだけして、帰ること"),
+	plate("p_ais", 9, "『料理板』\nのれんが　かかっている。『いらっしゃい』"),
 	door("d_hos", 12, { map: "hoshu", x: 10, y: 14 }, hosGate),
-	plate("p_hos", 13, "『保守板』\n沈んだ　スレを　上げる　板"),
+	plate("p_hos", 13, "『天文・気象板』\n今日の　空の　写真。……最後は　3日前"),
 	door("d_sen", 16, { map: "sentori", x: 9, y: 14 }, senGate),
-	plate("p_sen", 17, "『1000取り板』\n1000を　取るだけの　板"),
+	plate("p_sen", 17, "『実験板（ヤンゴン）』\n書きこみの　テストは　ここで"),
 	...monitors,
 	npc("hinary_k", 15, 6, SPR.hinary, hinaryRun, { dir: "left" }),
 	phono("phono_kaso", 16, 11),

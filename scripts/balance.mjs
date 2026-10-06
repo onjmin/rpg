@@ -307,10 +307,10 @@ const zones = [
 	["スタジアム", STD, KRF, [7, 8]],
 	["サーバー", SRV, KRF, [9, 10]],
 	["サーバー テト", SRV, KRT, [9, 10]],
-	["裏 ねこ板", NEKO, KNR, [5, 6]],
-	["裏 あいさつ板", AIS, KRF, [6, 7]],
-	["裏 保守板", HOS, KRF, [8, 9]],
-	["裏 1000取り", SEN, KRF, [9, 10]],
+	["裏 犬猫", NEKO, KNR, [5, 6]],
+	["裏 料理板", AIS, KRF, [6, 7]],
+	["裏 天文気象", HOS, KRF, [8, 9]],
+	["裏 実験板", SEN, KRF, [9, 10]],
 ];
 for (const [name, gs, ids, lvs] of zones)
 	for (const lv of lvs) {
@@ -330,7 +330,7 @@ const bosses = [
 	["F2 テト入り", "g_f2", KRT, 10],
 	["F2 テトなし", "g_f2", KRF, 10],
 	["裏 ぬこ画像bot", "g_nekoboss", KNR, 5],
-	["裏 定型文bot", "g_aisboss", KRF, 6],
+	["裏 常連bot", "g_aisboss", KRF, 6],
 	["裏 しずけさ", "g_hosboss", KRF, 8],
 	["裏 kskの主", "g_senboss", KRF, 9],
 	["裏 ゲッター テトなし", "g_getter", KRF, 9],

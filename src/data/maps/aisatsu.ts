@@ -1,10 +1,11 @@
-// あいさつ板（裏シナリオ「過疎板探検」の 2枚目。過疎板の底の 左から2番目の 扉。入るときに「以後、お見知りおきを」）。
-// ルールは「あいさつだけして、帰ること」。ヒナリーの「立て逃げ」は この板の 作法。
-// 広間に 4人の 名無しの 残像が 立っていて、それぞれの あいさつスレ（壁の 額）に 日付が ある。
+// 料理板（裏シナリオ「過疎板探検」の 2枚目。過疎板の底の 左から2番目の 扉。入るとき のれんの 声に 返事を する）。
+// おーぷんに 実在する 板（cook）。「料理雑談スレ」（2014年〜）が 細々と つづき、よそから 書きこむと
+// 「お客さんだ」「いらっしゃい」と 返ってくる（おんJ の「1ヶ月間過疎板巡り」スレ >>116・>>242）。
+// ゲームでは だれも 来なくなった 食堂。4人の 名無しの 残像が 立っていて、それぞれの スレ（壁の 額）に 日付が ある。
 // 来た順（日付の 古い順）に あいさつを 返すと、そろって おじぎして 帰っていく（ais_order）。
 // 順番を まちがえると そっぽを むかれて 最初から。
 // おくの モニターで この板の 1スレの >>1 を 当て（倉庫の 発掘と 同じ 遊び）、
-// 1000日 「こんにちは」を 返しつづけている 定型文bot を 止めると 終わり（ais_done）。
+// 1000日 「いらっしゃい」を 返しつづけている 常連bot を 止めると 終わり（ais_done）。
 // フラグ：ais_n（返した 人数 0〜4）・ais_order・ais_age・ais_done
 
 import type { EventDef, MapDef, Story } from "../../engine/defs";
@@ -26,16 +27,16 @@ const GHOSTS: {
 		id: "g_a",
 		x: 2,
 		order: 2,
-		date: "2014/08/08",
-		title: "おはようございます。帰ります",
-		reply: "……おはよう　ございます",
+		date: "2014/04/07",
+		title: "料理雑談スレ",
+		reply: "……いらっしゃい",
 	},
 	{
 		id: "g_b",
 		x: 6,
 		order: 0,
 		date: "2012/06/07",
-		title: "はじめまして。原住民です",
+		title: "はじめまして。なに作れば　ええ？",
 		reply: "……はじめまして",
 	},
 	{
@@ -43,16 +44,16 @@ const GHOSTS: {
 		x: 10,
 		order: 3,
 		date: "2015/01/01",
-		title: "こんばんは。だれか　おる？",
-		reply: "……おる",
+		title: "あけおめ。おせち　作った",
+		reply: "……あけおめ",
 	},
 	{
 		id: "g_d",
 		x: 14,
 		order: 1,
 		date: "2013/05/16",
-		title: "以後、お見知りおきを",
-		reply: "……こちらこそ",
+		title: "いらっしゃい。まず　米を　とげ",
+		reply: "……お客さんだ",
 	},
 ];
 
@@ -63,7 +64,7 @@ const ghostEvents = (): EventDef[] =>
 			`${g.id}_frame`,
 			g.x,
 			2,
-			`【あいさつ】${g.title}\n1　名前：風吹けば名無し　${g.date}`,
+			`【料理】${g.title}\n1　名前：名無しさん＠おーぷん　${g.date}`,
 		),
 		{
 			id: g.id,
@@ -79,9 +80,11 @@ const ghostEvents = (): EventDef[] =>
 				await s.narrate(
 					"名無しの　残像。\nなにも　言わずに、こちらを　見ている。",
 				);
-				const c = await s.choose(["あいさつする", "やめる"], { cancel: 1 });
+				const c = await s.choose(["あいさつする", "やめる"], {
+					cancel: 1,
+				});
 				if (c === 1) return;
-				await K(s, "……どうも、ンゴ");
+				await K(s, "……おじゃまします、ンゴ");
 				if (g.order !== n) {
 					s.se("miss");
 					await s.narrate("残像は、ふいと　そっぽを　むいた。");
@@ -105,42 +108,37 @@ const ghostEvents = (): EventDef[] =>
 				if (n + 1 < GHOSTS.length) return;
 				await s.narrate("4人の　残像が、そろって\nもういちど　おじぎした。");
 				await s.narrate(
-					"……そして、帰っていった。\nあいさつだけして、帰る　板。",
+					"……そして、帰っていった。\nお客さんに　あいさつして、帰る　店。",
 				);
 				if (front(s, "feris"))
-					await s.say(
-						"feris",
-						"ヒナリーちゃんの　口ぐせ、\nここの　ルールだったんだ〜",
-					);
+					await s.say("feris", "いらっしゃい、って\n言われたかったんだね〜");
 				s.set("ais_order");
 				await s.narrate("おくの　モニターが、\nぽつりと　ついた。");
 			},
 		},
 	]);
 
-/** おくの モニター：1スレの >>1 当て → 定型文bot。 */
+/** おくの モニター：1スレの >>1 当て → 常連bot。 */
 const monitorRun = async (s: Story): Promise<void> => {
 	if (s.flag("ais_done")) {
-		await s.narrate("1　あいさつして　帰る板　part1\n……bot は　止まっている。");
+		await s.narrate("1　料理雑談スレ\n……bot は　止まっている。");
 		return;
 	}
 	if (!s.flag("ais_order")) {
 		await s.narrate(
-			"消えた　モニター。\n『ようこそ。まず　みなさんに　あいさつを』",
+			"消えた　モニター。\n『ようこそ。まず　お客さんに　あいさつを』",
 		);
 		return;
 	}
 	if (!s.flag("ais_age")) {
 		await s.narrate("この板の　1スレ。\n>>1 は　文字化けして　読めない。");
-		await s.narrate(">>2 おはようございます\n>>3 以後、お見知りおきを");
-		await s.narrate(
-			">>4 ……帰るの　はやない？\n>>5 >>4 ルールやで。長居は　無用",
-		);
+		await s.narrate(">>2 いらっしゃい\n>>3 お客さんだ");
+		await s.narrate(">>4 ……なに　作ります？\n>>5 >>4 なんでも　ええで。雑談や");
 		await s.narrate("……この　スレの　>>1 は、\nなんだった？");
 		const c = await s.choose([
-			"あいさつして　帰る板",
-			"雑談する　板",
-			"自己紹介する　板",
+			"料理雑談スレ",
+			"今日の　献立　スレ",
+			"お店　紹介スレ",
 		]);
 		if (c !== 0) {
 			s.se("miss");
@@ -153,25 +151,25 @@ const monitorRun = async (s: Story): Promise<void> => {
 		s.set("ais_age");
 		s.se("levelup");
 		await s.narrate("スレが　ゆっくり　浮かびあがった。\n（age）");
-		await K(s, "あいさつして、帰る。\n……それだけの　板ンゴ");
+		await K(s, "なんでも　ええ、雑談。\n……それだけの　店ンゴ");
 	}
 	await s.narrate("スレの　いちばん下で、\nbot が　まだ　動いている。");
-	await s.narrate("998　名前：定型文bot\nこんにちは。以後、お見知りおきを");
-	await s.narrate("997　名前：定型文bot\nこんにちは。以後、お見知りおきを");
+	await s.narrate("998　名前：常連bot\nいらっしゃい。お客さんだ");
+	await s.narrate("997　名前：常連bot\nいらっしゃい。お客さんだ");
 	await s.narrate(
-		"……1000日、だれも　いない板で\nあいさつを　返しつづけている。",
+		"……1000日、だれも　来ない　店で\n「いらっしゃい」を　言いつづけている。",
 	);
-	await K(s, "だれにも　返ってこない\nあいさつ、ンゴ……");
+	await K(s, "だれにも　返ってこない\nいらっしゃい、ンゴ……");
 	s.se("shock");
 	await s.shake(300);
-	await s.narrate("定型文が、画面から　あふれだした！");
+	await s.narrate("「いらっしゃい」が、画面から　あふれだした！");
 	await s.battle("g_aisboss");
 	await s.narrate("bot が　止まった。");
 	s.se("cursor");
-	await s.narrate("999　名前：蓄音キリコ\n>>998 こんにちは。ンゴ");
+	await s.narrate("999　名前：蓄音キリコ\n>>998 おじゃまします。ンゴ");
 	await s.narrate("……画面が、すこしだけ\nあたたかく　なった　気がした。");
 	if (has(s, "roze"))
-		await s.say("roze", "返事が　来るのを、\n待ってたアルかもね");
+		await s.say("roze", "お客さんが　来るのを、\n待ってたアルかもね");
 	s.set("ais_done");
 	await s.narrate("どこかで、モニターが　ひとつ\nついた　気がした。");
 };
@@ -184,8 +182,8 @@ const events: EventDef[] = [
 		trigger: "auto",
 		once: true,
 		run: async (s) => {
-			await s.narrate("あいさつ板。\n最後の　レスは、1000日前。");
-			await s.narrate("広間に、だれかの　影が　4つ。\n……動かない。");
+			await s.narrate("料理板。\n最後の　レスは、1000日前。");
+			await s.narrate("食堂に、だれかの　影が　4つ。\n……動かない。");
 			if (front(s, "roze"))
 				await s.say("roze", "残像アル。\n書いた　人は、もう　いないアル");
 			await K(s, "……あいさつ、したほうが\nいいンゴ？");
@@ -202,8 +200,8 @@ const events: EventDef[] = [
 		"rule",
 		8,
 		2,
-		"板ルール\n一、あいさつだけして、帰ること",
-		"二、あいさつは、来た順に　返すこと\n三、長居は　無用",
+		"店の　きまり\n一、お客さんには　あいさつを",
+		"二、あいさつは、来た順に　返すこと\n三、なんでも　ええで。雑談や",
 	),
 	...ghostEvents(),
 	{
@@ -214,28 +212,29 @@ const events: EventDef[] = [
 		fixedDir: true,
 		run: monitorRun,
 	},
-	look("chairs", 8, 8, "いすが　ならんでいる。\nだれも　すわって　いない。"),
+	look("tables", 8, 8, "テーブルと　いす。\nだれも　すわって　いない。"),
+	look("pot", 1, 3, "鍋。\n……中は、からっぽだ。"),
 	...chest("ais1", 1, 10, "spray", 2),
 ];
 
 export const aisatsu: MapDef = {
 	id: "aisatsu",
-	name: "あいさつ板",
+	name: "料理板",
 	bgm: "dungeon",
 	tiles: { ...INDOOR, ".": { ...INDOOR["."], encounter: true } },
 	encounters: { rate: 0.05, groups: ["g_ais1", "g_ais2"] },
-	// 18×14。上の壁に 4つの 額（Q。x = 2,6,10,14）と 板ルール (8,2)。残像は その下 y4。
-	// おくの モニター M (15,5)。南の 扉 (8,13) → 過疎板の底
+	// 18×14。上の壁に 4つの 額（Q。x = 2,6,10,14）と 店の きまり (8,2)。残像は その下 y4。
+	// おくの モニター M (15,5)。テーブル t と いす n。南の 扉 (8,13) → 過疎板の底
 	rows: [
 		"##################", // y0
 		"#HHHHHHHHHHHHHHHH#", // y1
-		"#hQhhhQhQhQhhhQhh#", // y2  額 (2,2)(6,2)(10,2)(14,2)・板ルール (8,2)
-		"#................#", // y3
+		"#hQhhhQhQhQhhhQhh#", // y2  額 (2,2)(6,2)(10,2)(14,2)・きまり (8,2)
+		"#u...............#", // y3  鍋 (1,3)
 		"#................#", // y4  残像 (2,4)(6,4)(10,4)(14,4)
 		"#..............M.#", // y5  モニター (15,5)
 		"#................#", // y6
 		"#................#", // y7
-		"#..n.n.n.n.n.n...#", // y8  いす
+		"#..ntn..ntn..ntn.#", // y8  テーブルと いす
 		"#................#", // y9
 		"#................#", // y10 宝箱 (1,10)
 		"#................#", // y11

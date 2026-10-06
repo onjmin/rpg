@@ -1,8 +1,10 @@
-// ねこ板（裏シナリオ「過疎板探検」の 1枚目。過疎板の底の 左の 扉から。data/kaso.ts）。
-// ねこしか いなくなった 板。すずを つけた 猫（板猫）が 柵の すきまを ぬけて 勢い欄まで 案内する。
+// 犬猫大好き板（裏シナリオ「過疎板探検」の 1枚目。過疎板の底の 左の 扉から。data/kaso.ts）。
+// おーぷんに 実在する 板（dog）。「他の板の猫スレ紹介場」が 2015年から おーぷんじゅうの 猫スレを 集めつづけている
+// （おんJ の「1ヶ月間過疎板巡りしてきたワイが良スレだと思ったものを紹介していく」>>7）。犬は いない（犬とは 言ってない）。
+// ゲームでは ねこしか いなくなった 板。すずを つけた 猫（板猫）が 柵の すきまを ぬけて 勢い欄まで 案内する。
 // ほかの 猫は 気まぐれに 歩くだけ（にゃあ）。
-// 勢い欄の『ぬこ画像スレ』には、1000日 だれも いない 板に、画像bot だけが 画像を はりつづけている。
-// bot を 止めると ねこ板は 終わり（neko_done）。板猫は 底の ほうへ 走っていく（避難Jの 板猫と 同じ 猫）。
+// 勢い欄の 2番目『ぬこ画像スレ』（創作）には、1000日 だれも いない 板に、画像bot だけが 画像を はりつづけている。
+// bot を 止めると この板は 終わり（neko_done）。板猫は 底の ほうへ 走っていく（避難Jの 板猫と 同じ 猫）。
 // フラグ：neko_step（猫を 追った 回数 0〜4）・neko_done
 
 import type { EventDef, MapDef, Story } from "../../engine/defs";
@@ -15,11 +17,11 @@ import { TOWN } from "../tiles";
 const step = (st: { flags: Record<string, unknown> }): number =>
 	Number(st.flags.neko_step ?? 0);
 
-/** すずの 猫の 立つ 場所と、話しかけたとき 走っていく 道。 */
+/** すずの 猫の 立つ 場所と、話しかけたとき 走っていく 道（つぎの 場所まで）。 */
 const CAT: [x: number, y: number, route: string][] = [
-	[8, 11, "llllllu"], // 到着の そば → 左の 柵の すきまへ
-	[2, 10, "uuurrrrrrrrrrrrr"], // 柵 (1,9)(2,9) を ぬけて、右の 柵の すきまへ
-	[15, 7, "llllllllluuu"], // 柵 (15,6)(16,6) を ぬけて、家の 前へ
+	[8, 11, "llllllu"], // 到着の そば → 左の 柵の すきまの 手前へ
+	[2, 10, "uuurrrrrrrrrrrrr"], // 柵 (1,9)(2,9) を ぬけて、右の 柵の すきまの 手前へ
+	[15, 7, "llllllllluuu"], // 左へ 歩いて、柵 (6,6) を ぬけ、家の 前へ
 	[6, 4, "rrr"], // 勢い欄の 前へ
 	[9, 4, ""], // 勢い欄の 前で すわる
 ];
@@ -81,18 +83,21 @@ const stray = (
 const ikioiRun = async (s: Story): Promise<void> => {
 	if (s.flag("neko_done")) {
 		await s.narrate(
-			"1 【画像】ぬこ画像スレ　part998\n……bot は　止まっている。",
+			"1 他の板の　猫スレ　紹介場\n2 【画像】ぬこ画像スレ　part998",
 		);
-		await s.narrate("最終レス：さっき。\n名前：蓄音キリコ「にゃあ」");
+		await s.narrate("2の　最終レス：さっき。\n名前：蓄音キリコ「にゃあ」");
 		return;
 	}
 	await s.narrate(
-		"1 【画像】ぬこ画像スレ　part998\n2 ねこしか　おらんくなった　板",
+		"1 他の板の　猫スレ　紹介場\n2 【画像】ぬこ画像スレ　part998",
 	);
-	await s.narrate("1の　最終レス：いま。\n……いま？");
+	await s.narrate(
+		"1：おーぷんじゅうの　猫スレを\n2015年から　集めている。……人の　字だ。",
+	);
+	await s.narrate("2の　最終レス：いま。\n……いま？");
 	if (step(s.state) < CAT.length - 1) {
 		await s.narrate(
-			"画面が　はやすぎて、読めない。\n……だれかが、はりつづけている。",
+			"2は　画面が　はやすぎて、読めない。\n……だれかが、はりつづけている。",
 		);
 		await K(s, "……すずの　猫が、なにか\n知ってそうンゴ");
 		return;
@@ -139,10 +144,12 @@ const events: EventDef[] = [
 		trigger: "auto",
 		once: true,
 		run: async (s) => {
-			await s.narrate("ねこ板。\n最後の　レスは、1000日前。");
+			await s.narrate("犬猫大好き板。\n最後の　レスは、1000日前。");
 			await s.narrate("……いや。勢い欄だけが、\nいまも　動いている。");
 			await K(s, "ねこの　声しか、しないンゴ");
 			if (front(s, "feris")) await s.say("feris", "ねこ〜！　いっぱい〜！");
+			if (front(s, "roze")) await s.say("roze", "……犬は、アルか？");
+			await K(s, "犬猫（犬とは　言ってない）ンゴ");
 		},
 	},
 	warp(
@@ -152,7 +159,14 @@ const events: EventDef[] = [
 		{ map: "kaso", x: 4, y: 3, dir: "down" },
 		{ se: "door" },
 	),
-	{ id: "ikioi_l", x: 9, y: 3, trigger: "talk", fixedDir: true, run: ikioiRun },
+	{
+		id: "ikioi_l",
+		x: 9,
+		y: 3,
+		trigger: "talk",
+		fixedDir: true,
+		run: ikioiRun,
+	},
 	{
 		id: "ikioi_r",
 		x: 10,
@@ -170,9 +184,9 @@ const events: EventDef[] = [
 		"house_r",
 		14,
 		5,
-		"表札が　はがれている。\nカギが　かかっている。",
+		"表札に『犬』。……犬は　いない。\nカギが　かかっている。",
 	),
-	look("sign", 6, 11, "ようこそ　ねこ板へ\n人口：0（ねこを　のぞく）"),
+	look("sign", 6, 11, "ようこそ　犬猫大好き板へ\n人口：0（ねこを　のぞく）"),
 	look("bench", 2, 8, "ベンチに、ねこの　毛。\n……何匹ぶん　だろう。"),
 	look(
 		"bench2",
@@ -186,16 +200,16 @@ const events: EventDef[] = [
 
 export const neko: MapDef = {
 	id: "neko",
-	name: "ねこ板",
+	name: "犬猫大好き板",
 	bgm: "town",
 	tiles: { ...TOWN, ",": { ...TOWN[","], encounter: true } },
 	encounters: { rate: 0.06, groups: ["g_neko1", "g_neko2"] },
-	// 18×14。北に 家が 2軒と 勢い欄 (9,3)(10,3)。柵が 2列（すきま：y6 は x1・x15,16、y9 は x1,2・x10）。
+	// 18×14。北に 家が 2軒と 勢い欄 (9,3)(10,3)。柵が 2列（すきま：y6 は x1・x6・x15,16、y9 は x1,2・x10）。
 	// 南の 柵の すきま (8,13) → 過疎板の底
 	rows: [
 		"||||||||||||||||||", // y0
-		"|,,,,,,,,,,,,,,,,|", // y1  宝箱 (1,2) は y2
-		"|,nnn,,,,,,,,nnn,|", // y2
+		"|,,,,,,,,,,,,,,,,|", // y1
+		"|,nnn,,,,,,,,nnn,|", // y2  宝箱 (1,2)
 		"|,^^^,,,,Kk,,^^^,|", // y3  勢い欄 (9,3)(10,3)
 		"|,%W%,,,,::,,%W%,|", // y4  猫 (6,4)→(9,4)
 		"|,#D#,,,,::,,#D#,|", // y5  扉 (3,5)(14,5)

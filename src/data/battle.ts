@@ -699,7 +699,7 @@ export const enemies: Record<string, EnemyDef> = {
 	}),
 
 	// ── 裏シナリオ「過疎板探検」の 板（data/kaso.ts）。帯は 本編の 同じ 時期の 雑魚に そろえる ──
-	// ねこ板（第二章〜。Lv5〜6。倉庫の帯）
+	// 犬猫大好き板（第二章〜。Lv5〜6。倉庫の帯）
 	nekobot: en({
 		id: "nekobot",
 		name: "画像bot",
@@ -730,7 +730,7 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 		downText: "{user}は　どこかへ　走っていった。",
 	}),
-	// ねこ板の 中ボス（Lv5〜6 の 3人で 6〜7 ターン）。1000日 だれも 見ていない 画像を はりつづけた bot
+	// 犬猫大好き板の 中ボス（Lv5〜6 の 3人で 6〜7 ターン）。1000日 だれも 見ていない 画像を はりつづけた bot
 	nekoboss: en({
 		id: "nekoboss",
 		name: "ぬこ画像bot",
@@ -749,7 +749,7 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 		downText: "{user}は　さいごの　1枚を　はって　止まった。",
 	}),
-	// あいさつ板（第二〜三章。Lv6〜7）
+	// 料理板（第二〜三章。Lv6〜7）
 	teikei: en({
 		id: "teikei",
 		name: "定型文",
@@ -785,10 +785,10 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 		downText: "{user}は　ぺこりと　おじぎして　消えた。",
 	}),
-	// あいさつ板の 中ボス（Lv6〜7 の 3人で 7 ターン前後）。1000日 返事の ない あいさつを 返しつづけた bot
+	// 料理板の 中ボス（Lv6〜7 の 3人で 7 ターン前後）。1000日 返事の ない あいさつを 返しつづけた bot
 	aisboss: en({
 		id: "aisboss",
-		name: "定型文bot",
+		name: "常連bot",
 		sprite: SPR.e_pc,
 		scale: 1.5,
 		hp: 380,
@@ -798,13 +798,13 @@ export const enemies: Record<string, EnemyDef> = {
 		exp: 85,
 		drop: { item: "spray", rate: 1 },
 		acts: [
-			a(4, 1.2, "{user}「こんにちは」　{target}に　ささる！"),
-			a(3, 0.8, "{user}「以後、お見知りおきを」×1000！", "all"),
-			a(1, 0, "{user}は　返事を　待っている……"),
+			a(4, 1.2, "{user}「いらっしゃい」　{target}に　ささる！"),
+			a(3, 0.8, "{user}「お客さんだ」×1000！", "all"),
+			a(1, 0, "{user}は　お客さんを　待っている……"),
 		],
-		downText: "{user}「……こちらこそ」　bot は　止まった。",
+		downText: "{user}「……ごゆっくり」　bot は　止まった。",
 	}),
-	// 保守板（第三章の あと。Lv8〜9。サーバーの帯）
+	// 天文・気象板（第三章の あと。Lv8〜9。サーバーの帯）
 	hoshubot: en({
 		id: "hoshubot",
 		name: "保守bot",
@@ -835,7 +835,7 @@ export const enemies: Record<string, EnemyDef> = {
 			a(1, 0, "…………。"),
 		],
 	}),
-	// 保守板の 中ボス（Lv8〜9 の 3人で 7〜8 ターン）。千日の 静けさ。サイレントバルスの 手前の かたち
+	// 天文・気象板の 中ボス（Lv8〜9 の 3人で 7〜8 ターン）。千日の 静けさ。サイレントバルスの 手前の かたち
 	hosboss: en({
 		id: "hosboss",
 		name: "しずけさ",
@@ -854,7 +854,7 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 		downText: "{user}は　岩の　おくへ　ひいていった。",
 	}),
-	// 1000取り板（第四章の 夜から。Lv9〜10）
+	// 実験板（第四章の 夜から。Lv9〜10）
 	ksk: en({
 		id: "ksk",
 		name: "ksk",
@@ -900,7 +900,7 @@ export const enemies: Record<string, EnemyDef> = {
 		],
 		downText: "{user}は　999で　止まった。",
 	}),
-	// 1000取り板の 中ボス（Lv9〜10 の 3人で 6〜7 ターン）。1000日 相手を 待った bot
+	// 実験板の 中ボス（Lv9〜10 の 3人で 6〜7 ターン）。1000日 相手を 待った bot
 	senboss: en({
 		id: "senboss",
 		name: "kskの主",
@@ -1194,7 +1194,7 @@ export const groups: Record<string, EnemyGroup> = {
 		id: "g_aisboss",
 		enemies: ["aisboss"],
 		boss: true,
-		intro: "定型文bot「こんにちは」！",
+		intro: "常連bot「いらっしゃい、お客さんだ」！",
 		victory: "bot を　止めた！",
 	}),
 	g_hos1: g({ id: "g_hos1", enemies: ["hoshubot", "kaso"] }),
@@ -1364,7 +1364,7 @@ export const items: Record<string, ItemDef> = {
 	suzu: it({
 		id: "suzu",
 		name: "板猫のすず",
-		desc: "ねこ板の　猫が　つけていた　すず。",
+		desc: "犬猫大好き板の　猫が　つけていた　すず。",
 		note: [
 			"だれかに　飼われていた　猫の　すず。飼い主は、もう　板に　いない。",
 			"猫は　900の　板を　通って　歩く。避難Jにも　来る。ねこは　ノーカンだが。",
@@ -1375,7 +1375,7 @@ export const items: Record<string, ItemDef> = {
 	home_key: it({
 		id: "home_key",
 		name: "ホームのカギ",
-		desc: "避難Jの　家の　カギ。保守板の　おくに　あった。",
+		desc: "避難Jの　家の　カギ。天文・気象板の　おくに　あった。",
 		note: [
 			"ホームニキが　なくした　カギ。保守して　回っていた　板の　いちばん　おくに　落ちていた。",
 			"家の　中には　998レスぶんの　ログと、机の　上に　1枚。",
