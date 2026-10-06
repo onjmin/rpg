@@ -211,15 +211,46 @@ const CHECKPOINTS: Checkpoint[] = [
 		to: { map: "thread", x: 6, y: 7, dir: "up" },
 	},
 	{
-		// 裏シナリオ「避難J」（maps/hinan.ts）。倉庫で 避難Jのログを 掘ってある（dig_hinan）
+		// 裏シナリオ「過疎板探検」の 入口（maps/kaso.ts）。第二章の おわり、倉庫で 避難Jのログを 掘ってある（dig_hinan）
 		id: "cp9",
-		label: "避難J（となりの板のサーバーの前）",
-		sprite: SPR.j_so,
-		flags: { ...CH5_MID, door_open: false, dig_hinan: true },
-		party: P5,
-		lv: 10,
+		label: "過疎板の底（裏。倉庫の階段の前）",
+		sprite: SPR.hinary,
+		flags: { ...CH2_END, dig_hinan: true, hinary_q: true },
+		party: P3,
+		lv: 6,
 		items: KEY2,
-		to: { map: "server", x: 17, y: 10, dir: "up" },
+		to: { map: "kakolog", x: 19, y: 4, dir: "down" },
+	},
+	{
+		// 裏シナリオの 終点（maps/hinan.ts）。第四章の 夜、4つの 板を 終えて 回線を つないである
+		id: "cp10",
+		label: "避難J（裏。>>999 の手前）",
+		sprite: SPR.j_so,
+		flags: {
+			...CH4_MID,
+			dig_hinan: true,
+			kaso_in: true,
+			kaso_hinary: true,
+			neko_done: true,
+			ais_open: true,
+			ais_order: true,
+			ais_age: true,
+			ais_done: true,
+			hos_open: true,
+			hos_age: true,
+			hos_key: true,
+			hos_done: true,
+			sen_open: true,
+			sen_999: true,
+			sen_won: true,
+			sen_line: true,
+			sen_done: true,
+			hinan_found: true,
+		},
+		party: P4,
+		lv: 9,
+		items: [...KEY2, "suzu", "home_key"],
+		to: { map: "hinan", x: 7, y: 10, dir: "up" },
 	},
 ];
 
@@ -294,7 +325,7 @@ const supply = async (s: Story): Promise<void> => {
 	await s.narrate("どうぐを　補充した。");
 };
 
-// 人の並び（x = 2, 4, 6, 8 の2列。9人目は 左下）
+// 人の並び（x = 2, 4, 6, 8 の2列。9・10人目は 左下）
 const spots: [number, number][] = [
 	[2, 2],
 	[4, 2],
@@ -305,6 +336,7 @@ const spots: [number, number][] = [
 	[6, 5],
 	[8, 5],
 	[2, 8],
+	[4, 8],
 ];
 
 const events: EventDef[] = [

@@ -491,12 +491,12 @@ const HINARY_TALKS: {
 		},
 	},
 	{
-		// 避難Jのログを 掘ったあと（digs.ts の hinan）。サーバーの底の「となりの板のサーバー」への 手がかり（maps/hinan.ts）
+		// 避難Jのログを 掘ったあと（digs.ts の hinan）。北東の 階段（過疎板の底。maps/kaso.ts）への 手がかり
 		when: (s) => !!s.flag("dig_hinan") && !s.flag("hinan_1000"),
 		run: async (s) => {
 			await s.say(
 				"hinary",
-				"避難Jの　サーバーは、このスレの\nサーバーの　となりに　ある　模様です",
+				"避難Jへは、この倉庫の　北東の　階段から\nほかの板の　底を　通る　模様です",
 			);
 			await s.say("hinary", "住民は　1名。\n……ねこを　のぞく");
 			if (front(s, "nanj")) await s.say("nanj", "ねこ、数えとったんか");
@@ -745,7 +745,7 @@ export const kakolog: MapDef = {
 		"#wwwwwwwww[]wwwwwwwwn#", // y2  奥の間の正面に古い掲示板（B2 後: (10,2) に総選挙のはり紙）。(20,2) に はなれた棚
 		"#,,,,#..........#,,,,#", // y3  奥の間: フェリス (10,3)、ムッジェ (11,3)（B2 後は mujje_after）。棚は (20,3) から調べる
 		"#,,,,#..........#,,,p#", // y4  宝箱 (2,4)。B2 後: ンゴ姉 (7,4)、パン松 (14,4)
-		"#,,,,#..........#,,,,#", // y5
+		"#,,,,#..........#,,,>#", // y5  階段 (19,5) → 過疎板の底（避難Jのログを 掘ってから）
 		"#,,,,wwwww.wwwwww,,,,#", // y6  奥の間の入口 (10,6) = bossfloor
 		"#,p,,,,,,......,,,,,,#", // y7  蓄音機 (13,7)
 		"#,,,,,,,,......,,,,,,#", // y8
@@ -854,5 +854,22 @@ export const kakolog: MapDef = {
 		...DIGS.map(digEvent),
 		// 北東の空き部屋の奥の棚（n）。見えない。(20,3) から上を向いて調べる
 		nanashiLog,
+		// 北東の 空き部屋の 階段 → 過疎板の底（裏シナリオ。data/kaso.ts）。避難Jの ログを 掘るまでは まっくら
+		{
+			id: "to_kaso",
+			x: 19,
+			y: 5,
+			trigger: "touch",
+			through: true,
+			run: async (s) => {
+				if (!s.flag("dig_hinan")) {
+					await s.narrate("下へ　つづく　階段。\nおりた先は、まっくらだ。");
+					await s.narrate("……どれが　どの板か、わからない。");
+					await s.move("player", "u");
+					return;
+				}
+				await s.warp("kaso", 9, 13, "up", { se: "stairs" });
+			},
+		},
 	],
 };

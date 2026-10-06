@@ -302,8 +302,8 @@ export const server: MapDef = {
 			"冷却水の　タンクだ。\n「HCI3-P0　用」と　書いてある。",
 		),
 		{
-			// となりの板のサーバー（裏シナリオ「避難J」。maps/hinan.ts）。(17,10) から 上を向いて 調べる。
-			// 過去ログ倉庫で 避難Jのログを 掘っていれば（digs.ts の hinan）ランプが ひとつ ついていて つなげる
+			// となりの板のサーバー室への 扉（裏シナリオ「過疎板探検」。maps/kaso.ts）。(17,10) から 上を向いて 調べる。
+			// 過去ログ倉庫で 避難Jのログを 掘っていれば（digs.ts の hinan）ひらく
 			id: "rack_other",
 			x: 17,
 			y: 9,
@@ -320,16 +320,14 @@ export const server: MapDef = {
 					await s.narrate("……どれが　どの板か、わからない。");
 					return;
 				}
-				await s.narrate("ひとつだけ、ランプが　ついている。\n……『避難J』。");
-				await s.narrate("倉庫で　掘った、あの　スレの　板だ。");
+				await s.narrate(
+					"ラックの　わきに、小さな　扉。\n『ほかの板の　サーバー室』。",
+				);
 				if (
-					(await s.choose(["つないで　みる", "やめておく"], { cancel: 1 })) ===
-					1
+					(await s.choose(["入って　みる", "やめておく"], { cancel: 1 })) === 1
 				)
 					return;
-				if (s.state.party.some((m) => m.id === "roze"))
-					await s.say("roze", "……過疎板探検アルか");
-				await s.warp("hinan", 7, 10, "up", { se: "warp" });
+				await s.warp("kaso", 18, 12, "left", { se: "door" });
 			},
 		},
 		...chest("srv1", 1, 8, "hane"),

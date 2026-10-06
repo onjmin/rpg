@@ -290,8 +290,11 @@ const ROAD = ["g_road1", "g_road2", "g_road3", "g_road4"];
 const KAKO = ["g_kako1", "g_kako2", "g_kako3", "g_kako4"];
 const STD = ["g_std1", "g_std2", "g_std3"];
 const SRV = ["g_srv1", "g_srv2", "g_srv3", "g_srv4", "g_srv5"];
-// 裏シナリオ「避難J」（終章の寄り道。data/maps/hinan.ts）
-const HIN = ["g_hin1", "g_hin2"];
+// 裏シナリオ「過疎板探検」（data/kaso.ts）。板ごとの帯
+const NEKO = ["g_neko1", "g_neko2"];
+const AIS = ["g_ais1", "g_ais2"];
+const HOS = ["g_hos1", "g_hos2", "g_hos3"];
+const SEN = ["g_sen1", "g_sen2"];
 
 console.log(`（${N} 回ずつ・オート・道具なし）\n`);
 console.log(
@@ -304,7 +307,10 @@ const zones = [
 	["スタジアム", STD, KRF, [7, 8]],
 	["サーバー", SRV, KRF, [9, 10]],
 	["サーバー テト", SRV, KRT, [9, 10]],
-	["避難J", HIN, KRF, [9, 10]],
+	["裏 ねこ板", NEKO, KNR, [5, 6]],
+	["裏 あいさつ板", AIS, KRF, [6, 7]],
+	["裏 保守板", HOS, KRF, [8, 9]],
+	["裏 1000取り", SEN, KRF, [9, 10]],
 ];
 for (const [name, gs, ids, lvs] of zones)
 	for (const lv of lvs) {
@@ -323,8 +329,13 @@ const bosses = [
 	["F1 テトなし", "g_f1", KRF, 9],
 	["F2 テト入り", "g_f2", KRT, 10],
 	["F2 テトなし", "g_f2", KRF, 10],
+	["裏 ぬこ画像bot", "g_nekoboss", KNR, 5],
+	["裏 定型文bot", "g_aisboss", KRF, 6],
+	["裏 しずけさ", "g_hosboss", KRF, 8],
+	["裏 kskの主", "g_senboss", KRF, 9],
 	["裏 ゲッター テトなし", "g_getter", KRF, 9],
 	["裏 ゲッター テト入り", "g_getter", KRT, 9],
+	["F1 避難J後 テトなし", "g_f1_h", KRF, 9],
 ];
 for (const [name, g, ids, lv] of bosses) {
 	const cells = [-1, 0, 1, 2].map((d) => {

@@ -1,0 +1,204 @@
+// 裏シナリオ「過疎板探検」の共通部品（maps/kaso.ts・neko.ts・aisatsu.ts・hoshu.ts・sentori.ts・hinan.ts）。
+//
+// おんJwiki の「過疎板探検」（約900の専門板の ほとんどが 無人。「最後にレスされたのが1000日前」。
+// 「人が増えると信じてレスし続けた開拓者」）から。
+// 入口は 過去ログ倉庫の 北東の 階段（避難Jのログを 掘ってから。dig_hinan）と、サーバーの底の となりのラック。
+//
+// 流れ: 過疎板の底（kaso）→ ねこ板（neko）→ あいさつ板（aisatsu）→ 保守板（hoshu。第三章のあと）
+//       → 1000取り板（sentori。第四章の 音が消えた夜から）→ 避難J（hinan）→ ホームの家（hinan_home）
+// 板を ひとつ 終えるたび、過疎板の底の モニターが ひとつ 点き、避難Jの 板の 位置の 手がかりが ひとつ ふえる。
+//
+// 裏返し（2段）：
+//   1. 1000取り板の奥：1000ゲッターの 作成ログ「作：風吹けば名無し　回線：避難J」。bot は ホームニキが 自分で 置いた。
+//   2. ホームの家の >>998（1000日前）：「ネタはネタのまま終わるんやろな。……どうせ忘れられる」。
+//      本編の サイレントバルスの ことば。沈黙は、だれにも 返事を もらえなかった 千日から しみだしていた。
+//
+// フラグ（kaso_ / neko_ / ais_ / hos_ / sen_ / hinan_ / home_）：
+//   kaso_in（底に 来た）・neko_done・ais_done・hos_done・sen_done（板を 終えた）・sen_line（避難Jへの 回線）
+//   hinan_found（避難Jの モニターを 当てた）・home_met・home_key（カギを 拾った）・home_998（>>998 を 読んだ）
+//   hinan_1000・hinan_back・hinan_end・hinan_undo（hinan.ts）
+
+import type { EventDef, GameState, Script, Story } from "../engine/defs";
+import type { Dir } from "../engine/types";
+import { ks } from "./story";
+import { PROPS } from "./tiles";
+
+/** キリコ（第四章の 沈黙中は「かきこみ」。story.ts の ks）。 */
+export const K = ks;
+/** ホームニキ（避難Jの >>2。J民なので 黄色の名前欄・読み上げなし）。 */
+export const H = (s: Story, text: string): Promise<void> =>
+	s.say("nanj", text, { name: "ホームニキ" });
+/** 板猫。 */
+export const C = (s: Story, text = "にゃあ"): Promise<void> =>
+	s.say(null, text, { name: "板猫" });
+/** 名前欄だけの話し手（J民ではない。白い名前欄）。 */
+export const N = (s: Story, name: string, text: string): Promise<void> =>
+	s.say(null, text, { name });
+
+export const has = (s: Story, id: string): boolean =>
+	s.state.party.some((m) => m.id === id);
+/** 控えでなく いっしょに 歩いている 仲間か（やきうの アク禁中は いない）。 */
+export const front = (s: Story, id: string): boolean =>
+	!(id === "nanj" && s.state.flags.akukin) &&
+	s.state.party.some((m) => m.id === id && !m.bench);
+
+/** 数のフラグを1つ進め、進める前の値を返す。 */
+export const bump = (s: Story, name: string): number => {
+	const n = Number(s.flag(name) ?? 0);
+	s.set(name, n + 1);
+	return n;
+};
+
+/** 板を いくつ 終えたか（過疎板の底の ヒナリーの ノートと、避難Jの 手がかり）。 */
+export const boardsDone = (st: GameState): number =>
+	["neko_done", "ais_done", "hos_done", "sen_done"].filter((f) => st.flags[f])
+		.length;
+
+/** 調べると 文が 出るだけの 見えない イベント。 */
+export const look = (
+	id: string,
+	x: number,
+	y: number,
+	...texts: string[]
+): EventDef => ({
+	id,
+	x,
+	y,
+	trigger: "talk",
+	fixedDir: true,
+	run: async (s) => {
+		for (const t of texts) await s.narrate(t);
+	},
+});
+
+/** 勢い欄（板の スレ一覧）。調べると 1行ずつ。 */
+export const ikioi = (
+	id: string,
+	x: number,
+	y: number,
+	lines: (st: GameState) => string[],
+): EventDef => ({
+	id,
+	x,
+	y,
+	trigger: "talk",
+	fixedDir: true,
+	run: async (s) => {
+		for (const t of lines(s.state)) await s.narrate(t);
+	},
+});
+
+// ───────────────── ブロック押し（沈んだ スレを 上げる） ─────────────────
+
+export type PushBlock = { id: string; x: number; y: number };
+export type PushPuzzle = {
+	/** フラグの頭（`<prefix>_<block>` に "x,y" が 入る）。 */
+	prefix: string;
+	blocks: PushBlock[];
+	/** 押して 動かせる 範囲（両端を ふくむ）。 */
+	area: { x0: number; y0: number; x1: number; y1: number };
+	/** 範囲の 中で ブロックが 乗れる マス（マップの rows と 通れる 文字）。 */
+	rows: string[];
+	floor: string;
+	/** そろえる マス。 */
+	goals: [number, number][];
+	/** そろったとき（1回だけ。solved が 立つ）。 */
+	solved: string;
+	onSolved: Script;
+	/** ブロックの 見た目。 */
+	sprite?: string;
+};
+
+const DIR_VEC: Record<Dir, [number, number]> = {
+	up: [0, -1],
+	down: [0, 1],
+	left: [-1, 0],
+	right: [1, 0],
+};
+
+const posKey = (x: number, y: number) => `${x},${y}`;
+
+/** ブロックの いまの マス（動かしていなければ 最初の マス）。 */
+export const blockAt = (st: GameState, p: PushPuzzle, b: PushBlock): string => {
+	const v = st.flags[`${p.prefix}_${b.id}`];
+	return typeof v === "string" ? v : posKey(b.x, b.y);
+};
+
+/** そろっているか。 */
+export const pushSolved = (st: GameState, p: PushPuzzle): boolean => {
+	const at = new Set(p.blocks.map((b) => blockAt(st, p, b)));
+	return p.goals.every(([x, y]) => at.has(posKey(x, y)));
+};
+
+/**
+ * 押せる ブロック（話しかけると、向いている方へ 1マス 動く）。
+ * ブロックの 位置ごとに イベントを 1つ 置くので、範囲は 小さく。リセットは pushReset で。
+ */
+export const pushBlocks = (p: PushPuzzle): EventDef[] => {
+	const events: EventDef[] = [];
+	const canStand = (x: number, y: number) =>
+		x >= p.area.x0 &&
+		x <= p.area.x1 &&
+		y >= p.area.y0 &&
+		y <= p.area.y1 &&
+		p.floor.includes(p.rows[y]?.[x] ?? " ");
+	for (const b of p.blocks)
+		for (let y = p.area.y0; y <= p.area.y1; y++)
+			for (let x = p.area.x0; x <= p.area.x1; x++) {
+				if (!canStand(x, y)) continue;
+				events.push({
+					id: `${p.prefix}_${b.id}_${x}_${y}`,
+					x,
+					y,
+					sprite: p.sprite ?? PROPS.crate,
+					trigger: "talk",
+					fixedDir: true,
+					when: (st) => blockAt(st, p, b) === posKey(x, y),
+					run: async (s) => {
+						const [dx, dy] = DIR_VEC[s.state.dir];
+						const nx = x + dx;
+						const ny = y + dy;
+						const others = p.blocks
+							.filter((o) => o !== b)
+							.map((o) => blockAt(s.state, p, o));
+						if (
+							!canStand(nx, ny) ||
+							others.includes(posKey(nx, ny)) ||
+							(s.state.x === nx && s.state.y === ny)
+						) {
+							s.se("miss");
+							await s.narrate("うごかない。");
+							return;
+						}
+						s.se("damage");
+						s.set(`${p.prefix}_${b.id}`, posKey(nx, ny));
+						if (!s.flag(p.solved) && pushSolved(s.state, p)) {
+							s.set(p.solved);
+							await p.onSolved(s);
+						}
+					},
+				});
+			}
+	return events;
+};
+
+/** ブロックを 最初の 位置へ もどす。 */
+export const pushReset = (s: Story, p: PushPuzzle): void => {
+	for (const b of p.blocks) s.set(`${p.prefix}_${b.id}`, posKey(b.x, b.y));
+};
+
+// ───────────────── 過疎板の底の モニター（900の板） ─────────────────
+
+/**
+ * モニターの 並び（6列×3段）。板を 終えると その板の モニターが 点く。
+ * 避難Jは 暗いまま。手がかり：ねこ板と 同じ段・あいさつ板と 同じ列・保守板の 右上。
+ */
+export const MONITOR_COLS = 6;
+export const MONITOR_ROWS = 3;
+export const MONITORS: Record<string, [col: number, row: number]> = {
+	neko: [1, 0],
+	ais: [4, 2],
+	hos: [3, 1],
+	sen: [0, 2],
+	hinan: [4, 0],
+};

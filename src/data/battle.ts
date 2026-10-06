@@ -698,6 +698,228 @@ export const enemies: Record<string, EnemyDef> = {
 		downText: "{user}は　999で　止まった。",
 	}),
 
+	// ── 裏シナリオ「過疎板探検」の 板（data/kaso.ts）。帯は 本編の 同じ 時期の 雑魚に そろえる ──
+	// ねこ板（第二章〜。Lv5〜6。倉庫の帯）
+	nekobot: en({
+		id: "nekobot",
+		name: "画像bot",
+		sprite: SPR.e_bot,
+		hp: 58,
+		atk: 19,
+		def: 7,
+		spd: 13,
+		exp: 5,
+		acts: [
+			a(3, 1.1, "{user}は　{target}に　ぬこ.jpg を　はりつけた！"),
+			a(1, 0.6, "{user}は　画像を　れんとうした！", "all"),
+			a(1, 0, "{user}は　だれも　見ていない　画像を　はった。"),
+		],
+	}),
+	nyan: en({
+		id: "nyan",
+		name: "にゃーん",
+		sprite: SPR.cat,
+		hp: 46,
+		atk: 17,
+		def: 5,
+		spd: 16,
+		exp: 4,
+		acts: [
+			a(3, 1.0, "{user}の　ねこパンチ！　{target}に　ヒット！"),
+			a(2, 0, "{user}は　ひなたで　のびをした。"),
+		],
+		downText: "{user}は　どこかへ　走っていった。",
+	}),
+	// ねこ板の 中ボス（Lv5〜6 の 3人で 6〜7 ターン）。1000日 だれも 見ていない 画像を はりつづけた bot
+	nekoboss: en({
+		id: "nekoboss",
+		name: "ぬこ画像bot",
+		sprite: SPR.e_bot,
+		scale: 1.5,
+		hp: 360,
+		atk: 41,
+		def: 8,
+		spd: 12,
+		exp: 60,
+		drop: { item: "candy", rate: 1 },
+		acts: [
+			a(4, 1.2, "{user}の　ぬこ.jpg（高画質）が　{target}に　ささる！"),
+			a(3, 0.7, "{user}は　1000日ぶんの　画像を　いっきに　はった！", "all"),
+			a(1, 0, "{user}「にゃーん」　……bot なのに。"),
+		],
+		downText: "{user}は　さいごの　1枚を　はって　止まった。",
+	}),
+	// あいさつ板（第二〜三章。Lv6〜7）
+	teikei: en({
+		id: "teikei",
+		name: "定型文",
+		sprite: SPR.e_pc,
+		hp: 76,
+		atk: 24,
+		def: 9,
+		spd: 12,
+		exp: 7,
+		acts: [
+			a(3, 1.1, "{user}「こんにちは」　{target}に　ささった！"),
+			a(
+				1,
+				0.7,
+				"{user}「以後、お見知りおきを」　ていねいすぎて　いたい！",
+				"all",
+			),
+			a(1, 0, "{user}は　おなじ　あいさつを　くりかえした。"),
+		],
+	}),
+	tatenige: en({
+		id: "tatenige",
+		name: "立て逃げ",
+		sprite: SPR.e_silent,
+		hp: 60,
+		atk: 22,
+		def: 7,
+		spd: 19,
+		exp: 6,
+		acts: [
+			a(3, 1.2, "{user}は　スレを　立てて　{target}に　なげつけた！"),
+			a(2, 0, "{user}は　あいさつだけして　帰ろうとしている……"),
+		],
+		downText: "{user}は　ぺこりと　おじぎして　消えた。",
+	}),
+	// あいさつ板の 中ボス（Lv6〜7 の 3人で 7 ターン前後）。1000日 返事の ない あいさつを 返しつづけた bot
+	aisboss: en({
+		id: "aisboss",
+		name: "定型文bot",
+		sprite: SPR.e_pc,
+		scale: 1.5,
+		hp: 380,
+		atk: 48,
+		def: 11,
+		spd: 12,
+		exp: 85,
+		drop: { item: "spray", rate: 1 },
+		acts: [
+			a(4, 1.2, "{user}「こんにちは」　{target}に　ささる！"),
+			a(3, 0.8, "{user}「以後、お見知りおきを」×1000！", "all"),
+			a(1, 0, "{user}は　返事を　待っている……"),
+		],
+		downText: "{user}「……こちらこそ」　bot は　止まった。",
+	}),
+	// 保守板（第三章の あと。Lv8〜9。サーバーの帯）
+	hoshubot: en({
+		id: "hoshubot",
+		name: "保守bot",
+		sprite: SPR.e_bot,
+		hp: 104,
+		atk: 30,
+		def: 13,
+		spd: 12,
+		exp: 10,
+		acts: [
+			a(3, 1.1, "{user}「保守」　{target}を　勢い欄の　上へ　おしあげた！"),
+			a(1, 0.7, "{user}は　ぜんぶの　スレを　いっきに　上げた！", "all"),
+			a(1, 0, "{user}「保守」　……だれも　いない。"),
+		],
+	}),
+	chinmoku: en({
+		id: "chinmoku",
+		name: "沈黙",
+		sprite: SPR.e_shin2,
+		hp: 112,
+		atk: 29,
+		def: 15,
+		spd: 11,
+		exp: 11,
+		acts: [
+			a(2, 0.7, "{user}の　しずけさが　みんなを　つつむ……", "all"),
+			a(2, 1.1, "{user}は　{target}の　声を　すこし　うばった！"),
+			a(1, 0, "…………。"),
+		],
+	}),
+	// 保守板の 中ボス（Lv8〜9 の 3人で 7〜8 ターン）。千日の 静けさ。サイレントバルスの 手前の かたち
+	hosboss: en({
+		id: "hosboss",
+		name: "しずけさ",
+		sprite: SPR.e_shin3,
+		scale: 1.5,
+		hp: 520,
+		atk: 52,
+		def: 10,
+		spd: 13,
+		exp: 110,
+		drop: { item: "mabo", rate: 1 },
+		acts: [
+			a(3, 0.9, "{user}「――――」　音のない　なにかが　つつんだ！", "all"),
+			a(3, 1.3, "{user}は　{target}の　レスを　沈めた！"),
+			a(2, 0, "{user}は　だれかの　返事を　待っている……"),
+		],
+		downText: "{user}は　岩の　おくへ　ひいていった。",
+	}),
+	// 1000取り板（第四章の 夜から。Lv9〜10）
+	ksk: en({
+		id: "ksk",
+		name: "ksk",
+		sprite: SPR.e_bot,
+		hp: 120,
+		atk: 34,
+		def: 13,
+		spd: 20,
+		exp: 12,
+		acts: [
+			a(3, 1.1, "{user}「ksk」　{target}より　先に　書きこんだ！"),
+			a(1, 0.7, "{user}「kskst」　れんとう！", "all"),
+			a(1, 0, "{user}は　リロードした。"),
+		],
+	}),
+	kskst: en({
+		id: "kskst",
+		name: "kskst",
+		sprite: SPR.e_bot,
+		hp: 104,
+		atk: 37,
+		def: 11,
+		spd: 22,
+		exp: 12,
+		acts: [
+			a(3, 1.2, "{user}「kskst」　{target}に　ささる！"),
+			a(2, 0, "{user}「まだ　1000　いっとらん」"),
+		],
+	}),
+	// 999 の 床で 1000 を こえた ときに わく（ボスでは ない。にげられる）
+	sen_getter: en({
+		id: "sen_getter",
+		name: "ゲッター試作",
+		sprite: SPR.e_bot,
+		hp: 260,
+		atk: 40,
+		def: 8,
+		spd: 18,
+		exp: 25,
+		acts: [
+			a(3, 1.2, "{user}の　先どり！　{target}より　先に　かきこんだ！"),
+			a(2, 0, "{user}は　リロードを　くりかえしている。"),
+		],
+		downText: "{user}は　999で　止まった。",
+	}),
+	// 1000取り板の 中ボス（Lv9〜10 の 3人で 6〜7 ターン）。1000日 相手を 待った bot
+	senboss: en({
+		id: "senboss",
+		name: "kskの主",
+		sprite: SPR.e_bot,
+		scale: 1.5,
+		hp: 600,
+		atk: 56,
+		def: 11,
+		spd: 21,
+		exp: 120,
+		drop: { item: "pan", rate: 1 },
+		acts: [
+			a(4, 1.3, "{user}「ksk　ksk　ksk」　{target}に　ささる！"),
+			a(2, 0.8, "{user}「1000なら　ワイの　勝ち」　れんとう！", "all"),
+			a(2, 0, "{user}は　1000の　ことしか　考えていない。"),
+		],
+		downText: "{user}は　画面に　もどっていった。",
+	}),
+
 	// ── 裏ボス（クリア後の管理人室。data/maps/admin.ts） ──
 	// 矢野さとる（おんJ管理人）は実在の人物をもとにした非公式のファン描写。文はすべて創作。
 	// 攻撃しない（power 0 だけ）。ストックのボスを1体ずつ呼び、ストックと手下が尽きるまで攻撃をかわす。
@@ -813,6 +1035,8 @@ remake("ex_kantoku", "kantoku", {
 });
 remake("ex_balus", "balus", { hp: 552, atk: 46, def: 18, spd: 15, exp: 30 });
 remake("ex_botsu", "botsu", { hp: 672, atk: 51, def: 20, spd: 15, exp: 30 });
+// 避難Jの スレを 1000に したあとの F1（g_f1_h）。静けさの 源が 消えて、HP だけ すこし 低い
+remake("balus_h", "balus", { hp: 760 });
 
 const g = (d: EnemyGroup) => d;
 
@@ -949,6 +1173,67 @@ export const groups: Record<string, EnemyGroup> = {
 		intro: "1000ゲッターが　リロードして　あらわれた！",
 		victory: "1000ゲッターを　追いはらった！",
 	}),
+	// 過疎板探検（data/kaso.ts）。板ごとの 雑魚と 中ボス
+	g_kaso_dark: g({
+		id: "g_kaso_dark",
+		enemies: ["chinmoku", "chinmoku"],
+		intro: "暗い板から　しずけさが　しみだしてきた！",
+	}),
+	g_neko1: g({ id: "g_neko1", enemies: ["nekobot", "nyan"] }),
+	g_neko2: g({ id: "g_neko2", enemies: ["nyan", "nyan", "nekobot"] }),
+	g_nekoboss: g({
+		id: "g_nekoboss",
+		enemies: ["nekoboss"],
+		boss: true,
+		intro: "ぬこ画像bot が　画像を　はきだした！",
+		victory: "bot を　止めた！",
+	}),
+	g_ais1: g({ id: "g_ais1", enemies: ["teikei", "tatenige"] }),
+	g_ais2: g({ id: "g_ais2", enemies: ["teikei", "teikei"] }),
+	g_aisboss: g({
+		id: "g_aisboss",
+		enemies: ["aisboss"],
+		boss: true,
+		intro: "定型文bot「こんにちは」！",
+		victory: "bot を　止めた！",
+	}),
+	g_hos1: g({ id: "g_hos1", enemies: ["hoshubot", "kaso"] }),
+	g_hos2: g({ id: "g_hos2", enemies: ["chinmoku", "chinmoku"] }),
+	g_hos3: g({ id: "g_hos3", enemies: ["hoshubot", "hoshubot", "kaso"] }),
+	g_hosboss: g({
+		id: "g_hosboss",
+		enemies: ["hosboss"],
+		boss: true,
+		bgm: "tense",
+		intro: "しずけさが、音もなく　立ちはだかる。",
+		victory: "音が、すこし　もどった。",
+	}),
+	g_sen1: g({ id: "g_sen1", enemies: ["ksk", "kskst"] }),
+	g_sen2: g({ id: "g_sen2", enemies: ["kskst", "kskst"] }),
+	g_sen_sym1: g({ id: "g_sen_sym1", enemies: ["ksk", "ksk", "kskst"] }),
+	g_sen_sym2: g({ id: "g_sen_sym2", enemies: ["kskst", "kskst", "ksk"] }),
+	g_sen_getter: g({
+		id: "g_sen_getter",
+		enemies: ["sen_getter"],
+		intro: "ゲッター試作が　リロードして　あらわれた！",
+		victory: "ゲッター試作を　追いはらった！",
+	}),
+	g_senboss: g({
+		id: "g_senboss",
+		enemies: ["senboss"],
+		boss: true,
+		intro: "ksk が　スレから　とびだしてきた！",
+		victory: "ksk を　しずめた！",
+	}),
+	// 避難Jの 1000 を 見たあとの F1（maps/last.ts）。千日の 静けさの 源が 消えて、すこし 弱い
+	g_f1_h: g({
+		id: "g_f1_h",
+		enemies: ["balus_h"],
+		boss: true,
+		bgm: "lastboss",
+		intro: "サイレントバルスが　立ちはだかる。……どこか、うすい。",
+		victory: "音が、もどってきた！",
+	}),
 	// 裏ボス（管理人室）。canLose: true で呼ぶ（負けても なにも へらない。たおしたボスの経験値は入る）
 	g_admin: g({
 		id: "g_admin",
@@ -1072,6 +1357,29 @@ export const items: Record<string, ItemDef> = {
 			"おーぷんには　約900の　専門板が　あり、ほとんどは　だれも　いない。最後の　レスが　1000日前、は　めずらしくない。",
 			"それでも　「人が　増えると　信じて」　書きつづける　人が、たまに　いる。おんJ民は　これを　過疎板探検で　見つける。",
 			"998で　止まっていた　スレの、>>999 は　キリコ。1000は　1000日ぶりの　ホームニキ。",
+		],
+		key: true,
+	}),
+	// 過疎板探検（data/kaso.ts）の 大事なもの
+	suzu: it({
+		id: "suzu",
+		name: "板猫のすず",
+		desc: "ねこ板の　猫が　つけていた　すず。",
+		note: [
+			"だれかに　飼われていた　猫の　すず。飼い主は、もう　板に　いない。",
+			"猫は　900の　板を　通って　歩く。避難Jにも　来る。ねこは　ノーカンだが。",
+			"すずを　なくした　ことに、猫は　気づいていない。",
+		],
+		key: true,
+	}),
+	home_key: it({
+		id: "home_key",
+		name: "ホームのカギ",
+		desc: "避難Jの　家の　カギ。保守板の　おくに　あった。",
+		note: [
+			"ホームニキが　なくした　カギ。保守して　回っていた　板の　いちばん　おくに　落ちていた。",
+			"家の　中には　998レスぶんの　ログと、机の　上に　1枚。",
+			"カギを　なくしても、家は　そこに　ある。",
 		],
 		key: true,
 	}),

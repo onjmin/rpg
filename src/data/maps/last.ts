@@ -30,15 +30,30 @@ const lastRun = async (s: Story): Promise<void> => {
 	await s.say("roze", "忘れられても、もどってこれるアル");
 	await s.say("feris", "何回でも、だよ〜");
 	await s.say("teto", "君は　じつに　馬鹿だな。\nウソだって、本物に　なるんだ");
+	// 避難Jの ホームの 机で、同じ ことばを 読んでいる（maps/hinan.ts の desk → write999）
+	const hinan = !!s.flag("hinan_1000");
+	if (hinan) {
+		await s.say(
+			"kiriko",
+			"その言葉、どこで　書かれたか\n知ってるンゴ。……千日前の、>>998",
+		);
+		await s.say(
+			"kiriko",
+			"返事は、もう　したンゴ。\n1000日ぶりの「おかえり」も、聞いた",
+		);
+		await balusSay(s, "…………");
+	}
 
 	// ── F1 サイレントバルス ──
-	await s.battle("g_f1");
+	await s.battle(hinan ? "g_f1_h" : "g_f1");
 	s.set("f1_done");
 	s.set("res", 850);
 	s.hide("balus_last"); // hide で when を評価し直し、botsu（f1_done）が出る
 	await s.narrate(
 		"黒い　もやが　はれていく。\n蓄音機に　850レスが　もどってきた！",
 	);
+	if (hinan)
+		await s.narrate("もやの　おくで、小さく　声が　した。\n『……おかえり、か』");
 	await s.narrate("もやの　中から　あらわれたのは――\n角刈りの　キリコだった。");
 	await botsuSay(s, "角刈り。体重100トン。111歳");
 	await botsuSay(s, "あの夜、最初に　えらばれて、\nすぐ「再安価」で　流された");

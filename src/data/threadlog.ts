@@ -51,6 +51,11 @@ export const FLAG_DOMAIN: Record<
 	],
 	// 洪水の >>995〜>>997 に書きこむ おんJマイナーズ（MINOR_POSTS）と、避難Jの ホームニキ（maps/hinan.ts）
 	hinan_1000: [undefined, true],
+	// 避難ルートの 保守の 日々（maps/hinan.ts の moveThread）で えらんだ 回数
+	hd_write: [undefined, 1, 3],
+	hd_cat: [undefined, 1, 3],
+	hd_look: [undefined, 1, 3],
+	hd_rest: [undefined, 1, 3],
 	onsu_kaki: [undefined, true],
 	onchan_met: [undefined, true],
 	nichie_met: [undefined, true],
@@ -722,22 +727,33 @@ const nextThread = (f: Flags): string[] => [
 
 /**
  * スレを 避難Jへ うつして、ふたりで 1000日 保守した 静かな完走。
- * 仲間の 顔ぶれで 行が かわる（控えも ふくめて いる人だけ）。
+ * 仲間の 顔ぶれと、保守の 日々で なにを 多く えらんだか（hd_*）で 行が かわる。1セクション 10行まで。
  */
 export const hinanSummary = (st: GameState): EndingSummary => {
+	const f = st.flags;
 	const has = (id: string) => st.party.some((m) => m.id === id);
+	const most = (["hd_write", "hd_cat", "hd_look", "hd_rest"] as const)
+		.map((k) => [k, num(f, k)] as const)
+		.sort((a, b) => b[1] - a[1])[0];
+	const DAYS: Record<string, string> = {
+		hd_write: ">>600 毎日　ひとつずつ、ふたりで",
+		hd_cat: ">>600 板猫、キリコの　ひざで　ねる",
+		hd_look: ">>600 むこうは、まだ　同じ夜",
+		hd_rest: ">>600 ベンチで、風の　音を　待つ",
+	};
 	return {
 		sections: [
 			{
 				title: "【移転】蓄音キリコ、避難Jで　1000日",
 				lines: [
-					">>851 避難Jへ　移転",
-					">>852 ホームニキと　ふたりで　保守",
-					">>900 板猫が　1レス（にゃあ）",
+					">>1 避難Jへ　移転。立て直し",
+					">>2 ホームニキと　ふたりで　保守",
+					...(most && most[1] > 0 ? [DAYS[most[0]]] : []),
+					">>500 通りすがりの「保守」。それきり",
 					...(has("roze") ? [">>950 ロゼ「アル」"] : []),
 					...(has("feris") ? [">>951 フェリス「ふぇ」"] : []),
 					...(has("teto") ? [">>952 テト、パンの絵"] : []),
-					">>999 ホームニキ「おかえり」",
+					">>999 ホームニキ「おかえりは　お前が」",
 					"1000 名前：蓄音キリコ（1000日目）",
 				],
 			},

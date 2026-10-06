@@ -7,13 +7,18 @@ import { bonds } from "./bonds";
 import { cast } from "./cast";
 import { registerItemNames } from "./helpers";
 import { admin } from "./maps/admin";
+import { aisatsu } from "./maps/aisatsu";
 import { debug, debugStart } from "./maps/debug";
 import { exserver } from "./maps/exserver";
-import { hinan } from "./maps/hinan";
+import { hinan, hinanHome } from "./maps/hinan";
+import { hoshu } from "./maps/hoshu";
 import { kakolog } from "./maps/kakolog";
+import { kaso } from "./maps/kaso";
 import { last } from "./maps/last";
+import { neko } from "./maps/neko";
 import { odekake } from "./maps/odekake";
 import { road } from "./maps/road";
+import { sentori } from "./maps/sentori";
 import { server } from "./maps/server";
 import { stadium } from "./maps/stadium";
 import { studio } from "./maps/studio";
@@ -39,7 +44,14 @@ export const data: GameData = {
 		exserver,
 		debug,
 		sukima,
+		// 裏シナリオ「過疎板探検」（data/kaso.ts）
+		kaso,
+		neko,
+		aisatsu,
+		hoshu,
+		sentori,
 		hinan,
+		hinan_home: hinanHome,
 	},
 	cast,
 	enemies,
