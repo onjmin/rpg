@@ -85,6 +85,21 @@ const CHATS: ReiChat[] = [
 		},
 	},
 	{
+		// 避難Jの スレが 1000に とどいたあと（maps/hinan.ts）。となりの板の 保守ログ
+		id: "hinan",
+		when: (st) => !!st.flags.hinan_1000,
+		run: async (s) => {
+			await s.say(
+				"rei",
+				"となりの　板の　スレが、\n1000に　到達したのを　検知",
+			);
+			await s.say("rei", "保守ログ、1000日ぶん。\n……当機より、長いです");
+			await s.say("kiriko", "ホームニキンゴ。\n……ずっと、ひとりで");
+			await s.say("rei", "否定。ねこが　1匹、\nログに　のこっています");
+			await s.say("rei", "……記録しました");
+		},
+	},
+	{
 		id: "door",
 		when: (st) => !!st.flags.door_open,
 		run: async (s) => {

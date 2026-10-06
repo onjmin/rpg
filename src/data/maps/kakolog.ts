@@ -491,6 +491,31 @@ const HINARY_TALKS: {
 		},
 	},
 	{
+		// 避難Jのログを 掘ったあと（digs.ts の hinan）。サーバーの底の「となりの板のサーバー」への 手がかり（maps/hinan.ts）
+		when: (s) => !!s.flag("dig_hinan") && !s.flag("hinan_1000"),
+		run: async (s) => {
+			await s.say(
+				"hinary",
+				"避難Jの　サーバーは、このスレの\nサーバーの　となりに　ある　模様です",
+			);
+			await s.say("hinary", "住民は　1名。\n……ねこを　のぞく");
+			if (front(s, "nanj")) await s.say("nanj", "ねこ、数えとったんか");
+			await s.say("hinary", "これで　発表を　終わりたいと\n思います");
+		},
+	},
+	{
+		// 避難Jの スレが 1000に とどいたあと
+		when: (s) => !!s.flag("hinan_1000"),
+		run: async (s) => {
+			await s.say("hinary", "避難Jの　スレが、1000に\nとどいた　模様です");
+			await s.say("hinary", "……研究対象が、ひとつ\nへりました");
+			await s.narrate(
+				"ヒナリーは　白衣の　ポケットから\n新しい　紙を　出した。",
+			);
+			await s.say("hinary", "……つづけます");
+		},
+	},
+	{
 		when: () => true,
 		run: async (s) => {
 			await s.say("hinary", "試合の　ない日は、\nレスが　少ない　模様です");

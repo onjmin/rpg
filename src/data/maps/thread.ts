@@ -199,6 +199,7 @@ const ending = async (s: Story): Promise<void> => {
 		"end_raid",
 		"end_kosan",
 		"end_puyu",
+		"end_home",
 	])
 		s.face(id, "player");
 	await s.narrate("【安価】安価でボカロ作ろうぜ　1000/1000");
@@ -225,6 +226,12 @@ const ending = async (s: Story): Promise<void> => {
 	await J(s, VARIANTS.kantoku(st), "テノヒラ監督");
 	const kosan = VARIANTS.kosan(st);
 	if (kosan) await J(s, kosan, "古参ニキ");
+	// 避難Jの ホームニキ（maps/hinan.ts）。1000日ぶりに 板の 外へ 出てきた
+	if (st.flags.hinan_1000) {
+		await J(s, "……人、ふえたな。\nお前んとこも、ワイんとこも", "ホームニキ");
+		await s.say("kiriko", "ホームニキ、板の　外に\n出てきたンゴ！？");
+		await J(s, "完走の　祭りは、ノーカンや", "ホームニキ");
+	}
 	await s.say("rei", VARIANTS.rei(st));
 	// 縛り（仕様では できるが ふつうは しない 遊び方）。当てはまるものだけ
 	const noItem = VARIANTS.shibariItem(st);
@@ -372,6 +379,13 @@ const REPLY: Record<
 		react: async (s) => {
 			await s.say("roze", "……ナイ、アル");
 			await s.narrate("ロゼは　だまって、\nキリコの　頭に　手を　のせた。");
+		},
+	},
+	m_home: {
+		// 避難Jの ホームニキ（maps/hinan.ts）。1000日ぶりの「おかえり」への 返事
+		text: () => "ただいま、ンゴ",
+		react: async (s) => {
+			await s.narrate("となりの　板から、だれかが\n親指を　立てた　気がした。");
 		},
 	},
 	m_onsu: {
@@ -775,6 +789,35 @@ const events: EventDef[] = [
 		{
 			dir: "right",
 			when: clear,
+		},
+	),
+	// 避難Jの ホームニキ（maps/hinan.ts）。避難Jの スレを 1000に した 周だけ、板の 外へ 出てくる
+	npc(
+		"end_home",
+		9,
+		8,
+		SPR.j_nanashi,
+		async (s) => {
+			const n = bump(s, "home_end_n");
+			if (n === 0) {
+				await J(
+					s,
+					"ホームは　るす　やけど、\n……ねこが　おるから　ええやろ",
+					"ホームニキ",
+				);
+				return;
+			}
+			await J(
+				s,
+				n % 2
+					? "倉庫で　会おや。\nワイの　スレの　となり、あけとく"
+					: "……にぎやかやな。\n1000日ぶりや、こんなん",
+				"ホームニキ",
+			);
+		},
+		{
+			dir: "left",
+			when: (st) => clear(st) && !!st.flags.hinan_1000,
 		},
 	),
 	// ぷゆゆ（町の小花のそばの子。エンディングの輪のなか）。キリコ (6,6) より上に置いて、

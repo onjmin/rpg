@@ -210,6 +210,17 @@ const CHECKPOINTS: Checkpoint[] = [
 		items: [...KEY2, "rec_botsu"],
 		to: { map: "thread", x: 6, y: 7, dir: "up" },
 	},
+	{
+		// 裏シナリオ「避難J」（maps/hinan.ts）。倉庫で 避難Jのログを 掘ってある（dig_hinan）
+		id: "cp9",
+		label: "避難J（となりの板のサーバーの前）",
+		sprite: SPR.j_nanashi,
+		flags: { ...CH5_MID, door_open: false, dig_hinan: true },
+		party: P5,
+		lv: 10,
+		items: KEY2,
+		to: { map: "server", x: 17, y: 10, dir: "up" },
+	},
 ];
 
 /** どうぐ（たたかいで使うもの）を配る数。 */
@@ -283,7 +294,7 @@ const supply = async (s: Story): Promise<void> => {
 	await s.narrate("どうぐを　補充した。");
 };
 
-// 人の並び（x = 2, 4, 6, 8 の2列）
+// 人の並び（x = 2, 4, 6, 8 の2列。9人目は 左下）
 const spots: [number, number][] = [
 	[2, 2],
 	[4, 2],
@@ -293,6 +304,7 @@ const spots: [number, number][] = [
 	[4, 5],
 	[6, 5],
 	[8, 5],
+	[2, 8],
 ];
 
 const events: EventDef[] = [

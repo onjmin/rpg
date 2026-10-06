@@ -290,6 +290,8 @@ const ROAD = ["g_road1", "g_road2", "g_road3", "g_road4"];
 const KAKO = ["g_kako1", "g_kako2", "g_kako3", "g_kako4"];
 const STD = ["g_std1", "g_std2", "g_std3"];
 const SRV = ["g_srv1", "g_srv2", "g_srv3", "g_srv4", "g_srv5"];
+// 裏シナリオ「避難J」（終章の寄り道。data/maps/hinan.ts）
+const HIN = ["g_hin1", "g_hin2"];
 
 console.log(`（${N} 回ずつ・オート・道具なし）\n`);
 console.log(
@@ -302,6 +304,7 @@ const zones = [
 	["スタジアム", STD, KRF, [7, 8]],
 	["サーバー", SRV, KRF, [9, 10]],
 	["サーバー テト", SRV, KRT, [9, 10]],
+	["避難J", HIN, KRF, [9, 10]],
 ];
 for (const [name, gs, ids, lvs] of zones)
 	for (const lv of lvs) {
@@ -320,6 +323,8 @@ const bosses = [
 	["F1 テトなし", "g_f1", KRF, 9],
 	["F2 テト入り", "g_f2", KRT, 10],
 	["F2 テトなし", "g_f2", KRF, 10],
+	["裏 ゲッター テトなし", "g_getter", KRF, 9],
+	["裏 ゲッター テト入り", "g_getter", KRT, 9],
 ];
 for (const [name, g, ids, lv] of bosses) {
 	const cells = [-1, 0, 1, 2].map((d) => {

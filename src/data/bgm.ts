@@ -24,8 +24,11 @@
 // | ending   | -23.6    | 18 → 17 | -24.1    |
 // | secret   | -17.0    | 50 → 22 | -24.1    |
 // | extra    | -18.1    | 50 → 25 | -24.1    |
+// | hinan    | -21.3    | 23 → 17 | -23.9    |
 // （2026-09 測定。「直した後」は比例から出した値。勝利のジングル＝title の 21〜24 小節は M-max -21.2）
 // secret・extra（2026-09-26 に足した寄り道の曲）は、ブラウザで studio の出口を 40 秒録って測った。
+// hinan（2026-10-06 に足した避難Jの曲。AI作曲スレ >>17「くもり空をパクったやつ」）も同じ測り方（studio.startWavRecording で
+// 40 秒録り、BS.1770 の K特性＋ゲートで I を出す。参照の town は -24.2 で前と一致）。
 // この測り方では 既存の field -23.9・town -24.2・tense -23.8・battle -24.3 と出る（上の表より 1 LU ほど低い）ので、
 // それと同じ -24 に そろえた。「直した後」は直してから測り直した値。
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。ending の歌入り（singBgm）は インストより 15.6 dB
@@ -39,6 +42,7 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import extra from "./bgm/extra.mml?raw"; // 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
+import hinan from "./bgm/hinan.mml?raw"; // e5978f29bf2f4db5「くもり空をパクったやつ」
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
 import secret from "./bgm/secret.mml?raw"; // a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
@@ -58,7 +62,8 @@ export const bgm: Record<string, string> = {
 	tense,
 	lastboss,
 	ending,
-	// 寄り道の場所だけの曲（隠し狩場「名無しの　すきま」・クリア後のテストサーバー）
+	// 寄り道の場所だけの曲（隠し狩場「名無しの　すきま」・クリア後のテストサーバー・裏シナリオ「避難J」）
 	secret,
 	extra,
+	hinan,
 };

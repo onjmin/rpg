@@ -301,6 +301,37 @@ export const server: MapDef = {
 			16,
 			"冷却水の　タンクだ。\n「HCI3-P0　用」と　書いてある。",
 		),
+		{
+			// となりの板のサーバー（裏シナリオ「避難J」。maps/hinan.ts）。(17,10) から 上を向いて 調べる。
+			// 過去ログ倉庫で 避難Jのログを 掘っていれば（digs.ts の hinan）ランプが ひとつ ついていて つなげる
+			id: "rack_other",
+			x: 17,
+			y: 9,
+			trigger: "talk",
+			fixedDir: true,
+			run: async (s) => {
+				await s.narrate(
+					"となりの　板の　サーバー。\n札に『livejupiter　以外　ぜんぶ』。",
+				);
+				if (!s.flag("dig_hinan")) {
+					await s.narrate(
+						"ランプが　900こ　ならんで、\nほとんど　消えている。",
+					);
+					await s.narrate("……どれが　どの板か、わからない。");
+					return;
+				}
+				await s.narrate("ひとつだけ、ランプが　ついている。\n……『避難J』。");
+				await s.narrate("倉庫で　掘った、あの　スレの　板だ。");
+				if (
+					(await s.choose(["つないで　みる", "やめておく"], { cancel: 1 })) ===
+					1
+				)
+					return;
+				if (s.state.party.some((m) => m.id === "roze"))
+					await s.say("roze", "……過疎板探検アルか");
+				await s.warp("hinan", 7, 10, "up", { se: "warp" });
+			},
+		},
 		...chest("srv1", 1, 8, "hane"),
 		...chest("srv2", 24, 12, "mabo"),
 		...chest("srv3", 23, 3, "spray", 2),

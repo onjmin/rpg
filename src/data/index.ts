@@ -9,6 +9,7 @@ import { registerItemNames } from "./helpers";
 import { admin } from "./maps/admin";
 import { debug, debugStart } from "./maps/debug";
 import { exserver } from "./maps/exserver";
+import { hinan } from "./maps/hinan";
 import { kakolog } from "./maps/kakolog";
 import { last } from "./maps/last";
 import { odekake } from "./maps/odekake";
@@ -38,6 +39,7 @@ export const data: GameData = {
 		exserver,
 		debug,
 		sukima,
+		hinan,
 	},
 	cast,
 	enemies,

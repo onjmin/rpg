@@ -41,6 +41,7 @@ export const FLAG_DOMAIN: Record<
 		"995",
 		"996",
 		"997",
+		"m_home",
 		"m_onsu",
 		"m_onchan",
 		"m_nichie",
@@ -48,7 +49,8 @@ export const FLAG_DOMAIN: Record<
 		"m_ngoane",
 		"m_yayapoji",
 	],
-	// 洪水の >>995〜>>997 に書きこむ おんJマイナーズ（MINOR_POSTS）
+	// 洪水の >>995〜>>997 に書きこむ おんJマイナーズ（MINOR_POSTS）と、避難Jの ホームニキ（maps/hinan.ts）
+	hinan_1000: [undefined, true],
 	onsu_kaki: [undefined, true],
 	onchan_met: [undefined, true],
 	nichie_met: [undefined, true],
@@ -151,8 +153,8 @@ const WAVE2_BASE: (FloodPick & { text: string })[] = [
 ];
 
 /**
- * 会っていれば 洪水に書きこむ おんJマイナーズ（minors.ts）。先の子ほど前に出て、3人まで。
- * 総選挙で1票 入れた子は いちばん前。本文は2人で1行に ならぶので 全角7字まで。
+ * 会っていれば 洪水に書きこむ おんJマイナーズ（minors.ts）と、避難Jの ホームニキ（maps/hinan.ts）。
+ * 先の子ほど前に出て、3人まで。総選挙で1票 入れた子は いちばん前。本文は2人で1行に ならぶので 全角7字まで。
  */
 type MinorPost = {
 	id: string;
@@ -165,6 +167,16 @@ type MinorPost = {
 	sum: string;
 };
 export const MINOR_POSTS: MinorPost[] = [
+	{
+		// 避難Jの >>2。キリコの >>999 で スレを 1000に した（hinan.ts の meet）。1000日ぶりの 書きこみ
+		id: "home",
+		name: "ホームニキ",
+		met: (f) => !!f.hinan_1000,
+		text: "おかえり",
+		line: "……ホームの　声ンゴ",
+		item: { id: "pan", n: 1 },
+		sum: "ホームニキの　おかえり",
+	},
 	{
 		id: "onsu",
 		name: "おんすちゃん",
@@ -539,6 +551,8 @@ export const VARIANTS = {
  * 負けて通してもらったときも「負け」を見出しにしない。100トン・角刈りは再安価で流れたので「生まれる」と書かない。
  */
 const headline = (f: Flags): string =>
+	// 避難Jの スレを 1000に した（裏シナリオ）は、まとめの 1行を ふやさず 見出しで 拾う
+	(f.hinan_1000 ? "避難Jをホームにする" : null) ??
 	byFlag(
 		{
 			shukudai: "番長の絵日記を手伝う",
@@ -687,7 +701,7 @@ const S5: Record<string, string> = {
 	suwaru: ">>5 となり、あいてゆ？🥺",
 };
 
-/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ（>>5 は ぷゆゆ）。 */
+/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ（>>5 は ぷゆゆ、>>6 は 避難Jの ホームニキ）。 */
 const nextThread = (f: Flags): string[] => [
 	">>1 たておつ",
 	b1Other(f),
@@ -700,7 +714,44 @@ const nextThread = (f: Flags): string[] => [
 	byFlag(S4, f.reply_srv) ?? S4.neta,
 	byFlag(S5, f.puyu) ??
 		(f.puyu_met ? ">>5 またきてゆ🥺" : ">>5 きみ、はじめて　みるかおぷゆ？🥺"),
+	// 避難Jの スレを 1000に したときだけ（maps/hinan.ts）。1000日ぶりに 書く人
+	...(f.hinan_1000 ? [">>6 ホームにも　たまに　保守　来いや"] : []),
 ];
+
+// ───────────────── 避難ルートの まとめカード（maps/hinan.ts の moveThread） ─────────────────
+
+/**
+ * スレを 避難Jへ うつして、ふたりで 1000日 保守した 静かな完走。
+ * 仲間の 顔ぶれで 行が かわる（控えも ふくめて いる人だけ）。
+ */
+export const hinanSummary = (st: GameState): EndingSummary => {
+	const has = (id: string) => st.party.some((m) => m.id === id);
+	return {
+		sections: [
+			{
+				title: "【移転】蓄音キリコ、避難Jで　1000日",
+				lines: [
+					">>851 避難Jへ　移転",
+					">>852 ホームニキと　ふたりで　保守",
+					">>900 板猫が　1レス（にゃあ）",
+					...(has("roze") ? [">>950 ロゼ「アル」"] : []),
+					...(has("feris") ? [">>951 フェリス「ふぇ」"] : []),
+					...(has("teto") ? [">>952 テト、パンの絵"] : []),
+					">>999 ホームニキ「おかえり」",
+					"1000 名前：蓄音キリコ（1000日目）",
+				],
+			},
+			{
+				title: "【勢い欄】避難J",
+				lines: [
+					"1 【安価】安価でボカロ作ろうぜ　1000/1000",
+					"2 （スレ主が　消した）",
+					"……ほかに　スレは　ない",
+				],
+			},
+		],
+	};
+};
 
 /** いま何スレ目か（次スレを立てていなければ 1）。 */
 const partNo = (f: Flags): number => Math.max(1, num(f, "p2_n") || 1);
