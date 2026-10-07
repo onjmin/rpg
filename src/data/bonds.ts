@@ -9,6 +9,7 @@ import * as chatsTetoNanj from "./bonds/chats-teto-nanj";
 import { dates } from "./bonds/dates";
 import * as skitsA from "./bonds/skits-a";
 import * as skitsB from "./bonds/skits-b";
+import { remarks } from "./remarks";
 
 const parts = [skitsA, skitsB, chatsRozeFeris, chatsTetoNanj];
 
@@ -16,6 +17,8 @@ export const bonds: BondData = {
 	skits: parts.flatMap((p) => p.skits),
 	// 出来事の直後だけの分（期間限定・1回）を ふだんの話より先に
 	chats: [...asideChats, ...parts.flatMap((p) => p.chats)],
+	// 「はなす」（その場の ひとこと。remarks.ts）
+	remarks,
 	profiles: parts.flatMap((p) => p.profiles),
 	dates,
 };

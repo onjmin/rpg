@@ -331,6 +331,24 @@ export type ChatDef = {
 	run: Script;
 };
 
+/** 「はなす」の1行。[話す人の cast id（null はナレーション）, 文]。 */
+export type RemarkLine = [who: string | null, text: string];
+
+/**
+ * 「はなす」（フィールドのメニュー）の ひとこと。ドラクエ7の「はなす」のように、
+ * いる場所・いまの場面について、仲間が 順に ひとことずつ言う。何回でも聞ける（なかよし度は 上がらない）。
+ * 同じ人の分は上から順に調べ、最初に当てはまったものを使う（せまい場所・特別な条件を上に）。
+ */
+export type RemarkDef = {
+	who: string;
+	/** マップ id（省略で どこでも）。 */
+	map?: string | string[];
+	/** マップの中の範囲 [x0, y0, x1, y1]（両端ふくむ。省略で マップ全体）。 */
+	area?: [x0: number, y0: number, x1: number, y1: number];
+	when?: (s: GameState) => boolean;
+	lines: RemarkLine[] | ((s: GameState) => RemarkLine[]);
+};
+
 /** プロフィール（なかよし度で少しずつ読めるようになる）。 */
 export type ProfileDef = {
 	who: string;
@@ -355,6 +373,8 @@ export type DateDef = {
 export type BondData = {
 	skits: SkitDef[];
 	chats: ChatDef[];
+	/** 「はなす」（その場の ひとこと）。 */
+	remarks?: RemarkDef[];
 	profiles: ProfileDef[];
 	dates?: DateDef[];
 };

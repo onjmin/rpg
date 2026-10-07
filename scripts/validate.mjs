@@ -696,6 +696,44 @@ try {
 		if (!data.cast[c.who]) err(`chat #${i}: who "${c.who}" が cast に無い`);
 		await run(`chat ${c.who} #${i}`, c.run, data.start.mapId);
 	}
+	// 「はなす」（その場の ひとこと。remarks.ts）
+	{
+		const { playRemark } = await server.ssrLoadModule("/src/data/remarks.ts");
+		const fallback = new Set();
+		for (const [i, r] of (bonds.remarks ?? []).entries()) {
+			const where = `remark ${r.who} #${i}`;
+			if (!data.cast[r.who]) err(`${where}: who "${r.who}" が cast に無い`);
+			const ms = r.map ? (typeof r.map === "string" ? [r.map] : r.map) : [];
+			for (const id of ms) if (!maps[id]) err(`${where}: map "${id}" が無い`);
+			if (r.area) {
+				if (!ms.length) err(`${where}: area は map と いっしょに書く`);
+				const [x0, y0, x1, y1] = r.area;
+				if (x0 > x1 || y0 > y1) err(`${where}: area の向きが逆`);
+				for (const id of ms) {
+					const g = grids[id];
+					if (g && (x0 < 0 || y0 < 0 || x1 >= g.w || y1 >= g.h))
+						err(`${where}: area が ${id} の外に出ている`);
+				}
+			}
+			if (!ms.length && !r.when) fallback.add(r.who);
+			if (r.when)
+				for (const flags of whenFlagSets())
+					checkWhen(where, r.when, ms[0] ?? data.start.mapId, flags);
+			await run(
+				where,
+				(s) =>
+					playRemark(
+						s,
+						typeof r.lines === "function" ? r.lines(s.state) : r.lines,
+					),
+				ms[0] ?? data.start.mapId,
+			);
+		}
+		// どこで何を していても、仲間は なにか言う（最後の 受け皿）
+		for (const id of new Set((bonds.remarks ?? []).map((r) => r.who)))
+			if (!fallback.has(id))
+				err(`remark ${id}: map も when も無い 受け皿が無い（remarks/any.ts）`);
+	}
 	for (const d of bonds.dates ?? []) {
 		if (!data.cast[d.who]) err(`date: who "${d.who}" が cast に無い`);
 		await run(`date ${d.who}`, d.run, data.start.mapId);
@@ -790,6 +828,9 @@ try {
 		for (const [j, c] of bonds.chats.entries())
 			if (c.when)
 				checkWhen(`chat ${c.who} #${j}`, c.when, data.start.mapId, flags);
+		for (const [j, r] of (bonds.remarks ?? []).entries())
+			if (r.when)
+				checkWhen(`remark ${r.who} #${j}`, r.when, data.start.mapId, flags);
 	}
 	for (const [where, fn, mapId] of jobs)
 		for (let i = 0; i < TYPED; i++) await runBase(where, fn, mapId, i);

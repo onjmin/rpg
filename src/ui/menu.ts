@@ -1,4 +1,4 @@
-// フィールドのメニュー（Bボタン／☰）：つよさ・どうぐ・きろく・せってい。
+// フィールドのメニュー（Bボタン／☰）：はなす・つよさ・なかま・どうぐ・きろく・せってい。
 
 import { bondOf, hearts } from "../engine/bonds";
 import type { ItemDef } from "../engine/defs";
@@ -8,7 +8,7 @@ import { writeSave } from "../engine/save";
 import { saveSettings, settings } from "../engine/settings";
 import { el } from "./dom";
 import { itemDesc } from "./itemText";
-import { partyMenu, partyMenuHint } from "./party";
+import { partyMenu, partyMenuHint, talkAll } from "./party";
 
 type Item = {
 	label: string;
@@ -441,6 +441,10 @@ export const fieldMenu = async (game: Game): Promise<void> => {
 			game,
 			"",
 			[
+				// ドラクエ7の「はなす」：その場の ひとこと（仲間が いるときだけ）
+				...(game.state.party.length > 1
+					? [{ label: "はなす", value: "talk" }]
+					: []),
 				{ label: "つよさ", value: "status" },
 				...(game.state.party.length > 1
 					? [{ label: "なかま", sub: partyMenuHint(game), value: "party" }]
@@ -452,6 +456,10 @@ export const fieldMenu = async (game: Game): Promise<void> => {
 			{ cls: "main-menu" },
 		);
 		if (v === null) return;
+		if (v === "talk") {
+			await talkAll(game);
+			return; // 話したら フィールドへ もどる
+		}
 		if (v === "status") await statusView(game);
 		else if (v === "party") await partyMenu(game);
 		else if (v === "item") await itemMenu(game);

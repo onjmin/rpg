@@ -1,11 +1,14 @@
 // メニューの「なかま」：ひとやすみ会話・いれかえ（控え）・なかまと話す・プロフィール（仲間との親睦）。
+// メニューの いちばん上の「はなす」（その場の ひとこと。talkAll）も ここ。
 
+import { playRemark } from "../data/remarks";
 import { silent } from "../data/story";
 import {
 	addBond,
 	availableSkits,
 	bondOf,
 	hearts,
+	remarkOf,
 	seenSkits,
 } from "../engine/bonds";
 import type { DateDef } from "../engine/defs";
@@ -135,6 +138,25 @@ const profileView = (game: Game, who: string): Promise<void> =>
 		);
 	});
 
+/**
+ * フィールドのメニューの「はなす」：いる場所・いまの場面について、仲間が ひとことずつ
+ * （たたかう仲間の隊列の順、そのあと控え）。なかよし度は 上がらない。
+ */
+export const talkAll = async (game: Game): Promise<void> => {
+	const { data, state } = game;
+	game.msg.close();
+	let any = false;
+	for (const m of state.party) {
+		if (m.id === "kiriko") continue;
+		const lines = remarkOf(data.bonds, state, m.id);
+		if (!lines) continue;
+		any = true;
+		await playRemark(game.story, lines);
+	}
+	if (!any) await game.say(null, "……。");
+	game.msg.close();
+};
+
 /** 仲間ひとりと話す。章ごとに最初の1回だけ なかよし度が上がる。 */
 const talkWith = async (game: Game, who: string): Promise<void> => {
 	const { data, state } = game;
@@ -225,7 +247,8 @@ export const partyMenu = async (game: Game): Promise<void> => {
 			game,
 			`${name}${benchMark(game, v)}　${hearts(bondOf(state, v))}`,
 			[
-				{ label: "はなす", value: "talk" },
+				// メニューの いちばん上の「はなす」（みんなの ひとこと）と 分けて、1対1の話
+				{ label: "ふたりで　はなす", value: "talk" },
 				...(dateItem ? [dateItem] : []),
 				{ label: "プロフィール", value: "profile" },
 			],
