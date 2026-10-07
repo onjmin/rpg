@@ -46,8 +46,21 @@ const ikioiH = async (s: Story): Promise<void> => {
 	);
 	await s.narrate("1の　最終レス：1000日前。");
 	if (!f.home_998) {
-		if (f.home_met)
-			await K(s, "……999、書きたいンゴ。\nでも、ホームニキが　あんなに");
+		if (!f.home_met) return;
+		// 読む前に 999 を 書こうとすると、ホームニキが 立ちふさがる（カギが あれば 家を さす）
+		if ((await s.choose(["999 を　書く", "やめておく"], { cancel: 1 })) === 1)
+			return;
+		await s.narrate("キリコは　勢い欄の　前に　立った。");
+		await H(s, "書かせん、言うたやろ");
+		await s.narrate("ホームニキが　勢い欄の　前に\n立ちふさがった。");
+		if (s.has("home_key") > 0) {
+			await H(s, "……カギ、持っとるんやろ。\n書くなら、読んでからに　せえ");
+			await K(s, "……家、ンゴ？");
+		} else {
+			await H(s, "ワイの　スレや。\nワイの　ことも　知らんくせに");
+			await K(s, "……知れば、いいンゴ？");
+			await H(s, "…………");
+		}
 		return;
 	}
 	if ((await s.choose(["999 を　書く", "やめておく"], { cancel: 1 })) === 1)
@@ -90,7 +103,7 @@ const write999 = async (s: Story): Promise<void> => {
 	await H(s, "…………");
 	await K(
 		s,
-		"『どうせ、忘れられる』。\n吾輩の　スレを　消した　やつと、同じ　言葉",
+		"『ネタは　ネタのまま　終わる』。\n吾輩の　スレを　消した　やつと、同じ　言葉",
 	);
 	await H(s, "……知らん。\nワイは　ここから　出とらん");
 	if (has(s, "roze"))
@@ -620,10 +633,7 @@ const desk: EventDef = {
 		await K(s, "…………");
 		if (has(s, "roze")) await s.say("roze", "……キリコ？");
 		await K(s, "この　言葉。\n吾輩の　スレを　消した　やつが、言ったンゴ");
-		await K(
-			s,
-			"『ネタは、ネタのまま　終わるンゴ』……\n『どうせ、忘れられる』……",
-		);
+		await K(s, "『ネタは、ネタのまま　終わるンゴ』……\nあの夜の、あの声ンゴ");
 		if (has(s, "feris")) await s.say("feris", "サイレントバルス……？");
 		if (has(s, "roze"))
 			await s.say("roze", "同じ　言葉アル。\n……千日前に、ここで　書かれてた");

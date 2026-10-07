@@ -709,6 +709,11 @@ const digRun = (d: Dig) => async (s: Story) => {
 	s.se("levelup");
 	await s.narrate("スレが　ゆっくり　浮かびあがった。\n（age）");
 	await ks(s, d.line);
+	// 避難Jの ログ：北東の 階段の 下（過疎板の底）に 行けるように なる（裏シナリオ。data/kaso.ts）
+	if (d.id === "hinan")
+		await s.narrate(
+			"……北東の　階段の　下で、\nランプが　ひとつ　ついた　気がした。",
+		);
 	s.se("item");
 	s.give(d.item.id, d.item.n);
 	await s.narrate(d.item.text);
@@ -863,8 +868,13 @@ export const kakolog: MapDef = {
 			through: true,
 			run: async (s) => {
 				if (!s.flag("dig_hinan")) {
-					await s.narrate("下へ　つづく　階段。\nおりた先は、まっくらだ。");
-					await s.narrate("……どれが　どの板か、わからない。");
+					await s.narrate(
+						"下へ　つづく　階段。\nおりた先に、板の　名前が　900。",
+					);
+					await s.narrate(
+						"……どれも、知らない　名前だ。\nどれが　どの板か、わからない。",
+					);
+					await ks(s, "ひとつでも、知ってる　板が\nあれば　ンゴ……");
 					await s.move("player", "u");
 					return;
 				}

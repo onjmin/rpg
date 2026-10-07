@@ -243,6 +243,11 @@ const hinaryRun = async (s: Story): Promise<void> => {
 	}
 	await s.say("hinary", `本日の　研究成果：\n点いた　モニター、${n}こ`);
 	for (const [, t] of clues) await s.say("hinary", t);
+	if (n >= 2 && !s.flag("balus_lost"))
+		await s.say(
+			"hinary",
+			"右の　扉は、音の　ない　夜に　ひらく\n模様です。……来ない　ほうが　いい　夜ですが",
+		);
 	if (n >= 3 && !s.flag("sen_line"))
 		await s.say(
 			"hinary",
