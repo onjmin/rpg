@@ -89,7 +89,7 @@ export const SPR = {
 	e_jouren: "sa:die4kw", // メカのお兄ちゃん（常連bot）
 	e_hoshu: "sa:VTZXqI", // メカ芋君（保守bot）
 	e_ksk: "sa:xwdoKc", // 機械虫（ksk）
-	e_kskst: "sa:TzU1cf", // ダイノボット（kskst）
+	e_kskst: "sa:pyQkG9", // ロビー地雷（キリ番に しかけられる 地雷。kskst）
 	e_kskboss: "sa:C20SZD", // ドラムゴーレム（kskの主）
 	e_getter: "sa:r9YCz5", // ロボ（金。1000ゲッター・ゲッター試作）
 
