@@ -9,11 +9,12 @@
 //   ひとりが 書けるのは 1〜3レス。1000を 書いた ほうの 勝ち。勝つと ksk が あばれる（中ボス）。
 //   そのあと 端末に 1000ゲッターの 作成ログ：「作：風吹けば名無し　回線：避難J」。bot は 避難Jの 住民が 置いたもの。
 //   回線が つながり（sen_line）、過疎板の底の 避難Jの モニターから 行ける ように なる。
+//   端末の 下には 沈んだ レス（沈んだレス >>111。111歳）。
 // フラグ：sen_p<値>（スイッチ）・sen_999・sen_won（取り合いに 勝った）・sen_line・sen_done
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { chest, warp } from "../helpers";
-import { front, has, K, look } from "../kaso";
+import { front, giveSunk, has, K, look, sunkHad } from "../kaso";
 import { SPR } from "../sprites";
 import { symbol } from "../story";
 import { CYBER, PROPS } from "../tiles";
@@ -215,15 +216,15 @@ const terminalRun = async (s: Story): Promise<void> => {
 		await s.say("roze", "猛虎弁アル。\n……避難Jの、だれかアル");
 	if (has(s, "feris"))
 		await s.say("feris", "ヒナリーちゃんの　言ってた、\n住民1名〜？");
-	if (has(s, "teto"))
-		await s.say(
-			"teto",
-			"自分の　スレに、自分で　bot を　置く。\n……よほど　終わらせたくないんだな",
-		);
 	await K(s, "自分で、1000 を　取れない\nように　したンゴ……？");
 	s.se("decide");
 	await s.narrate("端末が、回線を　つないだ。\n『避難J：接続』");
 	s.set("sen_line");
+	await s.narrate("端末の　下から、\n紙きれが　1枚　のぞいている。");
+	if (!(await sunkHad(s, "sunk_111", 111))) {
+		await s.narrate("111　111歳");
+		await giveSunk(s, "sunk_111", 111);
+	}
 	s.set("sen_done");
 	await s.narrate("どこかで、モニターが　ひとつ\nついた　気がした。");
 	await K(s, "……避難Jへ　行くンゴ。\nこの　人に、会いに");

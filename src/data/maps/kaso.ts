@@ -9,6 +9,7 @@
 // 避難Jの モニターは 暗いまま。3つの 手がかり（同じ段・同じ列・右上）で 当てる。
 // 当てても、実験板で 回線（sen_line）を つなぐまでは 行けない。
 // ヒナリーが 研究中（倉庫の ヒナリーと 同じ人。立て逃げの 研究者）。手がかりを 発表してくれる。
+// 研究の 背骨は 蓄音キリコの レスの 数（「……数が、合いません」）。沈んだ レス4件を 拾った 数で 中間報告。
 
 import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { npc, warp } from "../helpers";
@@ -20,6 +21,8 @@ import {
 	MONITOR_COLS,
 	MONITOR_ROWS,
 	MONITORS,
+	SUNK,
+	sunkCount,
 } from "../kaso";
 import { SPR } from "../sprites";
 import { phono } from "../story";
@@ -88,18 +91,17 @@ const hosGate = async (s: Story): Promise<boolean> => {
 	return false;
 };
 
-/** 実験板の 扉：音の あるうちは ひらかない。 */
+/**
+ * 実験板の 扉：音の あるうちは ひらかない。
+ * 着くのは 声が もどった あとなので、音声認証は キリコの 声で とおる（登録は キリコが 生まれる 前の 時刻）。
+ */
 const senGate = async (s: Story): Promise<boolean> => {
 	if (s.flag("balus_lost")) {
 		if (!s.flag("sen_open")) {
 			s.set("sen_open");
-			await s.narrate("【音声認証】……。\n音が、ない。扉が　ひらいている。");
-			await K(s, "……吾輩の　声が　出ないから、\nひらいたンゴ？");
-			if (front(s, "roze"))
-				await s.say(
-					"roze",
-					"音の　ない　夜に　ひらく　扉……\nいやな　予感が　するアル",
-				);
+			await s.narrate("【音声認証】……一致：蓄音キリコ\n登録：8月18日　0時21分");
+			await K(s, "……吾輩、まだ　生まれて\nないンゴ");
+			await s.narrate("扉が、ひらいた。");
 		}
 		return true;
 	}
@@ -204,12 +206,36 @@ const CLUES: [flag: string, text: string][] = [
 	["hos_done", "避難Jは、天文・気象板の　右上に\nある　模様です"],
 ];
 
+/** 研究の 中間報告：沈んだ レス（data/kaso.ts の sunkCount）。最終発表は 床下で。 */
+const sunkReport = async (s: Story): Promise<void> => {
+	if (s.flag("ura_101")) {
+		await s.say("hinary", "研究の　発表は、床下で\n終わりました");
+		return;
+	}
+	const k = sunkCount(s);
+	if (!k) return;
+	await s.say(
+		"hinary",
+		`中間報告です。沈んだ　レス、\n${k}件　見つかった　模様です`,
+	);
+	if (k >= SUNK.length) await s.say("hinary", "……それでも、数が　合いません");
+};
+
 const hinaryRun = async (s: Story): Promise<void> => {
 	const n = boardsDone(s.state);
 	if (!s.flag("kaso_hinary")) {
 		s.set("kaso_hinary");
 		await s.say("hinary", "……避難Jを研究しているヒナリーです。");
 		if (front(s, "feris")) await s.say("feris", "ヒナリーちゃん、ここにも〜？");
+		await s.say("hinary", "蓄音キリコさんの　レスを\n数えています");
+		await s.say("hinary", "……数が、合いません");
+		await K(s, "……吾輩の、レス　ンゴ？");
+		if (sunkCount(s) < SUNK.length)
+			await s.say(
+				"hinary",
+				`足りないのは　${SUNK.length - sunkCount(s)}件。\nほかの　板に　沈んでいる　模様です`,
+			);
+		else await sunkReport(s);
 		await s.say(
 			"hinary",
 			"ここは　おーぷんの　ほかの板の\nサーバー室の　模様です",
@@ -233,16 +259,19 @@ const hinaryRun = async (s: Story): Promise<void> => {
 	if (s.flag("hinan_found")) {
 		await s.say("hinary", "避難Jの　モニター、\n当たった　模様です");
 		await s.say("hinary", "……サンキューヒッナ、は\n自分では　言いません");
+		await sunkReport(s);
 		return;
 	}
 	const clues = CLUES.filter(([f]) => s.flag(f));
 	if (!clues.length) {
 		await s.say("hinary", "本日の　研究成果：\n点いた　モニター、0こ");
+		await sunkReport(s);
 		await s.say("hinary", "犬猫大好き板から　どうぞ。\n以後、お見知りおきを。");
 		return;
 	}
 	await s.say("hinary", `本日の　研究成果：\n点いた　モニター、${n}こ`);
 	for (const [, t] of clues) await s.say("hinary", t);
+	await sunkReport(s);
 	if (n >= 2 && !s.flag("balus_lost"))
 		await s.say(
 			"hinary",

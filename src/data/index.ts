@@ -25,6 +25,7 @@ import { studio } from "./maps/studio";
 import { sukima } from "./maps/sukima";
 import { thread } from "./maps/thread";
 import { town } from "./maps/town";
+import { yukashita } from "./maps/yukashita";
 import { sfx } from "./sfx";
 
 export const data: GameData = {
@@ -52,6 +53,7 @@ export const data: GameData = {
 		sentori,
 		hinan,
 		hinan_home: hinanHome,
+		yukashita,
 	},
 	cast,
 	enemies,

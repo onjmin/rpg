@@ -146,6 +146,7 @@ const ikioi = async (s: Story): Promise<void> => {
 			"古参ニキ",
 		);
 		await J(s, "おんJ七不思議「サイレントバルス」や", "古参ニキ");
+		await J(s, "……声を　聞いた　やつは、おらん", "古参ニキ");
 		await s.say("nanj", "生まれたての　スレは、まっさきに　狙われるで");
 		await s.say("kiriko", "吾輩のスレも……消えるンゴ？");
 		await J(s, "1000レス　完走すりゃ、もう　手出しはでけへん", "古参ニキ");
@@ -461,6 +462,16 @@ const nanjAku = async (s: Story): Promise<void> => {
 	}
 	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) {
 		await onigiriHand(s);
+		return;
+	}
+	// このスレで 床下の真相を 見たあと（ura_101。1回だけ）。kakolog.ts の「フェリスおったよな」と 同じ形。
+	// もらいそびれたら、完走後の スレで わたす（thread.ts の nanjUra）
+	if (s.flag("ura_101") && !s.flag("ura_paper")) {
+		await s.narrate(
+			"やきうが、紙きれを　さしだした。\n手書きで『>>101　おったよな』",
+		);
+		await s.say("kiriko", "……うん");
+		s.set("ura_paper");
 		return;
 	}
 	await s.narrate(

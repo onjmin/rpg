@@ -80,6 +80,9 @@ export const FLAG_DOMAIN: Record<
 	f2_solo: [undefined, true],
 	// 洪水の >>998（もうひとつの おにぎり。town の nanjAku で立つ）
 	onigiri_done: [undefined, true],
+	// 避難Jの 床下で >>101 の 真相を 見た（maps/yukashita.ts）。keep_ は 次スレへ 持ち越す
+	ura_101: [undefined, true],
+	keep_ura101: [undefined, true],
 };
 
 /** 文字列フラグの値で表を引く（記録なし・想定外の値は undefined）。 */
@@ -88,6 +91,9 @@ const byFlag = <T>(
 	v: Flags[string] | undefined,
 ): T | undefined =>
 	typeof v === "string" && Object.hasOwn(table, v) ? table[v] : undefined;
+
+/** 床下で >>101 の 真相を 見た（story.ts の ura と同じ式。ここは フラグだけで 引く）。 */
+const uraOf = (f: Flags): boolean => !!(f.ura_101 || f.keep_ura101);
 
 /** 数のフラグ（数でなければ 0）。 */
 const num = (f: Flags, k: string): number => {
@@ -556,6 +562,8 @@ export const VARIANTS = {
  * 負けて通してもらったときも「負け」を見出しにしない。100トン・角刈りは再安価で流れたので「生まれる」と書かない。
  */
 const headline = (f: Flags): string =>
+	// 床下の 真相（裏シナリオの おわり）は、避難Jの 1000 より 上
+	(uraOf(f) ? ">>101から1000へ" : null) ??
 	// 避難Jの スレを 1000に した（裏シナリオ）は、まとめの 1行を ふやさず 見出しで 拾う
 	(f.hinan_1000 ? "避難Jをホームにする" : null) ??
 	byFlag(
@@ -587,15 +595,18 @@ const myThread = (st: GameState): string[] => {
 	const res = (no: string, text: string | null | undefined) => {
 		if (text) lines.push(`${no} ${text}`);
 	};
+	// 床下の 真相を 見たあとは、序章で えらんだ 道に かかわらず 名前の 順番を 書く（22字に おさめるため かっこは 半角）
 	res(
 		">>101",
-		hairWeight(
-			f,
-			"角刈り・100トン→再安価で　誕生",
-			"角刈り→再安価で　誕生",
-			"100トン→再安価で　誕生",
-			"ポニテ・34キロで　誕生",
-		),
+		uraOf(f)
+			? "蓄音キリコ(角刈り)→再安価→蓄音キリコ"
+			: hairWeight(
+					f,
+					"角刈り・100トン→再安価で　誕生",
+					"角刈り→再安価で　誕生",
+					"100トン→再安価で　誕生",
+					"ポニテ・34キロで　誕生",
+				),
 	);
 	// 記録なし（旧セーブ）は、勝負で越えるしかなかったので fight
 	res(
@@ -706,7 +717,7 @@ const S5: Record<string, string> = {
 	suwaru: ">>5 となり、あいてゆ？🥺",
 };
 
-/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ（>>5 は ぷゆゆ、>>6 は 避難Jの ホームニキ）。 */
+/** 次スレ：ほかの名無しが、自分が　えらばなかった道を　書きこむ（>>5 は ぷゆゆ、>>6 は 避難Jの ホームニキ、>>7 は 床下の 真相）。 */
 const nextThread = (f: Flags): string[] => [
 	">>1 たておつ",
 	b1Other(f),
@@ -721,6 +732,10 @@ const nextThread = (f: Flags): string[] => [
 		(f.puyu_met ? ">>5 またきてゆ🥺" : ">>5 きみ、はじめて　みるかおぷゆ？🥺"),
 	// 避難Jの スレを 1000に したときだけ（maps/hinan.ts）。1000日ぶりに 書く人
 	...(f.hinan_1000 ? [">>6 ホームにも　たまに　保守　来いや"] : []),
+	// 床下で >>101 の 真相を 見たとき（maps/yukashita.ts）。次スレでは hinan_1000 が 無いので 番号を つめる
+	...(uraOf(f)
+		? [`${f.hinan_1000 ? ">>7" : ">>6"} 角刈りの　ほうも　覚えとるで`]
+		: []),
 ];
 
 // ───────────────── 避難ルートの まとめカード（maps/hinan.ts の moveThread） ─────────────────

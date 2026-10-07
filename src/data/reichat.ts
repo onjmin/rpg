@@ -4,6 +4,7 @@
 // ぜんぶ見たら、短い ひとことを ランダムに。
 
 import type { GameState, Story } from "../engine/defs";
+import { ura } from "./story";
 
 /** その仲間が いっしょに いるか（控えも ふくむ）。 */
 const has = (st: GameState, id: string): boolean =>
@@ -41,6 +42,7 @@ const CHATS: ReiChat[] = [
 				"rei",
 				"発信元の　のこり、13％。\n当機には、分類　できませんでした",
 			);
+			await s.say("rei", "記録時刻：8月17日　23時台です");
 			await s.narrate("フェリスが　ふきだした。");
 			await s.say("feris", "あはは〜。角刈りだって〜");
 			await s.say("roze", "……フェリス先輩、\nわらっちゃ　だめアル");
@@ -60,6 +62,16 @@ const CHATS: ReiChat[] = [
 			await s.say("rei", "保留中の　解析、1件　完了");
 			await s.say("rei", "……植物では、ありませんでした");
 			await s.say("kiriko", "……ちょっとは、生えてるンゴ");
+		},
+	},
+	{
+		// 完走後、床下の真相（裏シナリオ A案）を 見ていたら。last.ts の 恩赦（主語のない「承認されました」）の 名義
+		id: "onsha",
+		when: (st) => !!st.flags.clear && ura(st),
+		run: async (s) => {
+			await s.say("rei", "恩赦の　承認者。\n名義は『蓄音キリコ』でした");
+			await s.say("kiriko", "……吾輩、押してないンゴ");
+			await s.say("rei", "記録しました");
 		},
 	},
 	{

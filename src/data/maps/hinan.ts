@@ -8,18 +8,19 @@
 // 流れ: 到着 → ホームニキ（999 は 書かせん。帰れ）→ 天文・気象板の カギで 家へ（hinan_home）→ 棚の ログ → 机の >>998
 //       （裏返し その2：サイレントバルスの ことば。home_998）→ 勢い欄で キリコが >>999 → 1000ゲッター →
 //       ホームニキの 告白 →「完走した スレは 倉庫で 眠る。消えない」→ ホームニキが 1000「おそいわ。……おかえり」
-//       → レコード「避難Jの声」（hinan_1000）→ ルート分岐「スレを うつす」（避難ルート。保守の 日々 → 静かな 完走）
+//       → レコード「避難Jの声」（hinan_1000）→ 床下で すずが 鳴り、猫を 追って 床下へ（maps/yukashita.ts。ura_101）
+//       → ルート分岐「スレを うつす」（避難ルート。保守の 日々 → 静かな 完走）
 //       　　　　　　　　　　　　　　　　　　　　　／「もどって 完走する」（本編へ。hinan_back）
 // 避難Jの 時間は 外と ちがう（「むこうは まだ 同じ夜や」）ので、避難ルートの あとも 本編は つづけられる。
 // フラグ: home_met・home_key（kaso.ts。天文・気象板）・home_998・hinan_1000・hinan_back・hinan_end・hinan_undo・
 //         home_trace・home_n・hd_write/hd_cat/hd_look/hd_rest（保守の 日々で えらんだ 回数）
 
-import type { EventDef, MapDef, Story } from "../../engine/defs";
+import type { EventDef, GameState, MapDef, Story } from "../../engine/defs";
 import { npc, warp } from "../helpers";
 import { bump, C, H, has, K, look, MONITORS } from "../kaso";
 import { SPR } from "../sprites";
 import { hinanSummary } from "../threadlog";
-import { INDOOR, TOWN } from "../tiles";
+import { INDOOR, PROPS, TOWN } from "../tiles";
 
 /** 過疎板の底の 避難Jの モニターの 下の マス（kaso.ts と 同じ 計算）。 */
 const MONITOR_X = 3 + MONITORS.hinan[0] * 2;
@@ -94,8 +95,6 @@ const write999 = async (s: Story): Promise<void> => {
 	await H(s, "スレの　ない　板は、板やない。\n……ホームが、なくなるやろ");
 	await H(s, "せやから、だれにも　取らせんようにした。\n……ワイにも、や");
 	if (has(s, "roze")) await s.say("roze", "……それで、1000日アルか");
-	if (has(s, "teto"))
-		await s.say("teto", "終わらせたくなくて、終われなく　した。\n……不器用だな");
 	await K(s, "ホームニキ。\n完走した　スレは、消えないンゴ");
 	await K(s, "過去ログ倉庫で、眠るンゴ。\n吾輩、そこで　>>2 を　読んだ");
 	await H(s, "……うそやろ。\nあれ、倉庫まで　流れとったんか");
@@ -106,10 +105,6 @@ const write999 = async (s: Story): Promise<void> => {
 		"『ネタは　ネタのまま　終わる』。\n吾輩の　スレを　消した　やつと、同じ　言葉",
 	);
 	await H(s, "……知らん。\nワイは　ここから　出とらん");
-	if (has(s, "roze"))
-		await s.say("roze", "出なくても、しみだすアル。\n千日ぶんの　静けさは");
-	else await K(s, "出なくても、しみだすンゴ。\n千日ぶんの　静けさは");
-	await H(s, "…………");
 	await s.narrate(
 		"ホームニキは　勢い欄を　見た。\nキリコの　999が、光っている。",
 	);
@@ -132,7 +127,34 @@ const write999 = async (s: Story): Promise<void> => {
 	await s.narrate("レコード「避難Jの声」を　てにいれた！");
 	s.set("hinan_1000");
 	await s.wait(300);
-	await offer(s);
+	// offer は 床下から もどって から（maps/yukashita.ts）
+	await toUnder(s);
+};
+
+/** 床下の 入口（家の ベッドの 横の 床板）。1000 の あとは いつでも 入れる。 */
+const underOpen = (st: GameState): boolean =>
+	!!(st.flags.hinan_1000 && st.flags.home_998);
+
+/**
+ * 1000 の あと：床下で すずが 鳴り、猫が 床板の すきまへ → 床下（yukashita）。
+ * 完走後でも 同じ 順に 通る（offer は 床下の さいごに 呼ぶ）。
+ */
+const toUnder = async (s: Story): Promise<void> => {
+	if (!underOpen(s.state)) return offer(s);
+	await s.narrate("ちりん。");
+	await s.narrate("……足もとの、ずっと　下で\nすずが　鳴った。");
+	if (s.has("suzu") > 0) await s.narrate("カバンの　すずは、鳴っていない。");
+	await C(s);
+	await s.narrate("板猫が　家の　ほうへ　走っていった。");
+	await H(s, "おい、そっちは　ワイの　家や");
+	await s.warp("hinan_home", 4, 6, "up", { se: "door" });
+	await s.narrate(
+		"猫は　ベッドの　横の、床板の\nすきまへ　するりと　入っていった。",
+	);
+	await s.narrate(
+		"床板が　一枚、浮いている。\nめくると、下へ　はしごが　のびていた。",
+	);
+	await s.warp("yukashita", 2, 3, "down", { se: "stairs" });
 };
 
 // ───────────────── ホームニキ ─────────────────
@@ -203,8 +225,16 @@ const before = async (s: Story): Promise<void> => {
 
 // ───────────────── ルート分岐：スレを うつす ─────────────────
 
-/** 「ここに うつすか？」。もどる＝本編へ（hinan_back）、うつす＝避難ルート（moveThread）。 */
-const offer = async (s: Story): Promise<void> => {
+/**
+ * 「ここに うつすか？」。もどる＝本編へ（hinan_back）、うつす＝避難ルート（moveThread）。
+ * 床下（maps/yukashita.ts）の さいごに 呼ぶ。
+ */
+export const offer = async (s: Story): Promise<void> => {
+	// 避難ルートで もう うつした あと（床下へ あとから 来た）
+	if (s.flag("hinan_end")) {
+		await H(s, "……おかえり。\nスレは、もう　ここに　あるで");
+		return;
+	}
 	if (s.flag("clear")) {
 		await H(s, "……お前の　スレ、完走したんか。\nほな、ええな");
 		await H(s, "倉庫で、となり　あけとく");
@@ -217,8 +247,7 @@ const offer = async (s: Story): Promise<void> => {
 	const c = await s.choose(["スレを　うつす", "もどって　完走する"]);
 	if (c === 0) return moveThread(s);
 	await H(s, "……せやな。あっちが　ホームや");
-	await K(s, "でも、ここも　ホームンゴ。\n>>999　書いたから");
-	await H(s, "……草");
+	await K(s, "……呼びに、いくンゴ");
 	await H(
 		s,
 		"完走したら、倉庫で　会おや。\nワイの　スレの　となりが　あいとる",
@@ -637,14 +666,7 @@ const desk: EventDef = {
 		if (has(s, "feris")) await s.say("feris", "サイレントバルス……？");
 		if (has(s, "roze"))
 			await s.say("roze", "同じ　言葉アル。\n……千日前に、ここで　書かれてた");
-		if (has(s, "teto"))
-			await s.say(
-				"teto",
-				"返事の　ない　言葉は、どこかへ　しみだす。\n……それが、あれか",
-			);
-		await s.narrate(
-			"だれにも　返事を　もらえなかった\n千日ぶんの　しずけさが、ここに　ある。",
-		);
+		await s.narrate("紙の　はしが、何度も　めくられて\nやわらかい。");
 		await K(s, "……吾輩が、返事を　するンゴ。\n>>999 で");
 		s.set("home_998");
 		await s.narrate("キリコは、紙を　そっと　もどした。");
@@ -664,7 +686,7 @@ export const hinanHome: MapDef = {
 		"#hBBBBBBh#", // y2  棚 (2..7,2)
 		"#........#", // y3
 		"#.Z....Mt#", // y4  ベッド (2,4)(2,5)・机 (7,4)(8,4)
-		"#.z......#", // y5
+		"#.z......#", // y5  床板 (3,5) → 床下（1000 の あと）
 		"#....u...#", // y6  到着 (4,6)。えさ皿 (5,6)
 		"####D#####", // y7  扉 (4,7) → hinan
 	],
@@ -681,5 +703,16 @@ export const hinanHome: MapDef = {
 		look("bed", 2, 4, "ベッド。\n……ねこの　毛だらけだ。"),
 		look("dish", 5, 6, "ねこの　えさ皿。\nきれいに　洗ってある。"),
 		look("desk_r", 8, 4, "机の　はし。\nカレンダーは、1000日前の　まま。"),
+		// 床下への 床板（1000 の あと。maps/yukashita.ts）
+		{
+			...warp(
+				"yuka",
+				3,
+				5,
+				{ map: "yukashita", x: 2, y: 3, dir: "down" },
+				{ se: "stairs", when: underOpen },
+			),
+			sprite: PROPS.stairsDown,
+		},
 	],
 };

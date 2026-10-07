@@ -5,6 +5,7 @@
 import type { MapDef, Story, TileDef } from "../../engine/defs";
 import { warp } from "../helpers";
 import { SPR } from "../sprites";
+import { ura } from "../story";
 import { floodWaves, VARIANTS } from "../threadlog";
 import { CYBER } from "../tiles";
 import { reiCare, reiVisit } from "./server";
@@ -19,6 +20,37 @@ const tiles: Record<string, TileDef> = {
 const botsuSay = (s: Story, text: string) => s.say("botsu", text);
 const balusSay = (s: Story, text: string) =>
 	s.say(null, text, { name: "サイレントバルス", pace: "slow" });
+
+/**
+ * F2 のあと、床下で >>101 の真相を見ていたとき（story.ts の ura）。
+ * 名前の 最初の 持ち主を、2人目の キリコが 名前で 呼び返す。1人目の 名前欄は「蓄音キリコ」。
+ * ボツの声は 次スレへ 持ち越すので、もう 持っていれば 渡さない。
+ */
+const uraAfterF2 = async (s: Story): Promise<void> => {
+	const first = { name: "蓄音キリコ" };
+	await s.say("kiriko", "……すぐじゃ　ないンゴ。\n>>101は、お前の　レスンゴ");
+	await s.say("kiriko", "吾輩が、お前の　再安価ンゴ");
+	await s.say(
+		"botsu",
+		"ボツって　書いとけば、\nそっちの　1000は、そっちの　もの",
+		{ ...first, noVoice: true },
+	);
+	await s.say("botsu", "……ひろって、くれる？", first);
+	await s.narrate("ンゴは、ついていなかった。");
+	await s.say("kiriko", "……おかえり、蓄音キリコ");
+	await s.say("botsu", "……ただいま", first);
+	await s.narrate("キリコは　蓄音機を、\n角刈りの　蓄音キリコに　むけた。");
+	s.hide("botsu");
+	if (s.has("rec_botsu") > 0) {
+		await s.narrate("レコードの　同じ　みぞが、\nすこし　深く　なった。");
+		return;
+	}
+	s.give("rec_botsu");
+	s.se("item");
+	await s.narrate(
+		"角刈りの　蓄音キリコの　声が、\nレコードに　きざまれていく。",
+	);
+};
 
 /** 1000レス目の床を踏むと始まる最終戦（F1 → F2 → 1000 → エンディングへ）。 */
 const lastRun = async (s: Story): Promise<void> => {
@@ -43,6 +75,12 @@ const lastRun = async (s: Story): Promise<void> => {
 		);
 		await balusSay(s, "…………");
 	}
+	// 床下で >>101 の真相を見た（story.ts の ura）。ンゴの 練習の 字を 見ている
+	const u = ura(s.state);
+	if (u) {
+		await s.say("kiriko", "……その　ンゴ、\nれんしゅう　したンゴね");
+		await balusSay(s, "…………");
+	}
 
 	// ── F1 サイレントバルス ──
 	await s.battle(hinan ? "g_f1_h" : "g_f1");
@@ -64,7 +102,9 @@ const lastRun = async (s: Story): Promise<void> => {
 		s,
 		"流されたレスは、だれにも　ひろわれない。\nだから　ぜんぶ　無音に　するンゴ",
 	);
-	await s.say("roze", "……それは、ちがうアル");
+	// 真相を見たあとは、ロゼも うそだと 知っている
+	if (u) await s.narrate("ロゼは、なにも　言わなかった。");
+	else await s.say("roze", "……それは、ちがうアル");
 
 	// ── 恩赦とレスの洪水 ──
 	await s.narrate("――そのとき、\nスレの　上のほうが　明るくなった。");
@@ -103,7 +143,7 @@ const lastRun = async (s: Story): Promise<void> => {
 	await s.say("kiriko", "ここから先は、吾輩が　決めるンゴ！");
 
 	// ── F2 ボツキリコ ──
-	await s.battle("g_f2");
+	await s.battle(u ? "g_f2_u" : "g_f2");
 	// 縛りの記録（threadlog.ts の shibari）：勝ったときの キリコのレベルと、ひとりで たたかったか
 	const fighters = s.state.party.filter((m) => !m.bench);
 	s.set("f2_lv", fighters[0]?.lv ?? 1);
@@ -111,22 +151,27 @@ const lastRun = async (s: Story): Promise<void> => {
 	await s.narrate("ボツキリコは　ひざを　ついた。");
 	await botsuSay(s, "……吾輩の声も、どうせ　消えるンゴ");
 	await s.say("kiriko", "消えさせない");
-	await s.say(
-		"kiriko",
-		"角刈りも、100トンも、111歳も。\nぜんぶ　あの夜の安価。吾輩の一部ンゴ",
-	);
-	const answer = VARIANTS.botsuAnswer(s.state);
-	if (answer) await s.say("kiriko", answer);
-	await botsuSay(s, "……ひろって、くれるンゴ？");
-	await s.narrate("キリコは　蓄音機を　ボツキリコに　むけた。");
-	s.give("rec_botsu");
-	s.hide("botsu");
-	s.se("item");
-	await s.narrate("ボツキリコの　声が、\nレコードに　きざまれていく。");
+	if (u) await uraAfterF2(s);
+	else {
+		await s.say(
+			"kiriko",
+			"角刈りも、100トンも、111歳も。\nぜんぶ　あの夜の安価。吾輩の一部ンゴ",
+		);
+		const answer = VARIANTS.botsuAnswer(s.state);
+		if (answer) await s.say("kiriko", answer);
+		await botsuSay(s, "……ひろって、くれるンゴ？");
+		await s.narrate("キリコは　蓄音機を　ボツキリコに　むけた。");
+		s.give("rec_botsu");
+		s.hide("botsu");
+		s.se("item");
+		await s.narrate("ボツキリコの　声が、\nレコードに　きざまれていく。");
+	}
 	await s.narrate("のこり、1レス。");
-	await s.choose(["1000ゲット！"]);
+	// 真相を見たあとは、どちらの >>1 も 同じ名前（序章の「どちらを選んでも」の裏返し。thread.ts）
+	await s.choose(u ? [">>1 蓄音キリコ", ">>2 蓄音キリコ"] : ["1000ゲット！"]);
 	await s.narrate("1000　名前：蓄音キリコ");
 	await s.say("kiriko", "消えた声は、吾輩が、また　鳴らすンゴ！");
+	if (u) await s.narrate("声が、ふたつ　かさなって　聞こえた。");
 	await s.flash("#ffffff", 500);
 	s.se("levelup");
 	s.set("res", 1000);

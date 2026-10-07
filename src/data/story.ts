@@ -10,6 +10,10 @@ import { SPR } from "./sprites";
 export const silent = (st: GameState): boolean =>
 	!!st.flags.balus_lost && !st.flags.rec;
 
+/** 避難Jの床下で >>101 の真相を見た（このスレの ura_101 か、前のスレから持ち越した keep_ura101）。 */
+export const ura = (st: GameState): boolean =>
+	!!(st.flags.ura_101 || st.flags.keep_ura101);
+
 /**
  * ストーリーの区間（いまの目的の区切り）と、その区間を ぬけると立つフラグ。話の順。
  * 期間限定の場面（その区間に いる あいだは ずっと起きて、過ぎたら もう起きない）は、この区間で決める。

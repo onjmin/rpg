@@ -128,6 +128,39 @@ type Checkpoint = {
 const KEY1 = ["chikuonki", "rec_first"];
 const KEY2 = [...KEY1, "rec_kako"];
 
+// 裏シナリオ：第四章の 夜、4つの 板を 終えて 回線を つないである（避難Jの 手前）
+const URA_HINAN: Flags = {
+	...CH4_MID,
+	dig_hinan: true,
+	kaso_in: true,
+	kaso_hinary: true,
+	neko_done: true,
+	ais_open: true,
+	ais_order: true,
+	ais_age: true,
+	ais_done: true,
+	hos_open: true,
+	hos_age: true,
+	hos_key: true,
+	hos_done: true,
+	sen_open: true,
+	sen_999: true,
+	sen_won: true,
+	sen_line: true,
+	sen_done: true,
+	hinan_found: true,
+};
+// 板ごとに 拾う 沈んだ レス（data/kaso.ts の SUNK）
+const URA_ITEMS = [
+	...KEY2,
+	"suzu",
+	"home_key",
+	"sunk_145",
+	"sunk_130",
+	"sunk_329",
+	"sunk_111",
+];
+
 // レベルは battle.ts の各ボスの目安（B1 Lv4・B2 Lv6・B3 Lv7〜8・F1 Lv9〜10・F2 Lv10〜11）
 const CHECKPOINTS: Checkpoint[] = [
 	{
@@ -226,31 +259,29 @@ const CHECKPOINTS: Checkpoint[] = [
 		id: "cp10",
 		label: "避難J（裏。>>999 の手前）",
 		sprite: SPR.j_so,
+		flags: URA_HINAN,
+		party: P4,
+		lv: 9,
+		items: URA_ITEMS,
+		to: { map: "hinan", x: 7, y: 10, dir: "up" },
+	},
+	{
+		// 床下（maps/yukashita.ts）。避難Jの 1000 の あと、ホームの 家の 床板の 前（踏むと 床下へ）
+		id: "cp11",
+		label: "床下（裏。避難Jの1000のあと）",
+		sprite: SPR.cat,
 		flags: {
-			...CH4_MID,
-			dig_hinan: true,
-			kaso_in: true,
-			kaso_hinary: true,
-			neko_done: true,
-			ais_open: true,
-			ais_order: true,
-			ais_age: true,
-			ais_done: true,
-			hos_open: true,
-			hos_age: true,
-			hos_key: true,
-			hos_done: true,
-			sen_open: true,
-			sen_999: true,
-			sen_won: true,
-			sen_line: true,
-			sen_done: true,
-			hinan_found: true,
+			...URA_HINAN,
+			...done("hinan", "arrive"),
+			home_met: true,
+			home_in: true,
+			home_998: true,
+			hinan_1000: true,
 		},
 		party: P4,
 		lv: 9,
-		items: [...KEY2, "suzu", "home_key"],
-		to: { map: "hinan", x: 7, y: 10, dir: "up" },
+		items: [...URA_ITEMS, "rec_hinan"],
+		to: { map: "hinan_home", x: 3, y: 6, dir: "up" },
 	},
 ];
 
@@ -325,7 +356,7 @@ const supply = async (s: Story): Promise<void> => {
 	await s.narrate("どうぐを　補充した。");
 };
 
-// 人の並び（x = 2, 4, 6, 8 の2列。9・10人目は 左下）
+// 人の並び（x = 2, 4, 6, 8 の2列。9〜11人目は 下の段）
 const spots: [number, number][] = [
 	[2, 2],
 	[4, 2],
@@ -337,6 +368,7 @@ const spots: [number, number][] = [
 	[8, 5],
 	[2, 8],
 	[4, 8],
+	[6, 8],
 ];
 
 const events: EventDef[] = [

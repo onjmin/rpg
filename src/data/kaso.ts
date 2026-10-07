@@ -1,4 +1,4 @@
-// 裏シナリオ「過疎板探検」の共通部品（maps/kaso.ts・neko.ts・aisatsu.ts・hoshu.ts・sentori.ts・hinan.ts）。
+// 裏シナリオ「過疎板探検」の共通部品（maps/kaso.ts・neko.ts・aisatsu.ts・hoshu.ts・sentori.ts・hinan.ts・yukashita.ts）。
 //
 // おんJwiki の「過疎板探検」（約900の専門板の ほとんどが 無人。「最後にレスされたのが1000日前」。
 // 「人が増えると信じてレスし続けた開拓者」）から。
@@ -6,17 +6,26 @@
 //
 // 流れ: 過疎板の底（kaso）→ 犬猫大好き板（neko）→ 料理板（aisatsu）→ 天文・気象板（hoshu。第三章のあと）
 //       → 実験板（sentori。第四章の 音が消えた夜から）→ 避難J（hinan）→ ホームの家（hinan_home）
+//       → 1000（hinan_1000）→ すずが 鳴って 床下（yukashita）→ もどるか 残るか（offer）
 // 板を ひとつ 終えるたび、過疎板の底の モニターが ひとつ 点き、避難Jの 板の 位置の 手がかりが ひとつ ふえる。
+// 板ごとに 沈んだ レスを 1件 拾う（sunk_*。大事なもの）。ヒナリーは 蓄音キリコの レスを 数えていて
+// 「……数が、合いません」。拾った 件数（sunkCount）で 中間報告し、床下で 時刻の 順に 並べて 最終発表。
 //
-// 裏返し（2段）：
+// 裏返し（3段）：
 //   1. 実験板の奥：1000ゲッターの 作成ログ「作：風吹けば名無し　回線：避難J」。bot は ホームニキが 自分で 置いた。
 //   2. ホームの家の >>998（1000日前）：「ネタはネタのまま終わるんやろな。……どうせ忘れられる」。
-//      本編の サイレントバルスの ことば。沈黙は、だれにも 返事を もらえなかった 千日から しみだしていた。
+//      本編の サイレントバルスの ことば。床下の 1人目が 何十回も 写し、第四章の 夜、
+//      昔からある 声のない 静けさに 乗って はじめて 外へ 出た（キリコの 声を 借りて。87%一致）。
+//   3. >>101の子：>>101 で「蓄音キリコ」と 呼ばれたのは、角刈り・100t・111歳の 1人目が 先。
+//      釣り・防寒着・バラムツ（→囲碁）も その 1時間に 決まった。日付が かわって 再安価（ポニーテール）が 来て、
+//      1人目の レスは 流され、100t の レスと いっしょに 避難Jの 家の 床下へ 沈んだ。ボツキリコは その子。
+//      沈んだ レス4件（111・130・145・329）が その 1時間の 証拠。だれも 意味は 説明しない。
 //
 // フラグ（kaso_ / neko_ / ais_ / hos_ / sen_ / hinan_ / home_）：
 //   kaso_in（底に 来た）・neko_done・ais_done・hos_done・sen_done（板を 終えた）・sen_line（避難Jへの 回線）
 //   hinan_found（避難Jの モニターを 当てた）・home_met・home_key（カギを 拾った）・home_998（>>998 を 読んだ）
 //   hinan_1000・hinan_back・hinan_end・hinan_undo（hinan.ts）
+//   ura_101（床下で 真相を 見た）・keep_ura101（次スレへ 持ち越す。yukashita.ts）
 
 import type { EventDef, GameState, Script, Story } from "../engine/defs";
 import type { Dir } from "../engine/types";
@@ -53,6 +62,37 @@ export const bump = (s: Story, name: string): number => {
 export const boardsDone = (st: GameState): number =>
 	["neko_done", "ais_done", "hos_done", "sen_done"].filter((f) => st.flags[f])
 		.length;
+
+// ───────────────── 沈んだ レス（>>101の子の 1時間） ─────────────────
+
+/** 沈んだ レス（大事なもの。次スレへ 持ち越す）。書かれた 時刻の 順。 */
+export const SUNK = ["sunk_111", "sunk_130", "sunk_145", "sunk_329"];
+
+/** 沈んだ レスを 何件 拾ったか（ヒナリーの 中間報告と、床下の 最終発表）。 */
+export const sunkCount = (s: Story): number =>
+	SUNK.filter((id) => s.has(id) > 0).length;
+
+/** もう 拾っていれば（前の スレで 拾った）、短く そう言って true。 */
+export const sunkHad = async (
+	s: Story,
+	id: string,
+	no: number,
+): Promise<boolean> => {
+	if (s.has(id) <= 0) return false;
+	await s.narrate(`${no}の　レスは、\nもう　ひろってある。`);
+	return true;
+};
+
+/** 沈んだ レスを わたす。 */
+export const giveSunk = async (
+	s: Story,
+	id: string,
+	no: number,
+): Promise<void> => {
+	s.se("item");
+	s.give(id, 1);
+	await s.narrate(`沈んだレス　>>${no}を　てにいれた！`);
+};
 
 /** 調べると 文が 出るだけの 見えない イベント。 */
 export const look = (

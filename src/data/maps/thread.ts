@@ -11,7 +11,7 @@ import { addLose } from "../freedom";
 import { npc, warp } from "../helpers";
 import { reiChat } from "../reichat";
 import { SPR } from "../sprites";
-import { knows, resLine } from "../story";
+import { knows, resLine, ura } from "../story";
 import { floodLeft, threadSummary, VARIANTS } from "../threadlog";
 import { INDOOR } from "../tiles";
 
@@ -32,6 +32,23 @@ const bump = (s: Story, flag: string): number => {
 
 // ───────────────── 序章 ─────────────────
 
+/**
+ * 次スレ（前の周で 床下の真相を見た keep_ura101）だけ：>>101 の あとを 本当の順番で 流す。
+ * 名前を 先に もらった 角刈りの子が 生まれて、日付が かわって 流れていく。キリコは 覚えていない。
+ */
+const firstKiriko = async (s: Story): Promise<void> => {
+	await s.flash("#9a9a9a", 400);
+	await N(s, "……ここは、どこ？", "蓄音キリコ");
+	await J(s, "しゃべった……角刈りやけど", "名無し");
+	await J(s, ">>111　111歳", "名無し");
+	await J(s, "草", "名無し");
+	await s.narrate("――日付が、かわった。");
+	await s.narrate(
+		"角刈りの　子は、いちど　ふりかえって、\nそのまま　流れていった。",
+	);
+	await s.narrate("ずしん、と　なにかが　沈んだ。");
+};
+
 const opening = async (s: Story): Promise<void> => {
 	s.bgm(null);
 	await s.chapter("序章", "安価は絶対");
@@ -41,6 +58,7 @@ const opening = async (s: Story): Promise<void> => {
 	await s.narrate("【安価】安価でボカロ作ろうぜ");
 
 	// 安価は絶対（どちらを選んでも公式設定にもどる。選んだことはボツキリコ・エンディングで拾う）
+	// 並びは原作スレの順：髪型・体重 → >>101 → 日付が変わる → ポニテ・一人称・肌（裏シナリオ A案）
 	await J(s, "髪型は？", "名無し");
 	if ((await s.choose([">>1 角刈り", ">>2 ポニーテール"])) === 0) {
 		await J(s, "角刈りで草。……再安価や！", "名無し");
@@ -48,7 +66,6 @@ const opening = async (s: Story): Promise<void> => {
 	} else {
 		await J(s, "ポニテ有能", "名無し");
 	}
-	await J(s, "若草色の　ポニテに　リボンで　決まりや", "名無し");
 	await J(s, "体重は？", "名無し");
 	const w = await s.choose([">>1 100トン", ">>2 34キロ"]);
 	if (w === 0) s.set("anka_100t");
@@ -57,12 +74,15 @@ const opening = async (s: Story): Promise<void> => {
 		w === 0 ? "物理的に　ムリやろ。34kgにしとこ" : "ガリガリで　ええやん",
 		"名無し",
 	);
+	await J(s, ">>101　名前は――蓄音キリコ", "名無し");
+	if (s.flag("keep_ura101")) await firstKiriko(s);
+	else await s.narrate("スレは　つづいた。\n……日付が　かわった。");
+	await J(s, "若草色の　ポニテに　リボンで　決まりや", "名無し");
 	await J(
 		s,
 		"一人称は吾輩、語尾はンゴ。\n肌は……おんJ生まれなら　山吹色やろ",
 		"名無し",
 	);
-	await J(s, ">>101　名前は――蓄音キリコ", "名無し");
 
 	// 誕生
 	await s.flash("#f8b500", 400);
@@ -119,6 +139,7 @@ const opening = async (s: Story): Promise<void> => {
 		"nanj",
 		"ほな、おわびに　これ持っとき。\n声を　ためて、また　鳴らせる機械や",
 	);
+	await s.say("nanj", "……そこに　落ちとった　やつやけどな");
 	s.give("chikuonki");
 	s.se("item");
 	await s.narrate("ちいさな蓄音機を　てにいれた！");
@@ -218,6 +239,8 @@ const ending = async (s: Story): Promise<void> => {
 	// 倉庫で「キリコさんの　レスを　数えています」と言っていた ヒナリーの、最後の 発表
 	await s.say("hinary", "本日の　レス数は、\n1000の　模様です");
 	await s.say("hinary", "……おめでとう、ございます");
+	// 床下で 発表した あと（maps/yukashita.ts）
+	if (ura(st)) await s.say("hinary", "……キリコさんは、\n2名の　模様です");
 	await N(s, "ホゲェ！", "ムッジェ");
 	// ぷゆゆ（町の小花のそばでの こたえ方。記録なしは既定の一言）
 	await J(s, VARIANTS.puyu(st), "ぷゆゆ");
@@ -263,10 +286,20 @@ const ending = async (s: Story): Promise<void> => {
 		"冷やかしJ民",
 	);
 	await s.say("kiriko", "……また、来てくれたンゴ");
-	await s.narrate("蓄音機から、ちいさな　声が　ながれた。");
-	const B = { name: "ボツの声", noPortrait: true, pace: "slow" } as const;
-	await s.say("kiriko", "……悪くない　安価だったンゴ", B);
-	await s.say("kiriko", VARIANTS.botsuVoice(st), B);
+	if (ura(st)) {
+		// 床下の真相を 見たあと：ボツの声 ではなく、1人目の 書きこみ（ンゴは つかない）
+		await s.narrate("書きこみが、ひとつ　見えた。");
+		await s.say("kiriko", "……いい　名前、だった", {
+			name: "蓄音キリコ（かきこみ）",
+			noPortrait: true,
+			noVoice: true,
+		});
+	} else {
+		await s.narrate("蓄音機から、ちいさな　声が　ながれた。");
+		const B = { name: "ボツの声", noPortrait: true, pace: "slow" } as const;
+		await s.say("kiriko", "……悪くない　安価だったンゴ", B);
+		await s.say("kiriko", VARIANTS.botsuVoice(st), B);
+	}
 	// のこりの 13％（reichat.ts の 13）。B面は 次スレへ 持ち越すので、出るのは 次スレから
 	if (s.has("rec_bmen") > 0)
 		await s.narrate(
@@ -534,12 +567,30 @@ const nanjBack = async (s: Story): Promise<void> => {
 };
 
 /**
+ * 床下の真相を 見たあと（1回だけ）。蓄音機の 出どころと、第四章の「見張っとく」（town.ts の nightEv）。
+ * このスレで 床下へ 行ったのに アク禁中に 紙を もらいそびれた人（恩赦のあとや 完走後に 行った人）には、ここで わたす。
+ */
+const nanjUra = async (s: Story): Promise<void> => {
+	if (s.flag("ura_101") && !s.flag("ura_paper")) {
+		await s.narrate(
+			"やきうが、紙きれを　さしだした。\n手書きで『>>101　おったよな』",
+		);
+		s.set("ura_paper");
+	}
+	await s.say("nanj", "その蓄音機な。……拾いもんや");
+	await s.say("nanj", "あの夜、ワイは　見とった　だけや");
+	await s.say("nanj", "せやから、こんどは　見張っとく\n言うたんや");
+	s.set("ura_nanj");
+};
+
+/**
  * クリア後の やきう（エンディングの輪の まま）。
  * 3回目に話すか、テトを 前に出して話すと、控えで 仲間に もどる（本編のあいだは 第四章から もどらない）。
  */
 const nanjEnd = async (s: Story): Promise<void> => {
 	const n = bump(s, "nanj_end_n");
 	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) return onigiriLate(s);
+	if (ura(s.state) && !s.flag("ura_nanj")) return nanjUra(s);
 	const party = s.state.party;
 	const here = party.some((m) => m.id === "nanj");
 	const tetoFront = party.some((m) => m.id === "teto" && !m.bench);

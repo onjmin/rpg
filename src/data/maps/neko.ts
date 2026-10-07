@@ -5,11 +5,12 @@
 // ほかの 猫は 気まぐれに 歩くだけ（にゃあ）。
 // 勢い欄の 2番目『ぬこ画像スレ』（創作）には、1000日 だれも いない 板に、画像bot だけが 画像を はりつづけている。
 // bot を 止めると この板は 終わり（neko_done）。板猫は 底の ほうへ 走っていく（避難Jの 板猫と 同じ 猫）。
+// 走る 前に、くわえていた 紙（沈んだレス >>145。8月17日の 日付）を 落としていく。
 // フラグ：neko_step（猫を 追った 回数 0〜4）・neko_done
 
 import type { EventDef, MapDef, Story } from "../../engine/defs";
 import { chest, warp } from "../helpers";
-import { C, front, has, K, look } from "../kaso";
+import { C, front, giveSunk, has, K, look, sunkHad } from "../kaso";
 import { SPR } from "../sprites";
 import { lockedDoor } from "../story";
 import { TOWN } from "../tiles";
@@ -128,6 +129,14 @@ const ikioiRun = async (s: Story): Promise<void> => {
 	s.se("item");
 	s.give("suzu");
 	await s.narrate("板猫のすずを　てにいれた！");
+	await s.narrate("猫が、くわえていた　紙きれを\nぽとりと　落とした。");
+	if (!(await sunkHad(s, "sunk_145", 145))) {
+		await s.narrate(
+			"145　名前：風吹けば名無し　8月17日\nキリコの　趣味は、釣りで　ええやろ",
+		);
+		await giveSunk(s, "sunk_145", 145);
+		await K(s, "8月17日……。\n吾輩、まだ　生まれてないンゴ");
+	}
 	await s.narrate(
 		"猫は　すずを　なくしたことにも　気づかず、\n底の　ほうへ　走っていった。",
 	);

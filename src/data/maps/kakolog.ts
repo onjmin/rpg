@@ -169,8 +169,13 @@ const botsuRun = async (s: Story): Promise<void> => {
 		await ks(s, "あの夜　えらばれた　角刈りも、\nここに　流れついたンゴ？");
 	else if (ton)
 		await ks(s, "あの夜　えらばれた　100トンも、\nここに　流れついたンゴ？");
-	if (ton)
-		await s.say("roze", "……100トンのレスだけ、\nいちばん　底に　沈んでるアル");
+	// 100トンを えらんで いなくても、いちばん 重いレスは 底にある（裏シナリオ A案の 床下）
+	await s.say(
+		"roze",
+		ton
+			? "……100トンのレスだけ、\nいちばん　底に　沈んでるアル"
+			: "……いちばん　重い　レスだけ、\n底に　沈んでるアル",
+	);
 };
 const botsuPile: EventDef = {
 	id: "botsu_pile",
@@ -535,9 +540,13 @@ const HINARY_TALKS: {
 	{
 		when: () => true,
 		run: async (s) => {
+			// この話を 聞いた 回数（2回目から 数が 合わなくなる）
+			const n = Number(s.flag("hinary_kazu") ?? 0);
+			s.set("hinary_kazu", n + 1);
 			await s.say("hinary", "キリコさんの　レスを\n数えています");
 			await ks(s, "……何レス　ンゴ？");
 			await s.say("hinary", "まだ、とちゅうです");
+			if (n >= 1) await s.say("hinary", "……数が、合いません");
 		},
 	},
 	{

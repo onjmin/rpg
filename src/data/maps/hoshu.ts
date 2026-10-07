@@ -4,6 +4,7 @@
 // 手前の 部屋：沈んだ スレ（3つの 箱）を 押して 勢い欄の 上段（光る 床）に そろえると、おくへの 道が ひらく（hos_age）。
 // おく：ホームニキが 千日の あいだ 書いて 回った 保守レスの 足あと。日付が 新しい ほうへ 進むと、
 // いちばん おくの 部屋に ホームの カギ。カギを 取ると「しずけさ」が しみだしてくる（中ボス）。
+// しずけさが ひいた あとに、流れついた レス（沈んだレス >>329。服装：エスキモー）。
 // 左の 部屋は 2000日前の 植民地化宣言（おんJ民が 遊びで 無人板に 乗りこんだ ころ）の 行き止まり。
 // フラグ：hos_<a|b|c>（箱の 位置）・hos_age・hos_key（カギを 取った）・hos_done
 
@@ -11,12 +12,13 @@ import type { EventDef, MapDef, Story } from "../../engine/defs";
 import { chest, warp } from "../helpers";
 import {
 	front,
-	has,
+	giveSunk,
 	K,
 	look,
 	type PushPuzzle,
 	pushBlocks,
 	pushReset,
+	sunkHad,
 } from "../kaso";
 import { CAVE, PROPS } from "../tiles";
 
@@ -170,11 +172,15 @@ const keyChest: EventDef[] = [
 			s.bgm("dungeon");
 			await s.narrate("しずけさが、岩の　おくへ　ひいていった。");
 			await K(s, "……いまの、サイレントバルスに\n似てたンゴ");
-			if (has(s, "roze"))
-				await s.say(
-					"roze",
-					"……ここの　静けさが、\nあっちまで　流れてるアルか？",
-				);
+			await s.narrate(
+				"しずけさの　ひいた　あとに、\n紙きれが　1枚　のこっていた。",
+			);
+			if (!(await sunkHad(s, "sunk_329", 329))) {
+				await s.narrate("329　服装：エスキモー");
+				await s.narrate("……その下に、ちいさく。\n『8月やぞ　草』");
+				await s.narrate("キリコは、自分の　袖を　見た。");
+				await giveSunk(s, "sunk_329", 329);
+			}
 			s.set("hos_done");
 			await s.narrate("どこかで、モニターが　ひとつ\nついた　気がした。");
 		},

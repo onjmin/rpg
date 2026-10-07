@@ -6,11 +6,12 @@
 // 順番を まちがえると そっぽを むかれて 最初から。
 // おくの モニターで この板の 1スレの >>1 を 当て（倉庫の 発掘と 同じ 遊び）、
 // 1000日 「いらっしゃい」を 返しつづけている 常連bot を 止めると 終わり（ais_done）。
+// bot が 止まると、帳場の 帳面の 字が こくなる（沈んだレス >>130。バラムツ → 再安価で 囲碁）。
 // フラグ：ais_n（返した 人数 0〜4）・ais_order・ais_age・ais_done
 
 import type { EventDef, MapDef, Story } from "../../engine/defs";
 import { chest, warp } from "../helpers";
-import { bump, front, has, K, look } from "../kaso";
+import { bump, front, giveSunk, has, K, look, N, sunkHad } from "../kaso";
 import { SPR } from "../sprites";
 import { INDOOR } from "../tiles";
 
@@ -174,6 +175,24 @@ const monitorRun = async (s: Story): Promise<void> => {
 	await s.narrate("どこかで、モニターが　ひとつ\nついた　気がした。");
 };
 
+/** 帳場の 帳面（bot が 止まると 読める。沈んだレス >>130）。 */
+const ledgerRun = async (s: Story): Promise<void> => {
+	if (!s.flag("ais_done")) {
+		await s.narrate(
+			"帳場。帳面が　ひらいたまま。\n……字が　うすくて、読めない。",
+		);
+		return;
+	}
+	await s.narrate("帳場の　帳面。\n字が、こく　なっている。");
+	if (await sunkHad(s, "sunk_130", 130)) return;
+	await s.narrate("130　好きなもの：バラムツ\n380　再安価：囲碁");
+	await s.narrate("帳場の　むこうに、残像が　ひとつ。");
+	await N(s, "常連の残像", "……食べたら　あかん　魚や");
+	await s.narrate("残像は、それきり　消えた。");
+	await s.narrate("キリコは　だまって、\n石を　ひとつ　置く　しぐさを　した。");
+	await giveSunk(s, "sunk_130", 130);
+};
+
 const events: EventDef[] = [
 	{
 		id: "arrive",
@@ -212,6 +231,14 @@ const events: EventDef[] = [
 		fixedDir: true,
 		run: monitorRun,
 	},
+	{
+		id: "ledger",
+		x: 15,
+		y: 10,
+		trigger: "talk",
+		fixedDir: true,
+		run: ledgerRun,
+	},
 	look("tables", 8, 8, "テーブルと　いす。\nだれも　すわって　いない。"),
 	look("pot", 1, 3, "鍋。\n……中は、からっぽだ。"),
 	...chest("ais1", 1, 10, "spray", 2),
@@ -224,7 +251,7 @@ export const aisatsu: MapDef = {
 	tiles: { ...INDOOR, ".": { ...INDOOR["."], encounter: true } },
 	encounters: { rate: 0.05, groups: ["g_ais1", "g_ais2"] },
 	// 18×14。上の壁に 4つの 額（Q。x = 2,6,10,14）と 店の きまり (8,2)。残像は その下 y4。
-	// おくの モニター M (15,5)。テーブル t と いす n。南の 扉 (8,13) → 過疎板の底
+	// おくの モニター M (15,5)。テーブル t と いす n。帳場 [=] (14..16,10)。南の 扉 (8,13) → 過疎板の底
 	rows: [
 		"##################", // y0
 		"#HHHHHHHHHHHHHHHH#", // y1
@@ -236,7 +263,7 @@ export const aisatsu: MapDef = {
 		"#................#", // y7
 		"#..ntn..ntn..ntn.#", // y8  テーブルと いす
 		"#................#", // y9
-		"#................#", // y10 宝箱 (1,10)
+		"#.............[=]#", // y10 宝箱 (1,10)・帳場 (15,10)
 		"#................#", // y11
 		"#................#", // y12 到着 (8,12)
 		"########D#########", // y13 出口 (8,13) → kaso
