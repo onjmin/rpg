@@ -267,8 +267,8 @@ const events: EventDef[] = [
 		"二、1000 を　取る　以外の　テストは\n　　ほかの　板で",
 	),
 	// 通路の ksk
-	symbol("ksk1", 4, 8, SPR.e_bot, "g_sen_sym1", "ksk　ksk　ksk", "ksk"),
-	symbol("ksk2", 15, 9, SPR.e_bot, "g_sen_sym2", "kskst　kskst", "kskst"),
+	symbol("ksk1", 4, 8, SPR.e_ksk, "g_sen_sym1", "ksk　ksk　ksk", "ksk"),
+	symbol("ksk2", 15, 9, SPR.e_kskst, "g_sen_sym2", "kskst　kskst", "kskst"),
 	// おく
 	{
 		id: "ikioi_l",

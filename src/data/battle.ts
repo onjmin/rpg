@@ -681,7 +681,7 @@ export const enemies: Record<string, EnemyDef> = {
 	getter: en({
 		id: "getter",
 		name: "1000ゲッター",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_getter,
 		scale: 1.5,
 		hp: 760,
 		atk: 68,
@@ -703,7 +703,7 @@ export const enemies: Record<string, EnemyDef> = {
 	nekobot: en({
 		id: "nekobot",
 		name: "画像bot",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_imgbot,
 		hp: 66,
 		atk: 22,
 		def: 7,
@@ -718,7 +718,7 @@ export const enemies: Record<string, EnemyDef> = {
 	nyan: en({
 		id: "nyan",
 		name: "にゃーん",
-		sprite: SPR.cat,
+		sprite: SPR.e_graycat,
 		hp: 52,
 		atk: 20,
 		def: 5,
@@ -734,7 +734,7 @@ export const enemies: Record<string, EnemyDef> = {
 	nekoboss: en({
 		id: "nekoboss",
 		name: "ぬこ画像bot",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_workcat,
 		scale: 1.5,
 		hp: 420,
 		atk: 45,
@@ -753,7 +753,7 @@ export const enemies: Record<string, EnemyDef> = {
 	teikei: en({
 		id: "teikei",
 		name: "定型文",
-		sprite: SPR.e_pc,
+		sprite: SPR.e_teikei,
 		hp: 86,
 		atk: 27,
 		def: 9,
@@ -773,7 +773,7 @@ export const enemies: Record<string, EnemyDef> = {
 	tatenige: en({
 		id: "tatenige",
 		name: "立て逃げ",
-		sprite: SPR.e_silent,
+		sprite: SPR.e_tatenige,
 		hp: 68,
 		atk: 25,
 		def: 7,
@@ -789,7 +789,7 @@ export const enemies: Record<string, EnemyDef> = {
 	aisboss: en({
 		id: "aisboss",
 		name: "常連bot",
-		sprite: SPR.e_pc,
+		sprite: SPR.e_jouren,
 		scale: 1.5,
 		hp: 440,
 		atk: 53,
@@ -808,7 +808,7 @@ export const enemies: Record<string, EnemyDef> = {
 	hoshubot: en({
 		id: "hoshubot",
 		name: "保守bot",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_hoshu,
 		hp: 118,
 		atk: 34,
 		def: 13,
@@ -823,7 +823,7 @@ export const enemies: Record<string, EnemyDef> = {
 	chinmoku: en({
 		id: "chinmoku",
 		name: "沈黙",
-		sprite: SPR.e_shin2,
+		sprite: SPR.e_silent,
 		hp: 126,
 		atk: 33,
 		def: 15,
@@ -858,7 +858,7 @@ export const enemies: Record<string, EnemyDef> = {
 	ksk: en({
 		id: "ksk",
 		name: "ksk",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_ksk,
 		hp: 136,
 		atk: 38,
 		def: 13,
@@ -873,7 +873,7 @@ export const enemies: Record<string, EnemyDef> = {
 	kskst: en({
 		id: "kskst",
 		name: "kskst",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_kskst,
 		hp: 118,
 		atk: 41,
 		def: 11,
@@ -888,7 +888,7 @@ export const enemies: Record<string, EnemyDef> = {
 	sen_getter: en({
 		id: "sen_getter",
 		name: "ゲッター試作",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_getter,
 		hp: 300,
 		atk: 44,
 		def: 8,
@@ -904,7 +904,7 @@ export const enemies: Record<string, EnemyDef> = {
 	senboss: en({
 		id: "senboss",
 		name: "kskの主",
-		sprite: SPR.e_bot,
+		sprite: SPR.e_kskboss,
 		scale: 1.5,
 		hp: 700,
 		atk: 62,

@@ -80,6 +80,18 @@ export const SPR = {
 	e_shin3: "sa:JiWaz3", // 侵蝕レベル3
 	e_shinmax: "sa:kXfKfE", // 侵蝕レベル最大
 	e_bat: "sa:Z7zM7m", // バット
+	// 裏シナリオ（過疎板探検・避難J）の敵
+	e_imgbot: "sa:zf7c3Q", // pc（画面が ちかちか。画像bot）
+	e_graycat: "sa:xKnonU", // 灰色猫（二足歩行）。案内猫の 虎猫と 分ける
+	e_workcat: "sa:kvzK0W", // 仕事猫（ぬこ画像bot）
+	e_teikei: "sa:akHtbg", // 01001000…（文字で できた 人。定型文）
+	e_tatenige: "sa:2FuY6d", // フェースレス男（立て逃げ）
+	e_jouren: "sa:die4kw", // メカのお兄ちゃん（常連bot）
+	e_hoshu: "sa:VTZXqI", // メカ芋君（保守bot）
+	e_ksk: "sa:xwdoKc", // 機械虫（ksk）
+	e_kskst: "sa:TzU1cf", // ダイノボット（kskst）
+	e_kskboss: "sa:C20SZD", // ドラムゴーレム（kskの主）
+	e_getter: "sa:r9YCz5", // ロボ（金。1000ゲッター・ゲッター試作）
 
 	// ── 管理人室（クリア後のおまけ。実在の人物をもとにした非公式のファン描写） ──
 	/** 矢野さとる（おんJ管理人）。似顔ではない汎用の人物グラ（rpgen no.751「白の民(眼鏡)」） */
