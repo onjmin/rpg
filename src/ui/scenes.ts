@@ -129,6 +129,8 @@ export const endingRoll = async (
 		else inner.appendChild(el("p", { text: line }));
 	}
 	roll.appendChild(inner);
+	// アニメが始まるまでの 1フレームに 先頭の行が見えて ちらつかないよう、画面の下に置いておく
+	inner.style.transform = `translateY(${viewport.h}px)`;
 	game.ui.appendChild(roll);
 	await nextFrame();
 	const height = inner.scrollHeight + viewport.h;
