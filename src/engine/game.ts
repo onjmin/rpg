@@ -87,6 +87,8 @@ export class Game {
 	private gatherAll = false;
 	private path: Dir[] = [];
 	private pathTalk: Actor | null = null;
+	/** 十字キーでぶつかった bump つきの相手（押しっぱなしで同じ相手に何度も呼ばない）。 */
+	private bumped: { actor: Actor; dir: Dir } | null = null;
 	private marker: { x: number; y: number; t: number } | null = null;
 	private stepsSinceBattle = 0;
 	private time = 0;
@@ -433,6 +435,7 @@ export class Game {
 			return;
 		}
 		const held = this.input.heldDir();
+		if (held !== this.bumped?.dir) this.bumped = null;
 		if (held) {
 			this.path = [];
 			this.pathTalk = null;
@@ -495,7 +498,15 @@ export class Game {
 		const nx = this.player.x + v.dx;
 		const ny = this.player.y + v.dy;
 		this.player.dir = d;
-		if (!field.canEnter(nx, ny, this.player)) return;
+		if (!field.canEnter(nx, ny, this.player)) {
+			// 押せる箱など：ぶつかったら調べたのと同じに動かす
+			const a = field.blockerAt(nx, ny, this.player);
+			if (a?.def?.bump && a.def.run && this.bumped?.actor !== a) {
+				this.bumped = { actor: a, dir: d };
+				void this.runEvent(a.def);
+			}
+			return;
+		}
 		// 着いたときの判定は update() が行う（stepPending）
 		this.stepPending = true;
 		await this.stepPlayer(d, WALK_MS);
@@ -976,6 +987,11 @@ export class Game {
 				if (!a) return;
 				a.setPos(x, y);
 				if (dir) a.dir = dir;
+			},
+			nudge: async (target, dir, px = 3) => {
+				const a = this.actorFor(target);
+				if (!a) return;
+				await a.nudge(dir, px, 200);
 			},
 			battle: async (groupId, opt) => {
 				this.msg.hideWindow();

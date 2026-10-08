@@ -48,6 +48,8 @@ export type EventDef = {
 	wander?: boolean;
 	/** 向きを変えない（看板・オブジェ等）。 */
 	fixedDir?: boolean;
+	/** 十字キーでぶつかっても調べたのと同じに run を呼ぶ（押せる箱など）。押しっぱなしでは同じ相手に1回だけ。 */
+	bump?: boolean;
 	/** 出現条件。偽の間はマップに居ない扱い。 */
 	when?: (s: GameState) => boolean;
 	/** 1回だけ実行する（実行後 `done:<map>:<id>` が立ち、以後は消える）。 */
@@ -481,6 +483,8 @@ export type Story = {
 	hide(eventId: string): void;
 	/** イベントの位置を変える（見た目だけ。マップを出ると元に戻る）。 */
 	place(eventId: string, x: number, y: number, dir?: Dir): void;
+	/** その場で少し押して戻る（見た目だけ。動かない箱・ぶつかった人）。px はずらす画素（既定 3）。 */
+	nudge(target: string, dir: Dir, px?: number): Promise<void>;
 	/**
 	 * 戦闘。負けたときは通常「もういちど／タイトルへ」を選ばせる。
 	 * canLose: true なら負けてもそのまま "lose" を返す（負けイベント）。

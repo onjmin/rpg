@@ -170,8 +170,15 @@ export const pushSolved = (st: GameState, p: PushPuzzle): boolean => {
 	return p.goals.every(([x, y]) => at.has(posKey(x, y)));
 };
 
+/** 箱を 押す 速さ（歩きの 何倍か）。重いので ゆっくり。 */
+const PUSH_SPEED = 0.6;
+
+const dirOf = (dx: number, dy: number): Dir =>
+	dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up";
+
 /**
- * 押せる ブロック（話しかけると、向いている方へ 1マス 動く）。
+ * 押せる ブロック（十字キーで ぶつかるか、話しかけると、1マス 動く）。
+ * 押すと キリコも 1歩 ついていく（隊列も）。動かないときは 箱が すこし ゆれるだけで、文は 出さない。
  * ブロックの 位置ごとに イベントを 1つ 置くので、範囲は 小さく。リセットは pushReset で。
  */
 export const pushBlocks = (p: PushPuzzle): EventDef[] => {
@@ -182,16 +189,20 @@ export const pushBlocks = (p: PushPuzzle): EventDef[] => {
 		y >= p.area.y0 &&
 		y <= p.area.y1 &&
 		p.floor.includes(p.rows[y]?.[x] ?? " ");
+	const isGoal = (x: number, y: number) =>
+		p.goals.some(([gx, gy]) => gx === x && gy === y);
 	for (const b of p.blocks)
 		for (let y = p.area.y0; y <= p.area.y1; y++)
 			for (let x = p.area.x0; x <= p.area.x1; x++) {
 				if (!canStand(x, y)) continue;
+				const id = `${p.prefix}_${b.id}_${x}_${y}`;
 				events.push({
-					id: `${p.prefix}_${b.id}_${x}_${y}`,
+					id,
 					x,
 					y,
 					sprite: p.sprite ?? PROPS.crate,
 					trigger: "talk",
+					bump: true,
 					fixedDir: true,
 					when: (st) => blockAt(st, p, b) === posKey(x, y),
 					run: async (s) => {
@@ -199,8 +210,10 @@ export const pushBlocks = (p: PushPuzzle): EventDef[] => {
 						let dx = Math.sign(x - s.state.x);
 						let dy = Math.sign(y - s.state.y);
 						if ((dx !== 0) === (dy !== 0)) [dx, dy] = DIR_VEC[s.state.dir];
+						const dir = dirOf(dx, dy);
 						const nx = x + dx;
 						const ny = y + dy;
+						s.face("player", dir);
 						const others = p.blocks
 							.filter((o) => o !== b)
 							.map((o) => blockAt(s.state, p, o));
@@ -210,17 +223,26 @@ export const pushBlocks = (p: PushPuzzle): EventDef[] => {
 							(s.state.x === nx && s.state.y === ny)
 						) {
 							s.se("miss");
-							await s.narrate("うごかない。");
+							await Promise.all([s.nudge("player", dir), s.nudge(id, dir, 1)]);
 							return;
 						}
+						// 箱と いっしょに 1歩（となりから 押したときだけ）
+						const behind =
+							Math.abs(x - s.state.x) + Math.abs(y - s.state.y) === 1;
+						const step = dir[0];
 						s.se("damage");
+						await Promise.all([
+							s.move(id, step, { speed: PUSH_SPEED, through: true }),
+							behind &&
+								s.move("player", step, { speed: PUSH_SPEED, through: true }),
+						]);
 						s.set(`${p.prefix}_${b.id}`, posKey(nx, ny));
-						// 見た目は ふだん スクリプトの 終わりに 動く。そろった 知らせより 先に 動かす
+						// 見た目は ふだん スクリプトの 終わりに 入れかわる。そろった 知らせより 先に
 						s.show(`${p.prefix}_${b.id}_${nx}_${ny}`);
 						if (!s.flag(p.solved) && pushSolved(s.state, p)) {
 							s.set(p.solved);
 							await p.onSolved(s);
-						}
+						} else if (isGoal(nx, ny)) s.se("cursor");
 					},
 				});
 			}

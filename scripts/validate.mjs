@@ -490,6 +490,17 @@ try {
 			},
 			heal: () => {},
 			shake: async () => {},
+			nudge: async (target) => {
+				if (
+					target !== "player" &&
+					!target.startsWith("follower:") &&
+					!(here().events ?? []).some((e) => e.id === target)
+				)
+					err(
+						`${where}: nudge の相手 "${target}" がこのマップのイベントに無い`,
+						note,
+					);
+			},
 			flash: async () => {},
 			chapter: async () => tick(),
 			saveMenu: async () => {},

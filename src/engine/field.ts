@@ -36,6 +36,15 @@ export class Actor {
 		dur: number;
 		resolve: () => void;
 	} | null = null;
+	/** nudge の途中（描画だけずらす）。 */
+	private bumpTw: {
+		dx: number;
+		dy: number;
+		px: number;
+		t: number;
+		dur: number;
+		resolve: () => void;
+	} | null = null;
 	wanderWait = 1000 + Math.random() * 2000;
 
 	constructor(
@@ -77,6 +86,15 @@ export class Actor {
 		});
 	}
 
+	/** その場で少し押して戻る（マスは動かない）。 */
+	nudge(dir: Dir, px: number, ms: number): Promise<void> {
+		const v = DIR_VEC[dir];
+		this.bumpTw?.resolve();
+		return new Promise((resolve) => {
+			this.bumpTw = { dx: v.dx, dy: v.dy, px, t: 0, dur: ms, resolve };
+		});
+	}
+
 	/** その場に置き直す（ワープ）。 */
 	setPos(x: number, y: number): void {
 		this.x = this.fx = x;
@@ -87,6 +105,14 @@ export class Actor {
 	}
 
 	update(dt: number): void {
+		const b = this.bumpTw;
+		if (b) {
+			b.t += dt;
+			if (b.t >= b.dur) {
+				this.bumpTw = null;
+				b.resolve();
+			}
+		}
 		const tw = this.tween;
 		if (!tw) return;
 		tw.t += dt;
@@ -106,8 +132,12 @@ export class Actor {
 		time: number,
 	): void {
 		if (!this.visible || !this.sprite) return;
-		const px = Math.round(this.fx * TILE - ox);
-		const py = Math.round(this.fy * TILE - oy);
+		// nudge：すっと出て、ゆっくり戻る
+		const b = this.bumpTw;
+		const k = b ? b.t / b.dur : 1;
+		const off = b ? b.px * (k < 0.35 ? k / 0.35 : (1 - k) / 0.65) : 0;
+		const px = Math.round(this.fx * TILE - ox + (b?.dx ?? 0) * off);
+		const py = Math.round(this.fy * TILE - oy + (b?.dy ?? 0) * off);
 		if (this.still) {
 			drawRefInCell(ctx, this.sprite, px, py);
 			return;
