@@ -226,6 +226,12 @@ try {
 		if (!g || x < 0 || y < 0 || x >= g.w || y >= g.h) return false;
 		return !!maps[mapId].tiles[g.grid[y][x]]?.passable;
 	};
+	for (const [id, m] of Object.entries(maps))
+		for (const e of m.events ?? [])
+			if (e.trigger === "touch" && !passable(id, e.x, e.y))
+				err(
+					`map ${id}: touch イベント ${e.id} (${e.x},${e.y}) が通れない マスに ある（踏めない）`,
+				);
 
 	// ── スクリプトを走らせる ──
 	/** スクリプトの set で立ったフラグ（名前 → 値の集合）。フラグの約束の検査に使う。 */

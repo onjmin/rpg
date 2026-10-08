@@ -215,6 +215,8 @@ export const pushBlocks = (p: PushPuzzle): EventDef[] => {
 						}
 						s.se("damage");
 						s.set(`${p.prefix}_${b.id}`, posKey(nx, ny));
+						// 見た目は ふだん スクリプトの 終わりに 動く。そろった 知らせより 先に 動かす
+						s.show(`${p.prefix}_${b.id}_${nx}_${ny}`);
 						if (!s.flag(p.solved) && pushSolved(s.state, p)) {
 							s.set(p.solved);
 							await p.onSolved(s);

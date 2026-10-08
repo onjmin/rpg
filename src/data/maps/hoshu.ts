@@ -38,7 +38,7 @@ const rows = [
 	"#wwwwww......wwwwww#", // y12
 	"#wwwwww......wwwwww#", // y13 端末 (13,13) は 壁の 前
 	"#wwwwwwwww.wwwwwwww#", // y14 到着 (10,14)
-	"#########.##########", // y15 出口 (10,15) → kaso
+	"##########.#########", // y15 出口 (10,15) → kaso
 ];
 
 const tiles = {

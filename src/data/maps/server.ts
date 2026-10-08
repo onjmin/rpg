@@ -327,7 +327,7 @@ export const server: MapDef = {
 					(await s.choose(["入って　みる", "やめておく"], { cancel: 1 })) === 1
 				)
 					return;
-				await s.warp("kaso", 18, 12, "left", { se: "door" });
+				await s.warp("kaso", 17, 12, "left", { se: "door" });
 			},
 		},
 		...chest("srv1", 1, 8, "hane"),
