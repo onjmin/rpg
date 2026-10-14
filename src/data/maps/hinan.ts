@@ -100,11 +100,7 @@ const write999 = async (s: Story): Promise<void> => {
 	await H(s, "……うそやろ。\nあれ、倉庫まで　流れとったんか");
 	await K(s, "それに。……>>998、読んだンゴ");
 	await H(s, "…………");
-	await K(
-		s,
-		"『ネタは　ネタのまま　終わる』。\n吾輩の　スレを　消した　やつと、同じ　言葉",
-	);
-	await H(s, "……知らん。\nワイは　ここから　出とらん");
+	await H(s, "……ワイの　ひとりごとや。\nワイは　ここから　出とらん");
 	await s.narrate(
 		"ホームニキは　勢い欄を　見た。\nキリコの　999が、光っている。",
 	);
@@ -662,12 +658,9 @@ const desk: EventDef = {
 		}
 		await s.freeze(700);
 		await K(s, "…………");
+		// 前夜祭で 聞いた 声（town の サイレントバルス）。だれの 言葉かは 言わない
+		await K(s, "『ネタは、ネタのまま　終わるンゴ』……");
 		if (has(s, "roze")) await s.say("roze", "……キリコ？");
-		await K(s, "この　言葉。\n吾輩の　スレを　消した　やつが、言ったンゴ");
-		await K(s, "『ネタは、ネタのまま　終わるンゴ』……\nあの夜の、あの声ンゴ");
-		if (has(s, "feris")) await s.say("feris", "サイレントバルス……？");
-		if (has(s, "roze"))
-			await s.say("roze", "同じ　言葉アル。\n……千日前に、ここで　書かれてた");
 		await s.narrate("紙の　はしが、何度も　めくられて\nやわらかい。");
 		await s.narrate("うらに、土が　すこし　ついている。");
 		await K(s, "……吾輩が、返事を　するンゴ。\n>>999 で");

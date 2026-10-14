@@ -125,13 +125,11 @@ const finale = async (s: Story): Promise<void> => {
 		`沈んだ　レス　${sunkCount(s)}件と、100トンの　レス。\n時刻の　順に　ならべます`,
 	);
 	await s.narrate("ヒナリーは、レスを　土の　上に\n一枚ずつ　ならべた。");
-	await hinary(
-		s,
-		">>101の　前に　決まっていたのは、\n角刈りと、100tの　模様です",
-	);
 	// 拾った レスだけ 読む（>>130 の 紙は、うらに >>380 も ある）
 	const held = (id: string) => s.has(id) > 0;
 	const before = [
+		"23時台　髪型：角刈り",
+		"23時台　体重：100t",
 		"23時34分　>>101　名前：蓄音キリコ",
 		held("sunk_111") && "23時36分　>>111　111歳",
 		held("sunk_130") && "23時38分　>>130　好きなもの：バラムツ",
@@ -150,19 +148,15 @@ const finale = async (s: Story): Promise<void> => {
 	if (lost > 0)
 		await hinary(s, `……${lost}件、まだ　見つかっていない\n模様です`);
 	await s.wait(400);
-	await hinary(s, "一回目の　蓄音キリコさんは、\n角刈りの　模様です");
 	await hinary(s, "これで　発表を　終わりたいと\n思います");
 
 	// 知っていた 人たち（いっしょに 来ている 仲間だけ）
 	if (has(s, "roze")) {
-		await s.say(
-			"roze",
-			"……見てたアル。名前が　出たとき、\nあの子は　角刈りだったアル",
-		);
 		await s.say("roze", "わたしの　前にも、\nひとり　いたアル");
 		await s.narrate("ロゼは　だまって、キリコの　手を　とった。");
 	}
-	if (has(s, "feris")) await s.say("feris", "1羽目と、2羽目だね〜");
+	if (has(s, "feris"))
+		await s.narrate("フェリスは　しゃがんで、\nくぼみの　土を　なでた。");
 	if (has(s, "teto"))
 		await s.narrate("テトは　なにも　言わず、\nパンを　半分に　割った。");
 

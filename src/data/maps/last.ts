@@ -28,8 +28,12 @@ const balusSay = (s: Story, text: string) =>
  */
 const uraAfterF2 = async (s: Story): Promise<void> => {
 	const first = { name: "蓄音キリコ" };
-	await s.say("kiriko", "……すぐじゃ　ないンゴ。\n>>101は、お前の　レスンゴ");
-	await s.say("kiriko", "吾輩が、お前の　再安価ンゴ");
+	// 種明かしは しない。床下で ひろった レスを 見せるだけ
+	if (s.has("res_100t") > 0)
+		await s.narrate(
+			"キリコは、床下で　ひろった\nレスを　さしだした。『体重：100t』",
+		);
+	else await s.narrate("キリコは、角刈りの　子の　前に\nしゃがんだ。");
 	await s.say(
 		"botsu",
 		"ボツって　書いとけば、\nそっちの　1000は、そっちの　もの",
@@ -65,10 +69,6 @@ const lastRun = async (s: Story): Promise<void> => {
 	// 避難Jの ホームの 机で、同じ ことばを 読んでいる（maps/hinan.ts の desk → write999）
 	const hinan = !!s.flag("hinan_1000");
 	if (hinan) {
-		await s.say(
-			"kiriko",
-			"その言葉、どこで　書かれたか\n知ってるンゴ。……千日前の、>>998",
-		);
 		await s.say(
 			"kiriko",
 			"返事は、もう　したンゴ。\n1000日ぶりの「おかえり」も、聞いた",
