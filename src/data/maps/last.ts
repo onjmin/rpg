@@ -63,9 +63,10 @@ const lastRun = async (s: Story): Promise<void> => {
 	await balusSay(s, "…………");
 	await s.say("kiriko", "吾輩の850レス、返してもらうンゴ");
 	await balusSay(s, "ネタは、ネタのまま　終われ。\n……どうせ、忘れられるンゴ");
-	await s.say("roze", "忘れられても、もどってこれるアル");
-	await s.say("feris", "何回でも、だよ〜");
-	await s.say("teto", "君は　じつに　馬鹿だな。\nウソだって、本物に　なるんだ");
+	// 返事は 先輩たちの 口で なく、ならぶ 位置で
+	await s.narrate(
+		"ロゼと　フェリスと　テトが、\nキリコの　うしろに　ならんだ。",
+	);
 	// 避難Jの ホームの 机で、同じ ことばを 読んでいる（maps/hinan.ts の desk → write999）
 	const hinan = !!s.flag("hinan_1000");
 	if (hinan) {

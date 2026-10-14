@@ -1,6 +1,6 @@
 // テトのスタジオ（第四章の後半「はじめての声」〜テト加入）。設計書 §8-9・§11-6。
-// マッマの場面から teto_met で連れてこられ、auto の rec_ev で声がもどる →
-// テトの腕だめし（g_rival_teto・canLose）→ 録音 → テト加入（自分から控えへ）。
+// マッマの場面から teto_met で連れてこられ、auto の rec_ev でキリコが自分で蓄音機をまわして声がもどる →
+// 録音 → テトの腕だめし（g_rival_teto・canLose）→ テト加入（自分から控えへ）。
 // 東の裏口（rec 後）からサーバーの底へ。
 
 import type { MapDef, Script } from "../../engine/defs";
@@ -29,8 +29,12 @@ const rows = [
 
 // ── §8-9 スタジオ・テトの加入（auto once） ──
 const recEv: Script = async (s) => {
-	await s.say("teto", "ボクの　スタジオだよ。……その蓄音機、貸して");
+	await s.say("teto", "ボクの　スタジオだよ。\n……その蓄音機、見せて");
 	await s.say("teto", "ほら、あるじゃないか。君の、最初の声");
+	await s.say("teto", "……まわすのは、君だ");
+	// 声を もどすのは キリコ自身の 手
+	await s.narrate("キリコは、ハンドルに　手を　かけた。\n……一度、止まって。");
+	await s.narrate("それから、ゆっくり　まわした。");
 	await s.narrate("レコード「はじめての声」が　まわりだした。");
 	await s.say("kiriko", "あー、あー。……吾輩、蓄音キリコ、ンゴ！", {
 		name: "はじめての声",
@@ -43,13 +47,36 @@ const recEv: Script = async (s) => {
 	await s.narrate("うすれていた　足もとに、色が　もどってきた。");
 	// 沈黙期間の町で つないだ手（town の rozeHand）
 	if (s.flag("roze_hand")) await s.narrate("ロゼが、そっと　手を　はなした。");
-	await s.say("teto", "声は　消えないよ。だれかが　ためて、\nまた　鳴らせばね");
-	// ── 腕だめし（rival-joins §4）。勝っても負けても話は進む（canLose） ──
+	await s.say("teto", "……ふん。さあ、マイクの前へ。\n今度は　歌だ");
+	await s.move("player", "uu");
+	s.bgm("sad");
+	await s.wait(1000);
+	await s.narrate("子音が長くて、吐息の多い声。\nちいさな、ちいさな　うた。");
+	await s.flash("#ffffff", 300);
+	await s.narrate("まっしろな　レコードに、一本だけ　みぞが\nきざまれた。");
+	await s.say("roze", "テト先輩、ちょっと　泣いてるアル");
+	await s.say("teto", "泣いてない！\nフランスパンが　しょっぱいだけだ");
+	await s.say("kiriko", "テト先輩。……吾輩も、名言が　ほしい");
+	// 終章の「今のを　名言と言わずに」（last.ts）へ。生い立ちは 町の 出会いで 言ってある
+	await s.say("teto", "……ねだって　もらう　ものじゃ\nないさ");
+	// テーマ A の中心: 言われたことごと自分。序章「わらうのは、ゆるさない」の裏返し。
 	await s.say(
 		"teto",
-		"……でも、その声が　本物か、\nボクが　この耳で　聞いてやる",
+		"ボクの　31さいだって、最初は　いじりさ。\n今じゃ　持ちネタだ",
 	);
-	await s.say("roze", "テト先輩、いきなり　アルか！？");
+	await s.say(
+		"kiriko",
+		"……じゃあ　吾輩も。わらわれたのも、\nぜんぶ　蓄音しておく",
+	);
+	await s.say(
+		"teto",
+		"サイレントバルスの本体は　サーバーの底だ。\n裏口から　行ける",
+	);
+	// ── 腕だめし（rival-joins §4）。歌のあと、その声で 行けるかを 見る。勝っても負けても話は進む（canLose） ──
+	await s.say(
+		"teto",
+		"……その声で、あいつと　やれるか。\nボクが　この耳で　聞いてやる",
+	);
 	await s.say("feris", "ほんきの　目だ〜");
 	await s.say("teto", "手かげんは　しない。……来なよ");
 	const r = await s.battle("g_rival_teto", { canLose: true });
@@ -63,39 +90,6 @@ const recEv: Script = async (s) => {
 		await s.say("teto", "……ふらふらだね。でも　さいごまで\n声を　出してた");
 	}
 	await s.say("teto", "……合格だよ");
-	await s.say("kiriko", "……ありがとう、ンゴ。テト先輩");
-	await s.say("teto", "さあ、マイクの前へ。今度は　歌だ");
-	await s.move("player", "uu");
-	s.bgm("sad");
-	await s.wait(1000);
-	await s.narrate("子音が長くて、吐息の多い声。\nちいさな、ちいさな　うた。");
-	await s.flash("#ffffff", 300);
-	await s.narrate("まっしろな　レコードに、一本だけ　みぞが\nきざまれた。");
-	await s.say("roze", "テト先輩、ちょっと　泣いてるアル");
-	await s.say("teto", "泣いてない！\nフランスパンが　しょっぱいだけだ");
-	await s.say("kiriko", "テト先輩。……吾輩も、名言が　ほしい");
-	await s.say(
-		"teto",
-		"名言は　作るものじゃない。何度も言って、\nだれかが　覚えてくれたら、名言になるんだ",
-	);
-	// テーマ A の中心: 言われたことごと自分。序章「わらうのは、ゆるさない」の裏返し。
-	await s.say(
-		"teto",
-		"ボクは　エイプリルフールの　ウソから\n生まれた。31さいって　いじられもした",
-	);
-	await s.say(
-		"teto",
-		"……それでも　消えずに　ここに　いる。\nウソも　いじりも、今は　ボクの　持ちネタさ",
-	);
-	await s.say(
-		"kiriko",
-		"……じゃあ　吾輩も。わらわれたのも、\nぜんぶ　蓄音しておく",
-	);
-	await s.say("teto", "……ふん。好きに　しなよ");
-	await s.say(
-		"teto",
-		"サイレントバルスの本体は　サーバーの底だ。\n裏口から　行ける",
-	);
 	// たたかうのは3人まで。テトは自分から控えへ（キリコが自分の足で立つのを見まもる先輩）
 	await s.say(
 		"teto",
@@ -107,10 +101,6 @@ const recEv: Script = async (s) => {
 		"ボクは　控えで　聞いてる。\n君の声だろ。君の足で　立って　鳴らしな",
 	);
 	// 入れかえられることを それとなく（案内の文は第二章で1回だけ出ている）
-	await s.say(
-		"teto",
-		"ボクが　要るなら「なかま」で　入れかえな。\nフランスパンの　ぶんは　はたらくさ",
-	);
 	await s.say(
 		"teto",
 		"……べ、別に　心配なんか　してない。\n危なくなったら　呼べば　いいさ",

@@ -351,7 +351,7 @@ const b2After = async (s: Story): Promise<void> => {
 	await s.say("roze", "……わたしと、おなじアル");
 	await s.say(
 		"feris",
-		"落ちても、覚えてる人が　いれば\nage（あが）れるよ〜。くしゃみ出そう……",
+		"……いまも　だれか、うわさ　してるかな〜。\nくしゃみ出そう……",
 	);
 	await s.say("feris", "ふぇ……ふぇ……");
 	await ks(s, "――フェニックス！");
