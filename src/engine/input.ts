@@ -1,9 +1,10 @@
-// 入力（キーボード・画面上の十字キー/ボタン・タップ）をまとめる。
+// 入力（キーボード・ゲームパッド・画面上の十字キー/ボタン・タップ）をまとめる。
 //
 // - 方向は「押しっぱなし」を持つ（フィールド移動はポーリングで読む）。
 // - A/B と方向の「押した瞬間」は、ハンドラのスタック最上段に配る。
 //   メッセージ窓・選択肢・メニュー・戦闘がハンドラを積み、閉じたら外す。
 //   スタックが空のときはフィールド用キューに入る。
+// - ゲームパッドは毎コマ読み、ボタンをキーボードのキーと同じ道に通す（pollGamepads）。
 
 import type { Dir } from "./types";
 
@@ -33,6 +34,40 @@ const KEYMAP: Record<string, Key> = {
 	Backspace: "b",
 };
 
+/**
+ * ゲームパッド（標準の並び）のボタン番号 → キー。名前は任天堂の並び（右＝A・下＝B・上＝X・左＝Y）。
+ * 標準の番号は 下 0・右 1・左 2・上 3 なので、右（1）を A、下（0）を B にする。
+ * X と ＋（START）もメニュー（B）。Y は A と同じ。
+ */
+const GAMEPAD_KEYS: Record<number, Key> = {
+	0: "b",
+	1: "a",
+	2: "a",
+	3: "b",
+	9: "b",
+	12: "up",
+	13: "down",
+	14: "left",
+	15: "right",
+};
+/**
+ * Xbox のパッドは刻印が逆（下＝A・右＝B）なので刻印どおりに読む。
+ * 見分けは gp.id（「Xbox」「XInput」やマイクロソフトのベンダー 045e）。
+ */
+const XBOX_KEYS: Record<number, Key> = {
+	...GAMEPAD_KEYS,
+	0: "a",
+	1: "b",
+	2: "b",
+	3: "a",
+};
+const isXboxPad = (id: string): boolean => /xbox|xinput|045e/i.test(id);
+/** スティックをこれより倒したら向きにする。 */
+const STICK_DEAD = 0.5;
+/** 方向を押さえつづけたときのくりかえし（窓のカーソル送り。キーボードのリピートの代わり）。 */
+const GP_REPEAT_DELAY = 350;
+const GP_REPEAT_MS = 90;
+
 const isDir = (k: Key): k is Dir =>
 	k === "up" || k === "down" || k === "left" || k === "right";
 
@@ -41,6 +76,9 @@ export class Input {
 	private held: { dir: Dir; source: string }[] = [];
 	private handlers: { fn: Handler; tap: Key | null }[] = [];
 	private fieldQueue: Key[] = [];
+	/** ゲームパッドで押さえているボタン（"0:1" のような パッド:ボタン → 押した時刻。くりかえしの時刻に進める）。 */
+	private gpDown = new Map<string, number>();
+	private gpPolling = false;
 	/** フィールドでのタップ（ソース画素ではなく、canvas の左上から数えた CSS 画素）。 */
 	onFieldTap: ((x: number, y: number) => void) | null = null;
 	/** 何かしら入力があったとき（オーディオのアンロック用）。 */
@@ -63,7 +101,81 @@ export class Input {
 		});
 		window.addEventListener("blur", () => {
 			this.held = [];
+			this.gpDown.clear();
 		});
+		window.addEventListener("gamepadconnected", () => this.pollGamepads());
+	}
+
+	/**
+	 * ゲームパッドを毎コマ読み、押した・離したボタンを press・hold・release に渡す。
+	 * つながっているあいだだけ回す（ブラウザはボタンを押すまでパッドを見せないことがある）。
+	 */
+	private pollGamepads(): void {
+		if (this.gpPolling) return;
+		this.gpPolling = true;
+		const tick = () => {
+			const pads = navigator.getGamepads?.() ?? [];
+			const now = new Map<string, Key>();
+			let any = false;
+			for (const gp of pads) {
+				if (!gp?.connected) continue;
+				any = true;
+				const keys = isXboxPad(gp.id) ? XBOX_KEYS : GAMEPAD_KEYS;
+				gp.buttons.forEach((b, i) => {
+					const key = keys[i];
+					if (key && (b.pressed || b.value > 0.5))
+						now.set(`${gp.index}:${i}`, key);
+				});
+				// 左スティックは 4方向に丸める
+				const x = gp.axes[0] ?? 0;
+				const y = gp.axes[1] ?? 0;
+				if (Math.hypot(x, y) >= STICK_DEAD)
+					now.set(
+						`${gp.index}:stick`,
+						Math.abs(x) > Math.abs(y)
+							? x > 0
+								? "right"
+								: "left"
+							: y > 0
+								? "down"
+								: "up",
+					);
+			}
+			const t = performance.now();
+			for (const [code, key] of now) {
+				const source = `gp:${code}`;
+				const since = this.gpDown.get(code);
+				// スティックの向きが変わったら押しなおし
+				if (
+					since === undefined ||
+					this.heldBy(source) !== (isDir(key) ? key : undefined)
+				) {
+					this.gpDown.set(code, t);
+					if (isDir(key)) this.hold(key, source);
+					this.press(key);
+				} else if (isDir(key) && t - since >= GP_REPEAT_DELAY) {
+					this.gpDown.set(code, t - GP_REPEAT_DELAY + GP_REPEAT_MS);
+					this.press(key, true);
+				}
+			}
+			for (const code of [...this.gpDown.keys()])
+				if (!now.has(code)) {
+					this.gpDown.delete(code);
+					this.release(`gp:${code}`);
+				}
+			if (any) requestAnimationFrame(tick);
+			else {
+				this.gpPolling = false;
+				for (const code of this.gpDown.keys()) this.release(`gp:${code}`);
+				this.gpDown.clear();
+			}
+		};
+		requestAnimationFrame(tick);
+	}
+
+	/** source で押さえている向き。 */
+	private heldBy(source: string): Dir | undefined {
+		return this.held.find((h) => h.source === source)?.dir;
 	}
 
 	/** 押した瞬間のキーを配る。 */
