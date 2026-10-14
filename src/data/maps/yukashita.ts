@@ -160,6 +160,7 @@ const finale = async (s: Story): Promise<void> => {
 	await s.narrate("針が、いちばん　内がわの　みぞへ\nすべりこんだ。");
 	if (silent(s.state))
 		await s.narrate("音の　ない　夜。\n……その　みぞだけが、鳴った。");
+	await s.freeze(800);
 	await s.say("kiriko", "……ここは、どこ？", {
 		name: "蓄音機",
 		noPortrait: true,

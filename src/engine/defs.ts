@@ -452,6 +452,11 @@ export type Story = {
 	/** 選択肢。選ばれた番号を返す。 */
 	choose(options: string[], opt?: { cancel?: number }): Promise<number>;
 	wait(ms: number): Promise<void>;
+	/**
+	 * 画面を止める（大事な瞬間の「間」）。曲を すっと 切り、人も水も止め、色を少し抜いて ms 待つ。
+	 * 曲は止めたままなので、つづけて流すなら bgm で。
+	 */
+	freeze(ms?: number): Promise<void>;
 	fadeOut(ms?: number, color?: string): Promise<void>;
 	fadeIn(ms?: number): Promise<void>;
 	/** BGM を切り替える（null で止める）。 */

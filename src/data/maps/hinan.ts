@@ -361,7 +361,7 @@ const moveThread = async (s: Story): Promise<void> => {
 	}
 	await s.narrate("だれも、読みに　来なかった。");
 	await s.narrate("それでも　レスは　ふえて――");
-	await s.wait(600);
+	await s.freeze(700);
 	s.se("cursor");
 	await s.narrate(
 		"999　名前：風吹けば名無し\n>>1000　おかえり、は　お前が　言え",
@@ -657,8 +657,7 @@ const desk: EventDef = {
 			await s.narrate("キリコは、紙を　そっと　もどした。");
 			return;
 		}
-		s.bgm(null);
-		await s.wait(600);
+		await s.freeze(700);
 		await K(s, "…………");
 		if (has(s, "roze")) await s.say("roze", "……キリコ？");
 		await K(s, "この　言葉。\n吾輩の　スレを　消した　やつが、言ったンゴ");

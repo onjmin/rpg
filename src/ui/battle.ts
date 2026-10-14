@@ -8,6 +8,8 @@
 // 文の早送りとコマンドを出すのは、鳴らしたばかりの効果音の区切りまで待つ（engine/audio.ts）。
 // 裏ボス（EnemyDef.summon）は、ストックのボスを1体ずつ呼び、尽きるまで攻撃をかわす（召喚のブロック）。
 // 負けても、たおした手下の分の経験値は入る（決着のブロック）。
+// 大事な一撃では画面ごと止める（stopFor）。ボス戦の決め手は 曲を切って 長く止め（ボスストップ）、
+// かいしん・裏ボスの守りがとけた・味方の最後の1人が たおれた ときは 短く止める。
 
 import { cropOf, getImage, loadImage } from "../engine/assets";
 import type {
@@ -113,6 +115,14 @@ const readMs = (text: string, slow = false): number => {
 const SKIP_GUARD_MS = 150;
 /** ボスのせりふは 出てから この ms のあいだ 早送りしない（連打の勢いで とばさない）。 */
 const SLOW_GUARD_MS = 400;
+/** ボスストップ：ボス戦の 決め手が 当たった瞬間に 止める ms（その間は 早送りしない）。 */
+const BOSS_STOP_MS = 700;
+/** ボスが たおれる演出の ms（style.css の .boss-down と同じ。その間は 早送りしない）。 */
+const BOSS_DOWN_MS = 1200;
+/** かいしんが 当たった瞬間に 止める ms。 */
+const CRIT_STOP_MS = 140;
+/** 裏ボスの守りが とけた・味方の最後の1人が たおれた ときに 止める ms。 */
+const BEAT_STOP_MS = 450;
 
 /** 敵の見た目（歩行グラなら正面のコマ）を canvas に描く。 */
 const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
@@ -156,6 +166,7 @@ const enemyCanvas = (ref: string, scale: number): HTMLCanvasElement => {
 			window.clearInterval(timer);
 			return;
 		}
+		if (c.closest(".stopped")) return; // ボスストップの間は 足ぶみも止める
 		frame = 1 - frame;
 		draw();
 	}, 450);
@@ -537,17 +548,22 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 	 * 文を出して待つ。待ちは wait と 文の長さ（readMs）の長いほう。
 	 * quick は わざと すばやく流す文（裏ボスの「キーの音」など）で、長さで のばさない。
 	 * slow は ボスのせりふで、長めに出し、出てすぐの早送りを長く受けない。
-	 * オート中は（ボスのせりふのほかは）AUTO_RATE 倍。
+	 * hold は 演出が終わるまで（wait のあいだ）早送りを受けない（ボスが たおれる）。
+	 * オート中は（ボスのせりふ・hold のほかは）AUTO_RATE 倍。
 	 */
-	const log = async (text: string, wait = 400, pace?: "quick" | "slow") => {
+	const log = async (
+		text: string,
+		wait = 400,
+		pace?: "quick" | "slow" | "hold",
+	) => {
 		logEl.textContent = text;
 		fast = false;
 		const t0 = performance.now();
 		const slow = pace === "slow";
 		const until =
 			(pace === "quick" ? wait : Math.max(wait, readMs(text, slow))) *
-			(auto && !slow ? AUTO_RATE : 1);
-		const guard = slow ? SLOW_GUARD_MS : SKIP_GUARD_MS;
+			(auto && !pace ? AUTO_RATE : 1);
+		const guard = pace === "hold" ? wait : slow ? SLOW_GUARD_MS : SKIP_GUARD_MS;
 		while (performance.now() - t0 < until && !fast) {
 			await sleep(30);
 			// 出てすぐの早送りと、効果音の本体が鳴っている間の早送りは無視する（連打で音が畳みかけないように）
@@ -555,6 +571,19 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		}
 		// 時間で進むときも、効果音の区切りまでは次の文（とその音）を出さない
 		await audio.seSettled();
+	};
+
+	/**
+	 * 画面ごと止める。背景・敵の足ぶみ・飾りの動きが止まり（style.css の .stopped）、
+	 * hit の敵は白く ぬく。止めている間の タップや キーは 早送りに しない。
+	 */
+	const stopFor = async (ms: number, hit?: Fighter): Promise<void> => {
+		root.classList.add("stopped");
+		hit?.view.classList.add("struck");
+		await sleep(ms);
+		hit?.view.classList.remove("struck");
+		root.classList.remove("stopped");
+		fast = false;
 	};
 
 	const names = [...new Set(group.enemies.map((id) => data.enemies[id].name))];
@@ -951,6 +980,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		if (m.stock?.length) return summonNext(m);
 		renderEnemies(); // 守りの灰色が消える（もう当たる）
 		audio.se("shock");
+		await stopFor(BEAT_STOP_MS, m);
 		for (const t of m.enemy?.summon?.exposed ?? [])
 			await log(t.replace("{user}", m.name), 500);
 	};
@@ -999,7 +1029,13 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		}
 		t.hp = Math.max(0, t.hp - dmg);
 		if (t.side === "enemy") {
+			// ボスストップ：ボス戦の 決め手（最後の敵が たおれる 一撃）は、当たった瞬間に 曲を切って 止める
+			const finale = isBoss && t.hp <= 0 && !alive(enemies).length;
 			audio.se("attack");
+			if (finale) {
+				void audio.cutBgm();
+				await stopFor(BOSS_STOP_MS, t);
+			} else if (crit) await stopFor(CRIT_STOP_MS, t);
 			await hitEnemy(t);
 			renderEnemies(t);
 			await log(
@@ -1008,15 +1044,22 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 					: `ミス！　${t.name}に　ダメージを　あたえられない！`,
 			);
 			if (t.hp <= 0) {
-				// 撃破音とフェードアウトを同時に始める
+				// 撃破音とフェードアウトを同時に始める（ボスは ちらつきながら ゆっくり 沈む）
 				audio.se("enemyDown");
+				if (finale) {
+					t.view.classList.add("boss-down");
+					root.classList.remove("quake");
+					void root.offsetWidth;
+					root.classList.add("quake");
+				}
 				renderEnemies();
 				await log(
 					(t.enemy?.downText ?? "{user}を　たおした！").replace(
 						"{user}",
 						t.name,
 					),
-					320,
+					finale ? BOSS_DOWN_MS : 320,
+					finale ? "hold" : undefined,
 				);
 				if (t.master) await minionDown(t.master);
 			}
@@ -1025,7 +1068,14 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 			await hitParty(t);
 			renderParty();
 			await log(`${t.name}は　${dmg}の　ダメージを　うけた！`);
-			if (t.hp <= 0) await log(`${t.name}は　たおれてしまった！`, 380);
+			if (t.hp <= 0) {
+				// 最後の1人：曲を切って ひと呼吸 止めてから（全滅の音は runBattle）
+				if (!alive(party).length) {
+					void audio.cutBgm();
+					await stopFor(BEAT_STOP_MS);
+				}
+				await log(`${t.name}は　たおれてしまった！`, 380);
+			}
 		}
 	};
 

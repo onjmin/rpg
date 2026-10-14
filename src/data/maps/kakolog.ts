@@ -130,8 +130,7 @@ const whisper: EventDef = {
 	trigger: "touch",
 	once: true,
 	run: async (s) => {
-		s.bgm(null);
-		await s.wait(600);
+		await s.freeze(700);
 		await s.narrate("……ンゴ……");
 		await ks(s, "い、今……吾輩の声が　した？");
 		await s.say("roze", "……あっちの　こわれた　掲示板からアル");

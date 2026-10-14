@@ -215,10 +215,14 @@ export const battleBackdrop = (
 
 	let t0 = 0;
 	let last = 0;
+	let prev = 0;
 	const tick = (now: number) => {
 		// まだ付けていないうちは待ち、付けたあとに外れたら止める
 		if (canvas.isConnected) {
 			if (!t0) t0 = now;
+			// ボスストップ（.battle.stopped）の間は 時計ごと止める（とけたら 続きから うごく）
+			if (prev && canvas.closest(".stopped")) t0 += now - prev;
+			prev = now;
 			if (now - last >= FRAME_MS) {
 				last = now;
 				draw((now - t0) / 1000);

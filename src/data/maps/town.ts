@@ -201,8 +201,7 @@ const nightEv = async (s: Story): Promise<void> => {
 		"古参ニキ",
 	);
 	await s.say("kiriko", "あと150レス。明日には　完走だ");
-	s.bgm(null);
-	await s.wait(800);
+	await s.freeze(900);
 	await s.narrate("――そのとき。音が、消えた。");
 	await s.narrate(
 		"勢い欄の　スレタイが、ひとつ、またひとつ\n黒く　ぬりつぶされていく。",

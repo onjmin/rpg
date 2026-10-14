@@ -169,6 +169,7 @@ const lastRun = async (s: Story): Promise<void> => {
 	await s.narrate("のこり、1レス。");
 	// 真相を見たあとは、どちらの >>1 も 同じ名前（序章の「どちらを選んでも」の裏返し。thread.ts）
 	await s.choose(u ? [">>1 蓄音キリコ", ">>2 蓄音キリコ"] : ["1000ゲット！"]);
+	await s.freeze(800);
 	await s.narrate("1000　名前：蓄音キリコ");
 	await s.say("kiriko", "消えた声は、吾輩が、また　鳴らすンゴ！");
 	if (u) await s.narrate("声が、ふたつ　かさなって　聞こえた。");

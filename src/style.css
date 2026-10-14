@@ -115,6 +115,15 @@ button {
 	pointer-events: none;
 }
 
+/* 画面を止める（story.freeze）。色を少し抜き、動いている飾りも止める */
+body.frozen #app canvas {
+	filter: saturate(0.35) contrast(1.1);
+}
+
+body.frozen #ui * {
+	animation-play-state: paused;
+}
+
 body.shake #app {
 	animation: shake 0.1s linear infinite;
 }
@@ -1355,6 +1364,45 @@ body.shake #app {
 	opacity: 0;
 	transform: scale(0.6);
 	pointer-events: none;
+}
+
+/*
+ * ボスストップ（ui/battle.ts の stopFor）。決め手が当たった瞬間に 画面ごと止める。
+ * 背景と敵の絵は battle.ts が止め、ここでは 飾りの動きを止めて、当たった敵を 白く ぬく。
+ */
+#ui .battle.stopped *,
+#ui .battle.stopped *::before,
+#ui .battle.stopped *::after {
+	animation-play-state: paused;
+}
+
+.battle.stopped .battle-bg {
+	filter: saturate(0.4) brightness(0.7);
+}
+
+.enemy.struck .enemy-sprite {
+	filter: brightness(0) invert(1);
+}
+
+/* ボスが たおれる：ちらつきながら ゆっくり 沈む（ふつうの敵の 3倍） */
+.enemy.dead.boss-down {
+	transform: translateY(18px) scale(0.9);
+	transition:
+		opacity 1.2s steps(8),
+		transform 1.2s ease-in;
+}
+
+.enemy.boss-down .enemy-sprite {
+	animation: boss-down 0.15s steps(1) 8;
+}
+
+@keyframes boss-down {
+	0% {
+		filter: brightness(1.8) saturate(0.4);
+	}
+	50% {
+		filter: brightness(0.6);
+	}
 }
 
 .hpbar {

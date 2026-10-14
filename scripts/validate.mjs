@@ -345,6 +345,7 @@ try {
 				return i;
 			},
 			wait: async () => tick(),
+			freeze: async () => tick(),
 			fadeOut: async () => tick(),
 			fadeIn: async () => tick(),
 			bgm: (name) => {

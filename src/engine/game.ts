@@ -92,6 +92,8 @@ export class Game {
 	private marker: { x: number; y: number; t: number } | null = null;
 	private stepsSinceBattle = 0;
 	private time = 0;
+	/** 画面を止めている（story.freeze）。人も水も動かさず、時計も進めない。 */
+	private frozen = false;
 	private last = 0;
 	private camX = 0;
 	private camY = 0;
@@ -362,9 +364,11 @@ export class Game {
 		if (!this.running) return;
 		const dt = Math.min(50, t - this.last);
 		this.last = t;
-		this.time += dt;
 		this.state.playMs += dt;
-		this.update(dt);
+		if (!this.frozen) {
+			this.time += dt;
+			this.update(dt);
+		}
 		this.render();
 		this.rafId = requestAnimationFrame((tt) => this.frame(tt));
 	}
@@ -904,6 +908,15 @@ export class Game {
 			wait: (ms) => {
 				this.msg.hideWindow();
 				return sleep(ms);
+			},
+			freeze: async (ms = 700) => {
+				this.msg.hideWindow();
+				this.frozen = true;
+				document.body.classList.add("frozen");
+				await this.audio.cutBgm();
+				await sleep(ms);
+				document.body.classList.remove("frozen");
+				this.frozen = false;
 			},
 			fadeOut: (ms, color) => this.fadeOut(ms, color),
 			fadeIn: (ms) => this.fadeIn(ms),

@@ -17,6 +17,7 @@
 //   連打で次の効果音が畳みかけて重ならないように。余韻までは待たせない。
 // - ジングル（勝利の曲）は途中で絞って止められる（fadeOutJingle。レベルアップの音と重ねない）。
 //   dtm の stop は先読みで予約済みの音符（約0.5秒ぶん）を鳴らし残すので、出口の音量ごと絞る。
+// - 曲もすぐ切れる（cutBgm。ボスストップ・時が止まる場面）。同じく出口ごと絞り、軽量の曲は自前の出口（bgmBus）を通す。
 
 import type { DtmStudio, MmlPlayback, SpeechHandle } from "@onjmin/dtm";
 import {
@@ -189,6 +190,10 @@ export class GameAudio {
 	private jingleToken = -1;
 	/** studio の出口を絞っている間、戻してよくなる時刻（AudioContext の時計）。 */
 	private duckUntil: number | null = null;
+	/** 軽量の曲の出口（cutBgm で絞れるように。高音質は studio の出口を絞る）。 */
+	private bgmBus: GainNode | null = null;
+	/** bgmBus を絞っている間、戻してよくなる時刻（AudioContext の時計）。 */
+	private busUntil: number | null = null;
 	private seCache = new Map<string, Promise<AudioBuffer | null>>();
 	/** 長い効果音が鳴り終わる時刻（AudioContext の時計。重ね鳴らし防止）。 */
 	private seEnds = new Map<string, number>();
@@ -428,6 +433,53 @@ export class GameAudio {
 	}
 
 	/**
+	 * 曲を ms で絞って止める（ボスストップ・時が止まる場面）。bgm(null) と ちがい、
+	 * 先読みの音を鳴らし残さず すっと 無音になる。次の曲は 残りが消えてから 出口を戻す（unduck）。
+	 */
+	async cutBgm(ms = 60): Promise<void> {
+		if (this.jingleNow) return this.fadeOutJingle(ms);
+		this.bgmName = null;
+		this.sing = false;
+		const ctx = this.ctx;
+		if (!ctx || !this.bgmPlayback) {
+			this.stopBgmPlayback();
+			return;
+		}
+		const sec = ms / 1000;
+		if (settings.bgm === "hq") {
+			const studio = await this.studioPromise?.catch(() => null);
+			if (studio) {
+				rampTo(studio.masterGain.gain, ctx.currentTime, 0, sec);
+				this.duckUntil = ctx.currentTime + sec + DUCK_TAIL_SEC;
+			}
+		} else if (this.bgmBus) {
+			rampTo(this.bgmBus.gain, ctx.currentTime, 0, sec);
+			this.busUntil = ctx.currentTime + sec + DUCK_TAIL_SEC;
+		}
+		const pb = this.bgmPlayback;
+		await new Promise((r) => setTimeout(r, ms));
+		// 絞っている間に ほかの曲に替わっていたら、替えた側がもう止めている
+		if (this.bgmPlayback === pb) this.stopBgmPlayback();
+	}
+
+	/** 軽量の曲の出口。cutBgm で絞ってあれば、残りが消えてから戻す。 */
+	private bgmOut(ctx: AudioContext): GainNode {
+		if (!this.bgmBus) {
+			this.bgmBus = ctx.createGain();
+			this.bgmBus.connect(ctx.destination);
+		}
+		if (this.busUntil !== null) {
+			const at = Math.max(ctx.currentTime, this.busUntil);
+			this.busUntil = null;
+			const g = this.bgmBus.gain;
+			g.cancelScheduledValues(at);
+			g.setValueAtTime(0, at);
+			g.linearRampToValueAtTime(1, at + 0.05);
+		}
+		return this.bgmBus;
+	}
+
+	/**
 	 * fadeOutJingle で絞った studio の出口を戻す。曲は絞った音の残りが消えてから、
 	 * 声（now）は頭が欠けないようすぐに。
 	 */
@@ -542,7 +594,7 @@ export class GameAudio {
 			const pb = dtm.playMML(mml, {
 				...common,
 				audioContext: ctx,
-				destination: destination ?? ctx.destination,
+				destination: destination ?? (loop ? this.bgmOut(ctx) : ctx.destination),
 			});
 			pb.setVolume(volume);
 			return pb;
