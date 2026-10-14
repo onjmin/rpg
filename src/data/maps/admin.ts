@@ -97,10 +97,7 @@ const satoruRun = async (s: Story): Promise<void> => {
 	if (n === 1) return adminTalk(s);
 	if (n !== 0) return;
 	await S(s, "ボスの　ストック、また　つめといたけん。\nよろ。");
-	await H(
-		s,
-		"また来たんですか。ひまなんですか？\n……まあ、おいらも　ですけど。",
-	);
+	await H(s, "また来たんですか。\n……まあ、おいらも　ひまですけど。");
 	return challenge(s);
 };
 
@@ -131,10 +128,7 @@ const afterLose = async (s: Story): Promise<void> => {
 	const n = bump(s, "satoru_lose");
 	await S(s, "おしい〜。テストやけん、\n何回でも　遊んでってねー。");
 	if (n % 2 === 0)
-		await H(
-			s,
-			"なんだろう、負けても　なにも　へらないの、\nいい仕様ですよね。",
-		);
+		await H(s, "負けても　なにも　へらないの、\nいい仕様ですよね。");
 	else await s.say("kiriko", "……つぎは　勝つンゴ");
 	// オートは どうぐを つかわない。負けても たおしたボスの経験値は のこる（ui/battle.ts）
 	if (n === 1)
@@ -246,10 +240,7 @@ const adminTalk = async (s: Story): Promise<void> => {
 const hiroTalk = async (s: Story): Promise<void> => {
 	const k = bump(s, "hiro_talk2") % 4;
 	if (k === 0)
-		await H(
-			s,
-			"掲示板って、書く人が　いなかったら\nただの　空き地なんですよね。",
-		);
+		await H(s, "ここの　ボス、おいら\nまだ　一回も　勝ててないんですよね。");
 	else if (k === 1)
 		await H(
 			s,
@@ -324,7 +315,7 @@ const hiroRun = async (s: Story): Promise<void> => {
 	);
 	await H(
 		s,
-		"どれが　正解とかは　ないんで。\nキリコさんの　感想が　いちばんです、はい。",
+		"どれが　正解とかは　ないんで。\nキリコさんが　いいなら、それで。はい。",
 	);
 };
 

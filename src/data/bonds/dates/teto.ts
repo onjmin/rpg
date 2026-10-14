@@ -129,7 +129,7 @@ export const date: DateDef | null = {
 				}
 				await s.say("teto", "……君は　じつに　馬鹿だな");
 				await s.narrate(
-					"あの夜と　おなじ　セリフ。\nでも、いちばん　やさしい　言い方だった。",
+					"あの夜と　おなじ　セリフ。\n……声が、すこし　ちいさかった。",
 				);
 
 				// おみやげ

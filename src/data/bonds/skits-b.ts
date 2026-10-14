@@ -41,9 +41,6 @@ export const skits: SkitDef[] = [
 			await s.say("feris", "うん〜。でも　私、二十歳だよ〜");
 			await s.say("roze", "わたしは　24アル");
 			await s.say("kiriko", "吾輩は　25ンゴ");
-			await s.narrate(
-				"いちばん　あとに　生まれた　子が、\nいちばん　上だった。",
-			);
 			await s.say("kiriko", "いちばん　後輩で、\nいちばん　年上ンゴ……？");
 			await s.say("feris", "じゃあ　キリコちゃんは\n先輩で　後輩かな〜");
 			await s.say("roze", "……ややこしいアル");
@@ -149,8 +146,9 @@ export const skits: SkitDef[] = [
 				"teto",
 				"ウソに、安価に、くしゃみか。\n……ろくな　生まれじゃないな",
 			);
-			await s.say("roze", "でも、みんな　ここに　いるアル");
-			await s.say("teto", "……ふん。そういう　ことさ");
+			await s.narrate("テトは　フランスパンを　四つに　ちぎった。");
+			await s.say("roze", "……ひとつ、大きいアル");
+			await s.say("teto", "……ふん。新入りの　ぶんだ");
 		},
 	},
 
@@ -199,7 +197,7 @@ export const skits: SkitDef[] = [
 			await s.say("roze", "待つアル。今は　とっておくアル");
 			await s.say("feris", "1000レス目で　言えば　いいよ〜");
 			await s.say("kiriko", "でも、まだ　なにも\n思いついて　ない");
-			await s.say("teto", "言いたいことが　できたら、\nそれが　そうさ");
+			await s.say("teto", "ボクのも、気づいたら\n名言に　されてたさ");
 			await s.say(
 				"roze",
 				"わたしの　アル？ナイ！も、\n最初は　ただの　ノリだったアル",

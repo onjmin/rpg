@@ -1,7 +1,7 @@
 // おでかけ（nanj）：おんJスタジアムの外野席でナイター観戦。
 // フライのかんちがい → 手のひら返し → ホームランボールを釣りのタモ網でキャッチ（memo_nanj）。
-// 試合のあと「名付け親はワイ（自称）」をしんみり回収し、UTAU の声が無いやきうの
-// 応援の声を、キリコが蓄音機に録る。
+// 試合のあと「名付け親はワイ（自称）」をしんみり回収する。応援は 録らせない
+// （a_koe_aru_nai で もう 録っているので、ここは 録りそこねて「また 来る」に）。
 // 舞台は odekake マップの ④ やきうの区画（scratchpad/design/odekake-spots.md）。
 // やきうは アク禁（akukin）で離れたあとは戻らないので、それまでの間だけ行ける。
 // 隠しイベント「ふたつめの　おもいで」（次スレ＝同じ夜への 時間遡行。同じ キリコが 前の周を 覚えていない）：
@@ -123,27 +123,27 @@ export const date: DateDef | null = {
 				"名付け親は　自称やけど、\nキリコって　呼んだ回数は　ワイが一番や",
 			);
 			s.face("player", "right");
-			await s.say("kiriko", "呼ばれるたびに　吾輩は\n蓄音キリコに　なれるンゴ");
-			await s.say(
-				"nanj",
-				"ワイには　UTAUの　声は　ない。\n毎日　スレで　騒いどる　だけや",
-			);
-			await s.say("kiriko", "それも　りっぱな　声ンゴ。\n蓄音させてほしい");
+			await s.say("kiriko", "……数えてたンゴ？");
+			await s.say("nanj", "数えとらん。……たぶん、一番や");
+			await s.narrate("キリコは　蓄音機の　ふたを　あけた。");
+			await s.say("nanj", "あかん、あかん。\n応援は　試合中に　するもんや");
+			await s.narrate("やきうは　手のひらで、\n蓄音機に　ふたを　した。");
 
-			// 応援の声を蓄音する
-			await s.say("nanj", "……しゃあないな。\nかっとばせー！　キーリーコー！");
-			s.se("save");
-			await s.narrate(
-				"蓄音機が　くるくる　まわって、\nその声を　だいじに　ためた。",
-			);
+			// 録らない応援（ふたの 下で 聞くだけ）
+			await s.wait(400);
+			s.face("date_nanj", "down");
+			await s.say("nanj", "……かっとばせー！　キーリーコー！");
+			await s.narrate("だれも　いない　外野に、\n声が　はねかえった。");
+			s.face("player", "right");
+			await s.say("kiriko", "……いまの、録りそこねたンゴ");
 			s.face("date_nanj", "left");
 			await s.say(
 				"nanj",
 				promised
-					? "……なんや　照れるな。\n次スレ、立てといた　かいが　あったわ"
-					: "……なんや　照れるな。\nほな、帰ろか。キリコ",
+					? "ほな、また　来なあかんな。\n……次スレ、立てといた　かいが　あったわ"
+					: "ほな、また　来なあかんな。\n帰ろか、キリコ",
 			);
-			await s.say("kiriko", "うん。これからも　いっぱい\n呼んでほしいンゴ");
+			await s.say("kiriko", "うん。また　来るンゴ");
 			// 約束は果たした（keep_ は次スレへ持ち越すので、ここで消す）
 			if (promised) s.set("keep_nighter", false);
 		}),

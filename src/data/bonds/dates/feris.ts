@@ -1,6 +1,6 @@
 // おでかけ（feris）：星の見える丘。
 // フェリスは UTAU の声が無いので うたえない。かわりに くしゃみの火花を夜空に上げて見せる。
-// キリコは その笑い声を 蓄音機に録る。おもいでの品は memo_feris（はねのしおり）。
+// その笑い声は、たのむ前に 蓄音機が ひとりでに 録っている。おもいでの品は memo_feris（はねのしおり）。
 // 舞台は odekake マップの ② フェリスの区画（scratchpad/design/odekake-spots.md）。
 // 次スレで 前のしおりを持っていれば（again）、フェリスは「また」と言い、しおりを羽で数える
 // （隠しイベント「ふたつめの　おもいで」。次スレ＝同じ夜への 時間遡行。同じ キリコが 前の周を 覚えていない）。
@@ -88,10 +88,6 @@ export const date: DateDef | null = {
 			s.face("player", "up");
 			await s.say("kiriko", "わあ……！　きれい……");
 			s.face("date_feris", "left");
-			await s.say(
-				"feris",
-				"火花は　すぐ　消えちゃうけど〜。\n消えても、また　飛べるよ〜",
-			);
 			await s.narrate(
 				"ついでに　キリコの　防寒着の\nフードが、ちょっと　こげた。",
 			);
@@ -99,17 +95,12 @@ export const date: DateDef | null = {
 			await s.say("kiriko", "……あったかく　なったンゴ");
 			await s.say("feris", "あはは〜。ほかほかだね〜");
 
-			// 笑い声を蓄音する
-			await s.say(
-				"kiriko",
-				"今の　笑い声、蓄音させて　ほしい。\nうたじゃなくても、フェリスの　声だから",
-			);
+			// 笑い声は、たのむ 前に 入っていた
 			s.bgm(null);
 			s.se("save");
 			await s.wait(600);
-			await s.narrate(
-				"蓄音機が　くるくる　まわって、\nフェリスの　笑い声を　すいこんだ。",
-			);
+			await s.narrate("ふと　見ると、蓄音機が\nひとりでに　まわっていた。");
+			await s.say("kiriko", "……勝手に　ためてたンゴ");
 			// b_nai_gumi（蓄音機がこげる会話）を先に見ていても合うように「はじめて」とは言わない
 			await s.say("feris", "……えへへ。私の　声、\n蓄音機に　入っちゃった〜");
 			await s.say("feris", "じゃあ　お返しに、これ〜");

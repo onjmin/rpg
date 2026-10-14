@@ -56,7 +56,7 @@ export const chats: ChatDef[] = [
 				"roze",
 				"サーバーの　中は、電子が\nびゅんびゅん　走ってるアル",
 			);
-			await s.say("roze", "素粒子の　庭アル。\n……ちょっと　楽しいアル");
+			await s.say("roze", "素粒子の　庭アル。\n……あ、いま　ひとつ　光ったアル");
 			await s.say("kiriko", "ロゼ先輩、目が　きらきらンゴ");
 		},
 	},
@@ -65,7 +65,9 @@ export const chats: ChatDef[] = [
 		who: "roze",
 		when: (st) => !!st.flags.rec,
 		run: async (s) => {
-			await s.say("roze", "キリコの　声、もどって　よかったアル");
+			await s.say("roze", "……キリコ、なにか　しゃべるアル");
+			await s.say("kiriko", "……ンゴ？");
+			await s.say("roze", "……それで　いいアル");
 			await s.say(
 				"roze",
 				"テト先輩は　2008年生まれ。\n安価ボカロの　大・大先輩アル",
@@ -144,7 +146,6 @@ export const chats: ChatDef[] = [
 		who: "feris",
 		when: (st) => silent(st),
 		run: async (s) => {
-			await s.say("feris", "私も　うたえないんだ〜");
 			await s.narrate(
 				"フェリスが　となりに　すわって、\n羽を　すこし　ひろげた。",
 			);
@@ -179,7 +180,7 @@ export const chats: ChatDef[] = [
 		run: async (s) => {
 			await s.say(
 				"feris",
-				"キリコちゃんの　声、もどったね〜。\nうれしくて　くしゃみ　出そう……",
+				"キリコちゃんの　声、もどったね〜。\n……ふぇ……ふぇ……",
 			);
 			await s.say("kiriko", "い、今は　出さないでンゴ！");
 			await s.say("feris", "……ふぇ。セーフ〜");
