@@ -206,7 +206,7 @@ const terminalRun = async (s: Story): Promise<void> => {
 	}
 	await s.narrate("端末。\n『1000ゲッター　ver.998　作成ログ』");
 	await K(s, "……1000ゲッター？");
-	await s.narrate("『999 が　書かれたら　わいて、\n1000 を　横取りする　bot』");
+	await s.narrate("『999 が　書かれたら　わいて、\nその　999 を　消す　bot』");
 	await s.narrate("『作：風吹けば名無し\n回線：避難J』");
 	await s.narrate(
 		"『メモ：ワイの　スレで、1000 を\n取らせるな。……ワイにも、や』",

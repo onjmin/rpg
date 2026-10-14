@@ -138,8 +138,8 @@ const monitorRun = async (s: Story): Promise<void> => {
 		await s.narrate("……この　スレの　>>1 は、\nなんだった？");
 		const c = await s.choose([
 			"料理雑談スレ",
-			"今日の　献立　スレ",
-			"お店　紹介スレ",
+			"はじめましてスレ",
+			"米を　とげスレ",
 		]);
 		if (c !== 0) {
 			s.se("miss");

@@ -99,7 +99,9 @@ const senGate = async (s: Story): Promise<boolean> => {
 	if (s.flag("balus_lost")) {
 		if (!s.flag("sen_open")) {
 			s.set("sen_open");
-			await s.narrate("【音声認証】……一致：蓄音キリコ\n登録：8月18日　0時21分");
+			await s.narrate(
+				"【音声認証】……一致：蓄音キリコ\n登録：8月17日　23時34分",
+			);
 			await K(s, "……吾輩、まだ　生まれて\nないンゴ");
 			await s.narrate("扉が、ひらいた。");
 		}
