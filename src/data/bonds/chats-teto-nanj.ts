@@ -34,18 +34,6 @@ export const skits: SkitDef[] = [];
 export const chats: ChatDef[] = [
 	// ───────── テト ─────────
 	{
-		// T0' クリア後・管理人に会ったあと、やきうが まだ もどっていないとき
-		// （誕生スレの やきう。テトを前に出して話すと もどる。thread.ts の end_nanj）
-		who: "teto",
-		when: (st) =>
-			!!st.flags.clear && !!st.flags.satoru_met && !st.flags.nanj_back,
-		run: async (s) => {
-			await s.say("teto", "……あの　名無し、さっきから\nこっちばかり　見てるな");
-			await s.say("kiriko", "やきうンゴ");
-			await s.say("teto", "……ふうん");
-		},
-	},
-	{
 		// T0 クリア後（管理人室の予告）
 		who: "teto",
 		when: (st) => !!st.flags.clear,

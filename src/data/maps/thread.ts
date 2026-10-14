@@ -244,13 +244,11 @@ const ending = async (s: Story): Promise<void> => {
 	const jb = VARIANTS.meigenJb(st);
 	if (jb) await J(s, jb, "J民B");
 	await s.say("roze", "わたしにあって　キリコにないもの……\nもう、ないアル");
-	await s.say("feris", "34キロなのに、中身　ぎっしりだね〜");
 	// 倉庫で「キリコさんの　レスを　数えています」と言っていた ヒナリーの、最後の 発表
 	await s.say("hinary", "本日の　レス数は、\n1000の　模様です");
 	await s.say("hinary", "……おめでとう、ございます");
 	// 床下で 発表した あと（maps/yukashita.ts）
 	if (ura(st)) await s.say("hinary", "……キリコさんは、\n2名の　模様です");
-	await N(s, "ホゲェ！", "ムッジェ");
 	// ぷゆゆ（町の小花のそばでの こたえ方。記録なしは既定の一言）
 	await J(s, VARIANTS.puyu(st), "ぷゆゆ");
 	// 番長の越え方・代打・古参ニキへの返し・!バルス で変わる
@@ -265,6 +263,8 @@ const ending = async (s: Story): Promise<void> => {
 		await J(s, "完走の　祭りは、ノーカンや", "ホームニキ");
 	}
 	await s.say("rei", VARIANTS.rei(st));
+	// 恩赦の あとの やきう（テトとは ここが はじめて）
+	if (!s.flag("nanj_back")) await nanjBack(s);
 	// 縛り（仕様では できるが ふつうは しない 遊び方）。当てはまるものだけ
 	const noItem = VARIANTS.shibariItem(st);
 	if (noItem) {
@@ -533,9 +533,12 @@ const onigiriLate = async (s: Story): Promise<void> => {
 	s.set("onigiri_done");
 };
 
-/** 控えの となり：テトと やきうの はじめての 顔あわせ。やきうが 控えで もどる。 */
+/**
+ * エンディングの 輪で：テトと やきうの はじめての 顔あわせ。やきうが 控えで もどる。
+ * 恩赦（last.ts）の あと、本編の うちに やきうの 話を 閉じる。
+ */
 const nanjBack = async (s: Story): Promise<void> => {
-	await s.say("nanj", "名言、できたやん");
+	s.face("follower:teto", "left");
 	await s.say("teto", "……君が、やきうか");
 	await s.say("nanj", "せや。キリコの　名付け親や");
 	await s.say("teto", "自称、だろ");
@@ -543,10 +546,6 @@ const nanjBack = async (s: Story): Promise<void> => {
 	await s.say("kiriko", "吾輩が　言ったンゴ");
 	await s.say("nanj", "ワイが　おらんあいだ、\nキリコが　世話に　なったな");
 	await s.say("nanj", "サンガツや");
-	await s.say("teto", "……今、31って　言ったか");
-	await s.say("nanj", "言うてへん");
-	await s.say("kiriko", "「31」とも　書くンゴ");
-	await s.say("nanj", "……いらんこと　教えてもうたな");
 	await s.say("teto", "……ふん");
 	await s.narrate("テトは　フランスパンを　ちぎって、\nやきうに　つきだした。");
 	await s.say("nanj", "……なんや");
@@ -592,19 +591,10 @@ const nanjUra = async (s: Story): Promise<void> => {
 	s.set("ura_nanj");
 };
 
-/**
- * クリア後の やきう（エンディングの輪の まま）。
- * 3回目に話すか、テトを 前に出して話すと、控えで 仲間に もどる（本編のあいだは 第四章から もどらない）。
- */
+/** クリア後の やきう（エンディングの輪の まま。仲間には エンディングで もどっている）。 */
 const nanjEnd = async (s: Story): Promise<void> => {
-	const n = bump(s, "nanj_end_n");
 	if (s.flag("onigiri_got") && !s.flag("onigiri_done")) return onigiriLate(s);
 	if (ura(s.state) && !s.flag("ura_nanj")) return nanjUra(s);
-	const party = s.state.party;
-	const here = party.some((m) => m.id === "nanj");
-	const tetoFront = party.some((m) => m.id === "teto" && !m.bench);
-	if (!s.flag("nanj_back") && !here && (tetoFront || n >= 2))
-		return nanjBack(s);
 	await s.say("nanj", "名言、できたやん");
 };
 

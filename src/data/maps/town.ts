@@ -228,6 +228,8 @@ const nightEv = async (s: Story): Promise<void> => {
 	);
 	await s.say("roze", "わたしと……おなじ……！　キリコ！");
 	await s.say("nanj", "――――！　――――！");
+	// いちばん 大きな 声で どなっていた 1人を、サイレントバルスが だまらせた
+	await s.narrate("黒い　もやの　はしが、やきうの\n口もとを　なでて　消えた。");
 	await s.narrate("やきうの　口もとに、【アク禁】の　ふだが\nはられている。");
 	await s.say("feris", "書きこめないんだ……");
 	await s.narrate(

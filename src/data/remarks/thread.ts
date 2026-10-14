@@ -4,11 +4,9 @@
 // 場所（完走のあと）：やきう (4,7)・レイ (8,7)・モニター (2,3)(10,3)・下の扉 (6,10)。
 
 import type { RemarkDef } from "../../engine/defs";
-import { during, has, inParty, near, scene } from "./lib";
+import { during, has, near, scene } from "./lib";
 
 const THREAD = { map: "thread" };
-/** 完走のあとの やきう（話すと 控えに もどる）の そば。 */
-const NANJ = near("thread", 3, 6, 5, 8);
 /** 完走のあとの レイの そば。 */
 const REI = near("thread", 7, 6, 9, 8);
 /** 下の扉の前。 */
@@ -19,18 +17,6 @@ const MON_R = near("thread", 9, 3, 11, 4);
 
 export const thread: RemarkDef[] = [
 	// ───────── 完走のあと ─────────
-	...scene(
-		{
-			...NANJ,
-			when: (st) =>
-				!!st.flags.clear && !st.flags.nanj_back && !inParty(st, "nanj"),
-		},
-		{
-			roze: "……やきう、ずっと　こっちを\n見てるアル",
-			feris: "やきうくん、いるよ〜。\nほら、あそこ〜",
-			teto: "……あの　名無し、\n話しかけて　ほしそうだな",
-		},
-	),
 	...scene(
 		{ ...REI, when: has("clear") },
 		{
