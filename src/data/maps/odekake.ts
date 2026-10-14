@@ -39,20 +39,49 @@ const on = (t: TileDef, extra: string[], passable = t.passable): TileDef => ({
 
 const VOID: TileDef = { layers: [], color: "#000", passable: false };
 
-// 夜空（星は金平糖の小さなきらきら、月は黄色い玉）
-const C_SKY = "#0b1030";
-const STARS = base(3, 573);
-const STARS4 = base(3, 574);
-const STARS_Y = base(0, 573);
+// 夜空：RPGEN の「宇宙」（星なし 1枚・星あり 7枚。地の色が同じで、どう並べても つながる）。
+// ASCII の 夜空の 文字（- ' + y）は 場所だけを 決め、どの 1枚に するかは starfield() が
+// 星なし・星ありを 半々に 散らして 決める（月 m は そのまま）。
+const C_SKY = "#18202b";
+const SPACE_BLANK = "sp:X1lgbYC";
+const SPACE_STARS = [
+	"sp:VToKX3J",
+	"sp:X1lKbH4",
+	"sp:1CEg78q",
+	"sp:M4P5nw7",
+	"sp:63v9gzD",
+	"sp:BknvjJF",
+	"sp:yiGbrFL",
+];
+/** 星ありの 1枚を さす 文字（夜空の 文字と かぶらない 私用の 文字）。 */
+const STAR_CH = SPACE_STARS.map((_, i) => String.fromCharCode(0xf000 + i));
+const STARS_Y = base(0, 573); // 崖の下の 町の灯り（フェリス）に 使う
 const MOON = base(4, 572);
-const sky = (...l: string[]): TileDef => tile(C_SKY, l, false);
+const sky = (...l: string[]): TileDef =>
+	tile(C_SKY, [SPACE_BLANK, ...l], false);
 const SKY: Record<string, TileDef> = {
 	"-": sky(),
-	"'": sky(STARS),
-	"+": sky(STARS4),
-	y: sky(STARS_Y),
 	m: sky(MOON),
+	...Object.fromEntries(
+		STAR_CH.map((ch, i) => [ch, tile(C_SKY, [SPACE_STARS[i]], false)]),
+	),
 };
+/**
+ * 夜空の 文字を、星なし・星ありの 半々に 散らす。並びは 座標から 決める（来るたびに 変わらない）。
+ * seed は 行き先ごとに かえる（同じ 模様が ならばないように）。
+ */
+const starfield = (rows: string[], seed: number): string[] =>
+	rows.map((row, y) =>
+		[...row]
+			.map((ch, x) => {
+				if (!"-'+y".includes(ch)) return ch;
+				let h = (x * 374761393 + y * 668265263 + seed * 2246822519) >>> 0;
+				h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+				h = (h ^ (h >>> 16)) >>> 0;
+				return h % 2 ? "-" : STAR_CH[(h >>> 1) % STAR_CH.length];
+			})
+			.join(""),
+	);
 
 const WOOD = base(0, 46);
 const C_WOOD = "#b8905a";
@@ -255,10 +284,10 @@ const GAP = 12;
 const SPOT_W = 16;
 type Spot = { tiles: Record<string, TileDef>; rows: string[] };
 const SPOTS: Spot[] = [
-	{ tiles: rozeTiles, rows: rozeRows },
-	{ tiles: ferisTiles, rows: ferisRows },
+	{ tiles: rozeTiles, rows: starfield(rozeRows, 1) },
+	{ tiles: ferisTiles, rows: starfield(ferisRows, 2) },
 	{ tiles: tetoTiles, rows: tetoRows },
-	{ tiles: stadiumTiles, rows: nanjRows },
+	{ tiles: stadiumTiles, rows: starfield(nanjRows, 4) },
 ];
 /** 行き先の左端の x（マップ全体の座標）。 */
 export const SPOT_X = {
