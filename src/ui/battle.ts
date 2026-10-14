@@ -8,7 +8,7 @@
 // 文の早送りとコマンドを出すのは、鳴らしたばかりの効果音の区切りまで待つ（engine/audio.ts）。
 // 裏ボス（EnemyDef.summon）は、ストックのボスを1体ずつ呼び、尽きるまで攻撃をかわす（召喚のブロック）。
 // 負けても、たおした手下の分の経験値は入る（決着のブロック）。
-// 大事な一撃では画面ごと止める（stopFor）。ボス戦の決め手は 曲を切って 長く止め（ボスストップ）、
+// 大事な一撃では画面ごと止める（stopFor）。専用の曲が ある ボス戦の決め手は 曲を切って 長く止め（ボスストップ）、
 // かいしん・裏ボスの守りがとけた・味方の最後の1人が たおれた ときは 短く止める。
 
 import { cropOf, getImage, loadImage } from "../engine/assets";
@@ -351,7 +351,10 @@ const fight = async (game: Game, groupId: string): Promise<BattleResult> => {
 	audio.se("encounter");
 	const popSkip = input.push(() => {});
 	const clearFx = await encounterFx(game);
-	audio.bgm(group.bgm ?? (isBoss ? data.bossBgm : data.battleBgm));
+	const battleBgm = group.bgm ?? (isBoss ? data.bossBgm : data.battleBgm);
+	audio.bgm(battleBgm);
+	/** ボスストップは 専用の曲が ある ボス戦だけ（初戦の kskボットや 仲間との てあわせは ふつうの曲なので 止めない）。 */
+	const bossStop = isBoss && battleBgm !== data.battleBgm;
 
 	// ── 画面 ──
 	const root = el("div", { class: "battle" });
@@ -1030,7 +1033,7 @@ ${f.maxMp ? `<div class="m-bar mp"><i style="width:${(f.mp / f.maxMp) * 100}%"><
 		t.hp = Math.max(0, t.hp - dmg);
 		if (t.side === "enemy") {
 			// ボスストップ：ボス戦の 決め手（最後の敵が たおれる 一撃）は、当たった瞬間に 曲を切って 止める
-			const finale = isBoss && t.hp <= 0 && !alive(enemies).length;
+			const finale = bossStop && t.hp <= 0 && !alive(enemies).length;
 			audio.se("attack");
 			if (finale) {
 				void audio.cutBgm();
