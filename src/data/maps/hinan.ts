@@ -220,7 +220,8 @@ const before = async (s: Story): Promise<void> => {
 	}
 	await H(s, "帰れ、言うとるやろ");
 	await K(s, "……あの家、ホームニキの？");
-	await H(s, "カギは　なくした。\n……天文・気象板の　どこかや。知らん");
+	await H(s, "カギは　なくした。\n……もう　何百日も　入っとらん");
+	await H(s, "天文・気象板の　どこかや。知らん");
 };
 
 // ───────────────── ルート分岐：スレを うつす ─────────────────
@@ -637,6 +638,8 @@ const shelf = ([x, head, ...lines]: (typeof SHELVES)[number]): EventDef => ({
 	run: async (s) => {
 		await s.narrate(head);
 		for (const l of lines) await s.narrate(l);
+		// ほこりの ない >>998（だれが 手に 取っていたかは 床下で わかる）
+		if (x === 7) await K(s, "……ホームニキは、カギを\nなくしてた　はずンゴ");
 	},
 });
 
@@ -666,6 +669,7 @@ const desk: EventDef = {
 		if (has(s, "roze"))
 			await s.say("roze", "同じ　言葉アル。\n……千日前に、ここで　書かれてた");
 		await s.narrate("紙の　はしが、何度も　めくられて\nやわらかい。");
+		await s.narrate("うらに、土が　すこし　ついている。");
 		await K(s, "……吾輩が、返事を　するンゴ。\n>>999 で");
 		s.set("home_998");
 		await s.narrate("キリコは、紙を　そっと　もどした。");

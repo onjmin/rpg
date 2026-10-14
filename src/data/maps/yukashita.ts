@@ -35,7 +35,12 @@ const copies = async (s: Story): Promise<void> => {
 		"同じ　一行が、何十も　ならんでいる。\n返事の　レスは、ひとつも　ない。",
 	);
 	await s.narrate("いちばん　おわりの　一行。\nネタは、ネタのまま　終わるンゴ");
-	if (!s.flag("yk_998")) await s.narrate("キリコは、しばらく　見あげていた。");
+	if (s.flag("yk_ngo"))
+		await s.narrate("柱の　石の　字と、\n同じ　ひっかき方だ。");
+	if (!s.flag("yk_998")) {
+		await s.narrate("キリコは、しばらく　見あげていた。");
+		await K(s, "……あの夜に　聞いたのは、\nこっちの　一行ンゴ");
+	}
 	s.set("yk_998");
 };
 
@@ -48,6 +53,8 @@ const practice = async (s: Story): Promise<void> => {
 		"『ンゴ？』『ンゴ。』『……ンゴ』\n何度も　消して、書きなおした　あと。",
 	);
 	await s.narrate("すみに、ちいさく『吾輩』。\n一回だけ　書いて、消してある。");
+	if (s.flag("yk_998"))
+		await s.narrate("床板の　うらの　字と、\n同じ　ひっかき方だ。");
 	s.set("yk_ngo");
 };
 
@@ -74,6 +81,9 @@ const kubomi = async (s: Story): Promise<void> => {
 	await s.narrate(
 		"土が、ふかく　しずんでいる。\nとても　重い　ものが、長く　いた　ように。",
 	);
+	await s.narrate(
+		"すみに、土で　よごれた　紙の　きれはし。\n『ネタは』で　ちぎれている。",
+	);
 	s.set("yk_kubomi");
 };
 
@@ -98,6 +108,7 @@ const finale = async (s: Story): Promise<void> => {
 	await s.narrate("ホームニキが　おりてきた。\n床板の　うらを、見あげている。");
 	await s.narrate("それから、猫の　寝床の　となりの\nくぼみを　見た。");
 	await H(s, "……知らんかった。\nねこが　床下ばっかり　行く　思とった");
+	await H(s, "机の　紙に　ほこりが　つかんのも、\n……ねこや　思とった");
 
 	// ヒナリーは 過疎板の底で 避難Jを 研究していた。1000 で つながった モニターから 来る
 	await s.narrate("はしごが、もう一度　鳴った。\n白衣の　子が　おりてくる。");
@@ -134,6 +145,7 @@ const finale = async (s: Story): Promise<void> => {
 	await hinary(s, "ここで、日付が　かわります");
 	await readRows(s, after);
 	await hinary(s, "0時20分　再安価：ポニーテール");
+	await hinary(s, ">>101から　再安価まで、\n46分の　模様です");
 	const lost = SUNK.length - sunkCount(s);
 	if (lost > 0)
 		await hinary(s, `……${lost}件、まだ　見つかっていない\n模様です`);

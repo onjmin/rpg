@@ -93,7 +93,12 @@ const lastRun = async (s: Story): Promise<void> => {
 	if (hinan)
 		await s.narrate("もやの　おくで、小さく　声が　した。\n『……おかえり、か』");
 	await s.narrate("もやの　中から　あらわれたのは――\n角刈りの　キリコだった。");
+	// サイレントバルス＝ボツキリコの 声（レイの 87％・前夜祭の ンゴ）を 見せるだけ。説明は しない
+	await s.narrate(
+		"のこった　もやが、その子の　足もとへ\nすうっと　すいこまれていった。",
+	);
 	await botsuSay(s, "角刈り。体重100トン。111歳");
+	await s.say("kiriko", "……さっきの　ンゴと、\n同じ　声ンゴ");
 	await botsuSay(s, "あの夜、最初に　えらばれて、\nすぐ「再安価」で　流された");
 	await botsuSay(s, "吾輩は、お前の　ボツンゴ");
 	// 序章の髪型・体重の安価（角刈り・100トン）を、えらんだか
